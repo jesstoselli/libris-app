@@ -2,6 +2,7 @@ package app.billfolder.libris.shared
 
 import kotlin.time.Clock
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.toLocalDateTime
 
 // The API speaks calendar dates ("2026-10-16"); none of these go through an instant, so nothing shifts a day.
@@ -33,3 +34,10 @@ fun formatShortDate(iso: String): String {
 fun monthName(month: Int): String = MONTHS[month - 1]
 
 fun monthShort(month: Int): String = MONTHS[month - 1].take(3)
+
+// Material's DatePicker works in UTC-midnight millis; converting through UTC (never the device zone) keeps the day.
+fun isoFromPickerMillis(millis: Long): String =
+    kotlin.time.Instant.fromEpochMilliseconds(millis).toLocalDateTime(TimeZone.UTC).date.toString()
+
+fun pickerMillisFromIso(iso: String): Long =
+    kotlinx.datetime.LocalDate.parse(iso).atStartOfDayIn(TimeZone.UTC).toEpochMilliseconds()

@@ -1,0 +1,57 @@
+package app.billfolder.libris.ui
+
+import app.billfolder.libris.shared.AuthSession
+import app.billfolder.libris.shared.InMemoryTokenStore
+import app.billfolder.libris.shared.LibrisApi
+import app.billfolder.libris.shared.Session
+import app.billfolder.libris.shared.User
+import app.billfolder.libris.shared.librisHttpClient
+import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.MockEngineConfig
+import kotlinx.coroutines.CoroutineDispatcher
+import io.ktor.client.engine.mock.MockRequestHandleScope
+import io.ktor.client.engine.mock.respond
+import io.ktor.client.request.HttpRequestData
+import io.ktor.client.request.HttpResponseData
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.content.TextContent
+import io.ktor.http.headersOf
+
+const val BASE = "http://api.test"
+
+fun MockRequestHandleScope.json(body: String, status: HttpStatusCode = HttpStatusCode.OK): HttpResponseData =
+    respond(body, status, headersOf(HttpHeaders.ContentType, "application/json"))
+
+fun bookJson(
+    id: String = "b1",
+    title: String = "O Nome da Rosa",
+    status: String? = "not_started",
+    ownership: String = "owned",
+    totalPages: Int? = 512,
+    currentPage: Int = 0,
+    percent: Int = 0,
+    startedAt: String? = null,
+    finishedAt: String? = null,
+): String {
+    fun q(v: String?) = v?.let { "\"$it\"" } ?: "null"
+    return """{"id":"$id","title":"$title","authors":["Umberto Eco"],"ownership":"$ownership","status":${q(status)},"totalPages":${totalPages ?: "null"},"addedAt":"2026-10-01","genres":[],"currentPage":$currentPage,"percent":$percent,"startedAt":${q(startedAt)},"finishedAt":${q(finishedAt)}}"""
+}
+
+/** [dispatcher] must be the test's, so advanceUntilIdle() also waits for the fake HTTP calls. */
+class FakeApi(dispatcher: CoroutineDispatcher, handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData) {
+    val requests = mutableListOf<HttpRequestData>()
+    private val engine = MockEngine(
+        MockEngineConfig().apply {
+            this.dispatcher = dispatcher
+            addHandler { request ->
+                requests += request
+                handler(request)
+            }
+        },
+    )
+    val api = LibrisApi(librisHttpClient(engine), BASE)
+    val session = AuthSession(api, InMemoryTokenStore(Session("t", "r", User("u", "e@x.com", "Jess"))))
+
+    fun bodyOf(request: HttpRequestData) = (request.body as? TextContent)?.text
+}

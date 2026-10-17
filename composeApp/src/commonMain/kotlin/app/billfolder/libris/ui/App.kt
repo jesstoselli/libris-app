@@ -11,10 +11,18 @@ import app.billfolder.libris.ui.login.LoginScreen
 import app.billfolder.libris.ui.nav.MainShell
 import app.billfolder.libris.ui.theme.LibrisTheme
 import app.billfolder.libris.ui.theme.LocalLibrisType
+import coil3.ImageLoader
+import coil3.compose.setSingletonImageLoaderFactory
+import coil3.network.ktor3.KtorNetworkFetcherFactory
+import coil3.request.crossfade
 import org.koin.compose.koinInject
 
 @Composable
 fun App() {
+    // Covers load through Ktor on every platform (iOS has no default network fetcher).
+    setSingletonImageLoaderFactory { context ->
+        ImageLoader.Builder(context).components { add(KtorNetworkFetcherFactory()) }.crossfade(true).build()
+    }
     LibrisTheme { type ->
         CompositionLocalProvider(LocalLibrisType provides type) {
             val session = koinInject<AuthSession>()

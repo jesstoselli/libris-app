@@ -30,3 +30,12 @@ class DatesTest {
         assertEquals("mar", monthShort(3))
     }
 }
+
+class PickerDatesTest {
+    @Test
+    fun pickerMillis_roundTripKeepsTheDay() {
+        val millis = pickerMillisFromIso("2026-10-16")
+        assertEquals(1_792_108_800_000L, millis)
+        assertEquals("2026-10-16", isoFromPickerMillis(millis))
+    }
+}

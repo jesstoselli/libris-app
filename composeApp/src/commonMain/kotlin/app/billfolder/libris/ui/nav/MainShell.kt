@@ -16,6 +16,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
+import app.billfolder.libris.ui.acervo.AcervoScreen
+import app.billfolder.libris.ui.ficha.FichaScreen
 import app.billfolder.libris.shared.AuthSession
 import app.billfolder.libris.ui.components.LibrisIcons
 import app.billfolder.libris.ui.components.PageHeading
@@ -40,7 +43,10 @@ fun MainShell(session: AuthSession = koinInject()) {
     Column(Modifier.fillMaxSize()) {
         Box(Modifier.weight(1f).statusBarsPadding()) {
             NavHost(nav, startDestination = AcervoRoute) {
-                composable<AcervoRoute> { Placeholder("Acervo de leituras") }
+                composable<AcervoRoute> {
+                    AcervoScreen(onOpenBook = { nav.navigate(FichaRoute(it)) }, onRegister = { go(RegistrarRoute) })
+                }
+                composable<FichaRoute> { entry -> FichaScreen(entry.toRoute<FichaRoute>().id, onBack = { nav.popBackStack() }) }
                 composable<WishlistRoute> { Placeholder("Wishlist") }
                 composable<NumerosRoute> { Placeholder("Números") }
                 composable<RegistrarRoute> { Placeholder("Registrar livro") }
@@ -48,7 +54,7 @@ fun MainShell(session: AuthSession = koinInject()) {
         }
         RibbonBar(
             listOf(
-                RibbonItem("Acervo", LibrisIcons.Book, isOn(AcervoRoute::class)) { go(AcervoRoute) },
+                RibbonItem("Acervo", LibrisIcons.Book, isOn(AcervoRoute::class) || isOn(FichaRoute::class)) { go(AcervoRoute) },
                 RibbonItem("Wishlist", LibrisIcons.Bookmark, isOn(WishlistRoute::class)) { go(WishlistRoute) },
                 RibbonItem("Números", LibrisIcons.Chart, isOn(NumerosRoute::class)) { go(NumerosRoute) },
                 RibbonItem("Registrar", LibrisIcons.Plus, isOn(RegistrarRoute::class)) { go(RegistrarRoute) },
