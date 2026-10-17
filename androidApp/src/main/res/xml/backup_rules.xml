@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The session never goes to a backup: a refresh token restored on another phone would be a reused one. -->
+<full-backup-content>
+    <exclude domain="sharedpref" path="libris_session.xml" />
+</full-backup-content>
