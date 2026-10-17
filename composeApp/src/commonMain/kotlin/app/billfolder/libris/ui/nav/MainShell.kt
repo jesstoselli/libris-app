@@ -19,6 +19,14 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import app.billfolder.libris.ui.acervo.AcervoScreen
 import app.billfolder.libris.ui.ficha.FichaScreen
+import app.billfolder.libris.ui.form.BookFormScreen
+import app.billfolder.libris.shared.BookOwnership
+import app.billfolder.libris.ui.components.LocalSnackbar
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import app.billfolder.libris.shared.AuthSession
 import app.billfolder.libris.ui.components.LibrisIcons
 import app.billfolder.libris.ui.components.PageHeading
@@ -40,27 +48,42 @@ fun MainShell(session: AuthSession = koinInject()) {
         restoreState = true
     }
 
+    val snackbar = remember { SnackbarHostState() }
+    CompositionLocalProvider(LocalSnackbar provides snackbar) {
     Column(Modifier.fillMaxSize()) {
         Box(Modifier.weight(1f).statusBarsPadding()) {
             NavHost(nav, startDestination = AcervoRoute) {
                 composable<AcervoRoute> {
                     AcervoScreen(onOpenBook = { nav.navigate(FichaRoute(it)) }, onRegister = { go(RegistrarRoute) })
                 }
-                composable<FichaRoute> { entry -> FichaScreen(entry.toRoute<FichaRoute>().id, onBack = { nav.popBackStack() }) }
+                composable<FichaRoute> { entry ->
+                    val id = entry.toRoute<FichaRoute>().id
+                    FichaScreen(id, onBack = { nav.popBackStack() }, onEdit = { nav.navigate(EditRoute(id)) })
+                }
+                composable<EditRoute> { entry ->
+                    BookFormScreen(entry.toRoute<EditRoute>().id, onSaved = { nav.popBackStack() }, onBack = { nav.popBackStack() })
+                }
                 composable<WishlistRoute> { Placeholder("Wishlist") }
                 composable<NumerosRoute> { Placeholder("Números") }
-                composable<RegistrarRoute> { Placeholder("Registrar livro") }
+                composable<RegistrarRoute> {
+                    BookFormScreen(null, onSaved = { book ->
+                        val target: Any = if (book.ownership == BookOwnership.Owned) FichaRoute(book.id) else WishlistRoute
+                        nav.navigate(target) { popUpTo(RegistrarRoute) { inclusive = true } }
+                    }, onBack = null)
+                }
             }
         }
         RibbonBar(
             listOf(
-                RibbonItem("Acervo", LibrisIcons.Book, isOn(AcervoRoute::class) || isOn(FichaRoute::class)) { go(AcervoRoute) },
+                RibbonItem("Acervo", LibrisIcons.Book, isOn(AcervoRoute::class) || isOn(FichaRoute::class) || isOn(EditRoute::class)) { go(AcervoRoute) },
                 RibbonItem("Wishlist", LibrisIcons.Bookmark, isOn(WishlistRoute::class)) { go(WishlistRoute) },
                 RibbonItem("Números", LibrisIcons.Chart, isOn(NumerosRoute::class)) { go(NumerosRoute) },
                 RibbonItem("Registrar", LibrisIcons.Plus, isOn(RegistrarRoute::class)) { go(RegistrarRoute) },
                 RibbonItem("Sair", LibrisIcons.Exit, false) { scope.launch { session.logout() } },
             ),
         )
+    }
+    Box(Modifier.fillMaxSize().padding(bottom = 80.dp), contentAlignment = Alignment.BottomCenter) { SnackbarHost(snackbar) }
     }
 }
 

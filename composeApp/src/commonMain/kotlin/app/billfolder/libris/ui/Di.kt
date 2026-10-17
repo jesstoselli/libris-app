@@ -6,6 +6,7 @@ import app.billfolder.libris.shared.TokenStore
 import app.billfolder.libris.shared.librisHttpClient
 import app.billfolder.libris.ui.acervo.AcervoViewModel
 import app.billfolder.libris.ui.ficha.FichaViewModel
+import app.billfolder.libris.ui.form.BookFormViewModel
 import app.billfolder.libris.ui.login.LoginViewModel
 import org.koin.core.module.dsl.viewModel
 import io.ktor.client.HttpClient
@@ -24,6 +25,7 @@ fun librisModule(baseUrl: String, tokens: TokenStore, engine: HttpClientEngine):
     viewModelOf(::LoginViewModel)
     viewModelOf(::AcervoViewModel)
     viewModel { (bookId: String) -> FichaViewModel(bookId, get(), get()) }
+    viewModel { (bookId: String?) -> BookFormViewModel(bookId, get(), get()) }
 }
 
 private var started = false

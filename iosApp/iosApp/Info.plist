@@ -33,6 +33,8 @@
 	<array>
 		<string>arm64</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>Pra ler o código de barras dos livros e fotografar capas.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<!-- Lets debug builds reach the local API over plain HTTP; production is HTTPS. -->

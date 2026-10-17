@@ -63,6 +63,10 @@ class FichaViewModel(private val bookId: String, private val session: AuthSessio
     val messages = _messages.receiveAsFlow()
 
     init {
+        reload()
+    }
+
+    fun reload() {
         viewModelScope.launch {
             try {
                 val book = session.authorized { api.getBook(it, bookId) }

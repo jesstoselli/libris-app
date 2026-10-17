@@ -11,3 +11,5 @@ import kotlinx.serialization.Serializable
 @Serializable data object RegistrarRoute
 
 @Serializable data class FichaRoute(val id: String)
+
+@Serializable data class EditRoute(val id: String)

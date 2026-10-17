@@ -41,6 +41,8 @@ import app.billfolder.libris.ui.components.BookCover
 import app.billfolder.libris.ui.components.ConfirmDialog
 import app.billfolder.libris.ui.components.Ficha
 import app.billfolder.libris.ui.components.IsoDatePicker
+import app.billfolder.libris.ui.components.LocalSnackbar
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import app.billfolder.libris.ui.components.PrimaryButton
 import app.billfolder.libris.ui.components.ProgressBar
 import app.billfolder.libris.ui.components.RuledField
@@ -59,10 +61,16 @@ private val STATUS_TONES = mapOf(
 )
 
 @Composable
-fun FichaScreen(bookId: String, onBack: () -> Unit, viewModel: FichaViewModel = koinViewModel(key = bookId) { parametersOf(bookId) }) {
+fun FichaScreen(bookId: String, onBack: () -> Unit, onEdit: () -> Unit, viewModel: FichaViewModel = koinViewModel(key = bookId) { parametersOf(bookId) }) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val type = LocalLibrisType.current
-    val snackbar = remember { SnackbarHostState() }
+    val snackbar = LocalSnackbar.current
+    var firstResume by remember { mutableStateOf(true) }
+    // Back from "Editar livro": show what was just saved.
+    LifecycleResumeEffect(Unit) {
+        if (firstResume) firstResume = false else viewModel.reload()
+        onPauseOrDispose { }
+    }
     LaunchedEffect(viewModel) { viewModel.messages.collect { snackbar.showSnackbar(it) } }
     LaunchedEffect(state.deleted) { if (state.deleted) onBack() }
 
@@ -75,18 +83,17 @@ fun FichaScreen(bookId: String, onBack: () -> Unit, viewModel: FichaViewModel = 
                     Load.Loading -> Text("Carregando…", fontFamily = type.body, color = Libris.deskTextSoft)
                     is Load.Failed -> Text(load.message, fontFamily = type.body, color = Libris.deskText)
                     is Load.Loaded -> {
-                        BookSheet(load.value, viewModel)
+                        BookSheet(load.value, viewModel, onEdit)
                         if (load.value.ownership == BookOwnership.Owned) ReadingSheet(load.value, state, viewModel) else AcquireSheet(load.value, viewModel)
                     }
                 }
             }
         }
-        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter))
     }
 }
 
 @Composable
-private fun BookSheet(book: Book, viewModel: FichaViewModel) {
+private fun BookSheet(book: Book, viewModel: FichaViewModel, onEdit: () -> Unit) {
     val type = LocalLibrisType.current
     var confirmDelete by remember { mutableStateOf(false) }
     var editingDates by remember { mutableStateOf(false) }
@@ -127,7 +134,10 @@ private fun BookSheet(book: Book, viewModel: FichaViewModel) {
                     Text("✎ editar datas", fontFamily = type.body, fontSize = 14.sp, color = Libris.oxblood, modifier = Modifier.clickable { editingDates = true })
                 }
             }
-            Text("Apagar livro", fontFamily = type.body, fontSize = 14.sp, color = Libris.inkSoft, modifier = Modifier.clickable { confirmDelete = true }.padding(top = 8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(20.dp), modifier = Modifier.padding(top = 8.dp)) {
+                Text("Editar livro", fontFamily = type.body, fontSize = 14.sp, color = Libris.oxblood, modifier = Modifier.clickable(onClick = onEdit))
+                Text("Apagar livro", fontFamily = type.body, fontSize = 14.sp, color = Libris.inkSoft, modifier = Modifier.clickable { confirmDelete = true })
+            }
         }
     }
     if (confirmDelete) {
