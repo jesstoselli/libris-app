@@ -10,6 +10,7 @@ import app.billfolder.libris.shared.currentYearMonth
 import app.billfolder.libris.shared.userMessage
 import app.billfolder.libris.ui.Load
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,6 +22,7 @@ data class NumerosState(
     val month: Int,
     val stats: Load<YearStats> = Load.Loading,
     val detail: Load<MonthDetail> = Load.Loading,
+    val refreshing: Boolean = false,
 )
 
 /** Current month this year; December for past years; January for future ones. */
@@ -47,9 +49,17 @@ class NumerosViewModel(
         loadMonth()
     }
 
-    fun refresh() {
-        loadYear()
-        loadMonth()
+    fun refresh(): List<Job> = listOf(loadYear(), loadMonth())
+
+    /** The pull-down gesture: same reload, with the indicator up until every request has answered. */
+    fun pullToRefresh() {
+        if (_state.value.refreshing) return
+        _state.update { it.copy(refreshing = true) }
+        val jobs = refresh()
+        viewModelScope.launch {
+            jobs.joinAll()
+            _state.update { it.copy(refreshing = false) }
+        }
     }
 
     fun goToYear(year: Int) {
@@ -63,7 +73,7 @@ class NumerosViewModel(
         loadMonth()
     }
 
-    private fun loadYear() {
+    private fun loadYear(): Job {
         yearJob?.cancel()
         val year = _state.value.year
         _state.update { it.copy(stats = Load.Loading) }
@@ -75,9 +85,10 @@ class NumerosViewModel(
             }
             _state.update { it.copy(stats = load) }
         }
+        return yearJob!!
     }
 
-    private fun loadMonth() {
+    private fun loadMonth(): Job {
         monthJob?.cancel()
         val (year, month) = _state.value.let { it.year to it.month }
         _state.update { it.copy(detail = Load.Loading) }
@@ -89,5 +100,6 @@ class NumerosViewModel(
             }
             _state.update { it.copy(detail = load) }
         }
+        return monthJob!!
     }
 }

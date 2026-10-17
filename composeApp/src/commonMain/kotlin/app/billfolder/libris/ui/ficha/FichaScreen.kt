@@ -37,6 +37,7 @@ import app.billfolder.libris.shared.formatIsoDate
 import app.billfolder.libris.shared.formatShortDate
 import app.billfolder.libris.shared.todayIso
 import app.billfolder.libris.ui.Load
+import app.billfolder.libris.ui.components.Refreshable
 import app.billfolder.libris.ui.components.BookCover
 import app.billfolder.libris.ui.components.ConfirmDialog
 import app.billfolder.libris.ui.components.Ficha
@@ -74,17 +75,19 @@ fun FichaScreen(bookId: String, onBack: () -> Unit, onEdit: () -> Unit, viewMode
     LaunchedEffect(viewModel) { viewModel.messages.collect { snackbar.showSnackbar(it) } }
     LaunchedEffect(state.deleted) { if (state.deleted) onBack() }
 
-    Box(Modifier.fillMaxSize()) {
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
-            Text("‹ Voltar", fontFamily = type.body, color = Libris.deskText, modifier = Modifier.clickable(onClick = onBack).padding(vertical = 4.dp))
-            when {
-                state.notFound -> Ficha(Modifier.fillMaxWidth()) { Text("Livro não encontrado.", fontFamily = type.body) }
-                else -> when (val load = state.book) {
-                    Load.Loading -> Text("Carregando…", fontFamily = type.body, color = Libris.deskTextSoft)
-                    is Load.Failed -> Text(load.message, fontFamily = type.body, color = Libris.deskText)
-                    is Load.Loaded -> {
-                        BookSheet(load.value, viewModel, onEdit)
-                        if (load.value.ownership == BookOwnership.Owned) ReadingSheet(load.value, state, viewModel) else AcquireSheet(load.value, viewModel)
+    Refreshable(state.refreshing, viewModel::pullToRefresh) {
+        Box(Modifier.fillMaxSize()) {
+            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
+                Text("‹ Voltar", fontFamily = type.body, color = Libris.deskText, modifier = Modifier.clickable(onClick = onBack).padding(vertical = 4.dp))
+                when {
+                    state.notFound -> Ficha(Modifier.fillMaxWidth()) { Text("Livro não encontrado.", fontFamily = type.body) }
+                    else -> when (val load = state.book) {
+                        Load.Loading -> Text("Carregando…", fontFamily = type.body, color = Libris.deskTextSoft)
+                        is Load.Failed -> Text(load.message, fontFamily = type.body, color = Libris.deskText)
+                        is Load.Loaded -> {
+                            BookSheet(load.value, viewModel, onEdit)
+                            if (load.value.ownership == BookOwnership.Owned) ReadingSheet(load.value, state, viewModel) else AcquireSheet(load.value, viewModel)
+                        }
                     }
                 }
             }

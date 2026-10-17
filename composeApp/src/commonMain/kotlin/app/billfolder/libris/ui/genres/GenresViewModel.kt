@@ -1,5 +1,7 @@
 package app.billfolder.libris.ui.genres
 
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.Job
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.billfolder.libris.shared.AuthSession
@@ -15,7 +17,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-data class GenresState(val genres: Load<List<Genre>> = Load.Loading, val renameError: String? = null)
+data class GenresState(val genres: Load<List<Genre>> = Load.Loading, val renameError: String? = null, val refreshing: Boolean = false)
 
 class GenresViewModel(private val session: AuthSession, private val api: LibrisApi) : ViewModel() {
     private val _state = MutableStateFlow(GenresState())
@@ -29,13 +31,26 @@ class GenresViewModel(private val session: AuthSession, private val api: LibrisA
     val renamed = _renamed.receiveAsFlow()
 
     init {
+        load()
+    }
+
+    private fun load(): Job = viewModelScope.launch {
+        val load = try {
+            Load.Loaded(session.authorized { api.listGenres(it) })
+        } catch (e: Exception) {
+            Load.Failed(e.userMessage())
+        }
+        _state.update { it.copy(genres = load) }
+    }
+
+    /** The pull-down gesture: same reload, with the indicator up until every request has answered. */
+    fun pullToRefresh() {
+        if (_state.value.refreshing) return
+        _state.update { it.copy(refreshing = true) }
+        val jobs = listOf(load())
         viewModelScope.launch {
-            val load = try {
-                Load.Loaded(session.authorized { api.listGenres(it) })
-            } catch (e: Exception) {
-                Load.Failed(e.userMessage())
-            }
-            _state.update { it.copy(genres = load) }
+            jobs.joinAll()
+            _state.update { it.copy(refreshing = false) }
         }
     }
 

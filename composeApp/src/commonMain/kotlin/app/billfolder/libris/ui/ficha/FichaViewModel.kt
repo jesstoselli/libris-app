@@ -1,5 +1,7 @@
 package app.billfolder.libris.ui.ficha
 
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.Job
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.billfolder.libris.shared.ApiException
@@ -25,6 +27,7 @@ import kotlinx.coroutines.launch
 
 data class FichaState(
     val book: Load<Book> = Load.Loading,
+    val refreshing: Boolean = false,
     val notFound: Boolean = false,
     val logs: List<ReadingLog> = emptyList(),
     val pageInput: String = "",
@@ -66,7 +69,7 @@ class FichaViewModel(private val bookId: String, private val session: AuthSessio
         reload()
     }
 
-    fun reload() {
+    fun reload(): Job =
         viewModelScope.launch {
             try {
                 val book = session.authorized { api.getBook(it, bookId) }
@@ -77,6 +80,16 @@ class FichaViewModel(private val bookId: String, private val session: AuthSessio
             } catch (e: Exception) {
                 _state.update { it.copy(book = Load.Failed(e.userMessage())) }
             }
+        }
+
+    /** The pull-down gesture: same reload, with the indicator up until every request has answered. */
+    fun pullToRefresh() {
+        if (_state.value.refreshing) return
+        _state.update { it.copy(refreshing = true) }
+        val jobs = listOf(reload())
+        viewModelScope.launch {
+            jobs.joinAll()
+            _state.update { it.copy(refreshing = false) }
         }
     }
 

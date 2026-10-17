@@ -13,6 +13,7 @@ import app.billfolder.libris.shared.userMessage
 import app.billfolder.libris.ui.Load
 import app.billfolder.libris.ui.valueOrNull
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,6 +23,7 @@ import kotlinx.coroutines.launch
 
 data class AcervoState(
     val all: Load<List<Book>> = Load.Loading,
+    val refreshing: Boolean = false,
     val filtered: Load<List<Book>>? = null,
     val status: BookStatus? = null,
     val genreId: String? = null,
@@ -55,10 +57,10 @@ class AcervoViewModel(private val session: AuthSession, private val api: LibrisA
     fun coverSrc(book: Book) = api.coverSrc(book.coverUrl)
 
     /** Reloads everything (also when coming back from a Ficha, where things may have changed). */
-    fun refresh() {
+    fun refresh(): List<Job> = listOfNotNull(
         viewModelScope.launch {
             runCatching { session.authorized { api.listGenres(it) } }.onSuccess { g -> _state.update { it.copy(genres = g) } }
-        }
+        },
         viewModelScope.launch {
             val load = try {
                 Load.Loaded(session.authorized { api.listBooks(it, BookListQuery(ownership = BookOwnership.Owned)) })
@@ -66,8 +68,19 @@ class AcervoViewModel(private val session: AuthSession, private val api: LibrisA
                 Load.Failed(e.userMessage())
             }
             _state.update { it.copy(all = load) }
+        },
+        if (_state.value.hasFilters) loadFiltered() else null,
+    )
+
+    /** The pull-down gesture: same reload, with the indicator up until every request has answered. */
+    fun pullToRefresh() {
+        if (_state.value.refreshing) return
+        _state.update { it.copy(refreshing = true) }
+        val jobs = refresh()
+        viewModelScope.launch {
+            jobs.joinAll()
+            _state.update { it.copy(refreshing = false) }
         }
-        if (_state.value.hasFilters) loadFiltered()
     }
 
     fun setStatus(status: BookStatus?) {
@@ -89,12 +102,12 @@ class AcervoViewModel(private val session: AuthSession, private val api: LibrisA
         }
     }
 
-    private fun loadFiltered() {
+    private fun loadFiltered(): Job? {
         filterJob?.cancel()
         val s = _state.value
         if (!s.hasFilters) {
             _state.update { it.copy(filtered = null) }
-            return
+            return null
         }
         _state.update { it.copy(filtered = Load.Loading) }
         filterJob = viewModelScope.launch {
@@ -106,6 +119,7 @@ class AcervoViewModel(private val session: AuthSession, private val api: LibrisA
             }
             _state.update { it.copy(filtered = load) }
         }
+        return filterJob
     }
 
     private companion object {

@@ -34,6 +34,7 @@ import app.billfolder.libris.shared.formatShortDate
 import app.billfolder.libris.shared.monthName
 import app.billfolder.libris.shared.monthShort
 import app.billfolder.libris.ui.Load
+import app.billfolder.libris.ui.components.Refreshable
 import app.billfolder.libris.ui.components.Ficha
 import app.billfolder.libris.ui.theme.Libris
 import app.billfolder.libris.ui.theme.LocalLibrisType
@@ -52,49 +53,51 @@ fun NumerosScreen(viewModel: NumerosViewModel = koinViewModel()) {
         onPauseOrDispose { }
     }
 
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Column {
-            Text("Números de ${state.year}", fontFamily = type.title, fontWeight = FontWeight.ExtraBold, fontSize = 30.sp, color = Libris.deskText)
-            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                Text("‹ ${state.year - 1}", fontFamily = type.body, color = Libris.deskTextSoft, modifier = Modifier.clickable { viewModel.goToYear(state.year - 1) }.padding(vertical = 6.dp))
-                Text("${state.year + 1} ›", fontFamily = type.body, color = Libris.deskTextSoft, modifier = Modifier.clickable { viewModel.goToYear(state.year + 1) }.padding(vertical = 6.dp))
-            }
-        }
-        when (val load = state.stats) {
-            Load.Loading -> Text("Carregando…", fontFamily = type.body, color = Libris.deskTextSoft)
-            is Load.Failed -> Text(load.message, fontFamily = type.body, color = Libris.deskText)
-            is Load.Loaded -> {
-                val s = load.value
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Kpi(thousands(s.booksFinished), "terminados no ano", Modifier.weight(1f))
-                    Kpi(thousands(s.pagesRead), "páginas no ano", Modifier.weight(1f))
-                    Kpi(thousands(s.readingNow), "em leitura agora", Modifier.weight(1f))
+    Refreshable(state.refreshing, viewModel::pullToRefresh) {
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Column {
+                Text("Números de ${state.year}", fontFamily = type.title, fontWeight = FontWeight.ExtraBold, fontSize = 30.sp, color = Libris.deskText)
+                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Text("‹ ${state.year - 1}", fontFamily = type.body, color = Libris.deskTextSoft, modifier = Modifier.clickable { viewModel.goToYear(state.year - 1) }.padding(vertical = 6.dp))
+                    Text("${state.year + 1} ›", fontFamily = type.body, color = Libris.deskTextSoft, modifier = Modifier.clickable { viewModel.goToYear(state.year + 1) }.padding(vertical = 6.dp))
                 }
-                Ficha(Modifier.fillMaxWidth()) {
-                    Column {
-                        Text("Páginas lidas por mês · toque num mês", fontFamily = type.body, fontSize = 13.sp, color = Libris.inkSoft)
-                        MonthBars(s.months, state.month, viewModel::selectMonth)
+            }
+            when (val load = state.stats) {
+                Load.Loading -> Text("Carregando…", fontFamily = type.body, color = Libris.deskTextSoft)
+                is Load.Failed -> Text(load.message, fontFamily = type.body, color = Libris.deskText)
+                is Load.Loaded -> {
+                    val s = load.value
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Kpi(thousands(s.booksFinished), "terminados no ano", Modifier.weight(1f))
+                        Kpi(thousands(s.pagesRead), "páginas no ano", Modifier.weight(1f))
+                        Kpi(thousands(s.readingNow), "em leitura agora", Modifier.weight(1f))
+                    }
+                    Ficha(Modifier.fillMaxWidth()) {
+                        Column {
+                            Text("Páginas lidas por mês · toque num mês", fontFamily = type.body, fontSize = 13.sp, color = Libris.inkSoft)
+                            MonthBars(s.months, state.month, viewModel::selectMonth)
+                        }
                     }
                 }
             }
-        }
-        when (val d = state.detail) {
-            Load.Loading -> Unit
-            is Load.Failed -> Text(d.message, fontFamily = type.body, color = Libris.deskText)
-            is Load.Loaded -> {
-                val m = monthName(state.month)
-                Ficha(Modifier.fillMaxWidth()) {
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Section("Terminados em $m · ${d.value.finished.size}")
-                        if (d.value.finished.isEmpty()) Text("Nenhum livro terminado.", fontFamily = type.body, fontWeight = FontWeight.Light, color = Libris.inkSoft)
-                        d.value.finished.forEach { f -> DetailRow(f.title, f.authors.joinToString(", "), formatShortDate(f.finishedAt)) }
+            when (val d = state.detail) {
+                Load.Loading -> Unit
+                is Load.Failed -> Text(d.message, fontFamily = type.body, color = Libris.deskText)
+                is Load.Loaded -> {
+                    val m = monthName(state.month)
+                    Ficha(Modifier.fillMaxWidth()) {
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Section("Terminados em $m · ${d.value.finished.size}")
+                            if (d.value.finished.isEmpty()) Text("Nenhum livro terminado.", fontFamily = type.body, fontWeight = FontWeight.Light, color = Libris.inkSoft)
+                            d.value.finished.forEach { f -> DetailRow(f.title, f.authors.joinToString(", "), formatShortDate(f.finishedAt)) }
+                        }
                     }
-                }
-                Ficha(Modifier.fillMaxWidth()) {
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Section("Andaram em $m · ${thousands(d.value.pagesRead)} págs.")
-                        if (d.value.progressed.isEmpty()) Text("Nenhuma leitura anotada.", fontFamily = type.body, fontWeight = FontWeight.Light, color = Libris.inkSoft)
-                        d.value.progressed.forEach { p -> DetailRow(p.title, null, "+${thousands(p.pagesRead)}") }
+                    Ficha(Modifier.fillMaxWidth()) {
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Section("Andaram em $m · ${thousands(d.value.pagesRead)} págs.")
+                            if (d.value.progressed.isEmpty()) Text("Nenhuma leitura anotada.", fontFamily = type.body, fontWeight = FontWeight.Light, color = Libris.inkSoft)
+                            d.value.progressed.forEach { p -> DetailRow(p.title, null, "+${thousands(p.pagesRead)}") }
+                        }
                     }
                 }
             }

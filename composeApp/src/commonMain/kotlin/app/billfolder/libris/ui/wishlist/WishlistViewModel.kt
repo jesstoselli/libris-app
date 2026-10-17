@@ -1,5 +1,7 @@
 package app.billfolder.libris.ui.wishlist
 
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.Job
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.billfolder.libris.shared.AuthSession
@@ -20,6 +22,7 @@ import kotlinx.coroutines.launch
 
 data class WishlistState(
     val books: Load<List<Book>> = Load.Loading,
+    val refreshing: Boolean = false,
     val genres: List<Genre> = emptyList(),
     val genreId: String? = null,
     val query: String = "",
@@ -51,10 +54,10 @@ class WishlistViewModel(private val session: AuthSession, private val api: Libri
 
     fun setQuery(q: String) = _state.update { it.copy(query = q) }
 
-    fun refresh() {
+    fun refresh(): List<Job> = listOf(
         viewModelScope.launch {
             runCatching { session.authorized { api.listGenres(it) } }.onSuccess { g -> _state.update { it.copy(genres = g) } }
-        }
+        },
         viewModelScope.launch {
             val load = try {
                 Load.Loaded(session.authorized { api.listBooks(it, BookListQuery(ownership = BookOwnership.Wishlist)) })
@@ -62,6 +65,17 @@ class WishlistViewModel(private val session: AuthSession, private val api: Libri
                 Load.Failed(e.userMessage())
             }
             _state.update { it.copy(books = load) }
+        },
+    )
+
+    /** The pull-down gesture: same reload, with the indicator up until every request has answered. */
+    fun pullToRefresh() {
+        if (_state.value.refreshing) return
+        _state.update { it.copy(refreshing = true) }
+        val jobs = refresh()
+        viewModelScope.launch {
+            jobs.joinAll()
+            _state.update { it.copy(refreshing = false) }
         }
     }
 }

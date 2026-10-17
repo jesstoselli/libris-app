@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.billfolder.libris.shared.Genre
 import app.billfolder.libris.ui.Load
+import app.billfolder.libris.ui.components.Refreshable
 import app.billfolder.libris.ui.components.ConfirmDialog
 import app.billfolder.libris.ui.components.Ficha
 import app.billfolder.libris.ui.components.LocalSnackbar
@@ -44,23 +45,25 @@ fun GenresScreen(onBack: () -> Unit, viewModel: GenresViewModel = koinViewModel(
     LaunchedEffect(viewModel) { viewModel.messages.collect { snackbar.showSnackbar(it) } }
     LaunchedEffect(viewModel) { viewModel.renamed.collect { renaming = null } }
 
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Text("‹ Voltar", fontFamily = type.body, color = Libris.deskText, modifier = Modifier.clickable(onClick = onBack))
-        PageHeading("Gêneros")
-        Ficha(Modifier.fillMaxWidth()) {
-            when (val load = state.genres) {
-                Load.Loading -> Text("Carregando…", fontFamily = type.body)
-                is Load.Failed -> Text(load.message, fontFamily = type.body)
-                is Load.Loaded -> if (load.value.isEmpty()) {
-                    Text("Nenhum gênero ainda. Eles aparecem quando você cadastra livros.", fontFamily = type.body, color = Libris.inkSoft)
-                } else {
-                    Column {
-                        load.value.forEach { g ->
-                            Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Text(g.name, fontFamily = type.body, modifier = Modifier.weight(1f))
-                                Text("${g.bookCount} ${if (g.bookCount == 1) "livro" else "livros"}", fontFamily = type.body, fontSize = 13.sp, color = Libris.inkSoft)
-                                Text("✎", color = Libris.inkSoft, modifier = Modifier.clickable { viewModel.clearRenameError(); renaming = g }.padding(10.dp))
-                                Text("×", color = Libris.inkSoft, modifier = Modifier.clickable { deleting = g }.padding(10.dp))
+    Refreshable(state.refreshing, viewModel::pullToRefresh) {
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Text("‹ Voltar", fontFamily = type.body, color = Libris.deskText, modifier = Modifier.clickable(onClick = onBack))
+            PageHeading("Gêneros")
+            Ficha(Modifier.fillMaxWidth()) {
+                when (val load = state.genres) {
+                    Load.Loading -> Text("Carregando…", fontFamily = type.body)
+                    is Load.Failed -> Text(load.message, fontFamily = type.body)
+                    is Load.Loaded -> if (load.value.isEmpty()) {
+                        Text("Nenhum gênero ainda. Eles aparecem quando você cadastra livros.", fontFamily = type.body, color = Libris.inkSoft)
+                    } else {
+                        Column {
+                            load.value.forEach { g ->
+                                Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    Text(g.name, fontFamily = type.body, modifier = Modifier.weight(1f))
+                                    Text("${g.bookCount} ${if (g.bookCount == 1) "livro" else "livros"}", fontFamily = type.body, fontSize = 13.sp, color = Libris.inkSoft)
+                                    Text("✎", color = Libris.inkSoft, modifier = Modifier.clickable { viewModel.clearRenameError(); renaming = g }.padding(10.dp))
+                                    Text("×", color = Libris.inkSoft, modifier = Modifier.clickable { deleting = g }.padding(10.dp))
+                                }
                             }
                         }
                     }
