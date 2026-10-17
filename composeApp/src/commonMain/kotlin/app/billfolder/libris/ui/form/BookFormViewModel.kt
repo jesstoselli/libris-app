@@ -38,7 +38,6 @@ data class BookFormState(
     val publisher: String = "",
     val synopsis: String = "",
     val genres: List<String> = emptyList(),
-    val suggestedGenres: List<String> = emptyList(),
     val ownership: BookOwnership = BookOwnership.Owned,
     val status: BookStatus = BookStatus.NotStarted,
     val startedAt: String? = null,
@@ -152,18 +151,16 @@ class BookFormViewModel(private val bookId: String?, private val session: AuthSe
     fun onFinishedAt(v: String?) = _state.update { it.copy(finishedAt = v) }
 
     /** Adds a genre once (case-insensitively), reusing the stored spelling when it already exists. */
-    fun addGenre(raw: String) {
+    fun addGenre(raw: String) = _state.update { it.copy(genres = withGenre(it.genres, raw)) }
+
+    private fun withGenre(genres: List<String>, raw: String): List<String> {
         val name = raw.replace(",", "").trim()
-        _state.update { s ->
-            if (name.isEmpty() || s.genres.size >= MAX_GENRES || s.genres.any { it.equals(name, ignoreCase = true) }) return@update s
-            val known = _existingGenres.value.firstOrNull { it.name.equals(name, ignoreCase = true) }?.name ?: name
-            s.copy(genres = s.genres + known, suggestedGenres = s.suggestedGenres.filterNot { it.equals(name, ignoreCase = true) })
-        }
+        if (name.isEmpty() || genres.size >= MAX_GENRES || genres.any { it.equals(name, ignoreCase = true) }) return genres
+        val known = _existingGenres.value.firstOrNull { it.name.equals(name, ignoreCase = true) }?.name ?: name
+        return genres + known
     }
 
     fun removeGenre(name: String) = _state.update { it.copy(genres = it.genres - name) }
-
-    fun dismissSuggestion(name: String) = _state.update { it.copy(suggestedGenres = it.suggestedGenres - name) }
 
     /** From the barcode scanner: fill the ISBN and look it up right away. */
     fun onScanned(isbn: String) {
@@ -237,7 +234,7 @@ class BookFormViewModel(private val bookId: String?, private val session: AuthSe
         }
     }
 
-    /** Fills only what is still empty, so a lookup never overwrites what was typed. */
+    /** Fills only what is still empty, so a lookup never overwrites what was typed; its genres are added to the chosen ones. */
     private fun apply(lookup: IsbnLookup) = _state.update { s ->
         val source = lookup.source.split('+').joinToString(" e ") { if (it == "google_books") "Google Books" else "Open Library" }
         s.copy(
@@ -249,7 +246,7 @@ class BookFormViewModel(private val bookId: String?, private val session: AuthSe
             publisher = s.publisher.ifBlank { lookup.publisher.orEmpty() },
             publishedYear = s.publishedYear.ifBlank { lookup.publishedYear?.toString().orEmpty() },
             synopsis = s.synopsis.ifBlank { lookup.synopsis.orEmpty() },
-            suggestedGenres = lookup.suggestedGenres.filterNot { g -> s.genres.any { it.equals(g, ignoreCase = true) } },
+            genres = lookup.suggestedGenres.fold(s.genres, ::withGenre),
             pendingCoverUrl = if (s.coverId == null) lookup.coverUrl ?: s.pendingCoverUrl else s.pendingCoverUrl,
         )
     }

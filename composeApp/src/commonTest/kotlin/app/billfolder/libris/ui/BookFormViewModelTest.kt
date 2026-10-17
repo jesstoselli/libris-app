@@ -16,6 +16,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlin.test.AfterTest
@@ -110,7 +111,7 @@ class BookFormViewModelTest {
     }
 
     @Test
-    fun isbnLookup_fillsOnlyEmptyFields_andSuggestsGenres() = runTest(dispatcher) {
+    fun isbnLookup_fillsOnlyEmptyFields() = runTest(dispatcher) {
         val fake = server()
         val vm = BookFormViewModel(null, fake.session, fake.api)
         advanceUntilIdle()
@@ -123,8 +124,25 @@ class BookFormViewModelTest {
         assertEquals("Meu título", s.title)
         assertEquals(listOf("Umberto Eco"), s.authors)
         assertEquals("536", s.totalPages)
-        assertEquals(listOf("Mystery", "History"), s.suggestedGenres)
         assertEquals("Dados encontrados em Open Library.", s.lookupNote)
+    }
+
+    @Test
+    fun isbnLookup_addsItsGenresToTheBook_withoutDuplicates_andSavesThem() = runTest(dispatcher) {
+        val fake = server()
+        val vm = BookFormViewModel(null, fake.session, fake.api)
+        advanceUntilIdle()
+        vm.onTitle("Rosa"); vm.onPages("512")
+        vm.addGenre("history")
+
+        vm.onScanned("9780156001311")
+        advanceUntilIdle()
+
+        assertEquals(listOf("history", "Mystery"), vm.state.value.genres)
+        vm.save()
+        advanceUntilIdle()
+        val sent = bodyJson(fake, "/v1/books")["genres"]!!.jsonArray.map { it.jsonPrimitive.content }
+        assertEquals(listOf("history", "Mystery"), sent)
     }
 
     @Test

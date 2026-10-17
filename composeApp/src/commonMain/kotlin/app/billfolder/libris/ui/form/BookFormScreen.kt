@@ -194,13 +194,6 @@ private fun GenreChips(state: BookFormState, existing: List<String>, viewModel: 
             state.genres.forEach { g ->
                 Text("$g  ×", fontFamily = type.body, fontSize = 13.sp, color = Libris.paper, modifier = Modifier.background(Libris.inkSoft).clickable { viewModel.removeGenre(g) }.padding(horizontal = 8.dp, vertical = 4.dp))
             }
-            state.suggestedGenres.forEach { g ->
-                Row(Modifier.border(1.dp, Libris.inkSoft).padding(horizontal = 6.dp, vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(g, fontFamily = type.body, fontSize = 13.sp, color = Libris.inkSoft)
-                    Text(" ✓", color = Libris.inkSoft, modifier = Modifier.clickable { viewModel.addGenre(g) }.padding(horizontal = 4.dp))
-                    Text("×", color = Libris.inkSoft, modifier = Modifier.clickable { viewModel.dismissSuggestion(g) }.padding(horizontal = 4.dp))
-                }
-            }
         }
         RuledField(
             "", draft, { v -> if (v.endsWith(",")) { viewModel.addGenre(v); draft = "" } else draft = v },
