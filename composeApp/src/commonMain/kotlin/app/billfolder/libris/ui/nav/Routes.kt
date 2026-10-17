@@ -10,6 +10,9 @@ import kotlinx.serialization.Serializable
 
 @Serializable data object RegistrarRoute
 
-@Serializable data class FichaRoute(val id: String)
+/** [fromWishlist] only decides which ribbon item is lit. */
+@Serializable data class FichaRoute(val id: String, val fromWishlist: Boolean = false)
+
+@Serializable data object GenresRoute
 
 @Serializable data class EditRoute(val id: String)

@@ -5,6 +5,9 @@ import app.billfolder.libris.shared.LibrisApi
 import app.billfolder.libris.shared.TokenStore
 import app.billfolder.libris.shared.librisHttpClient
 import app.billfolder.libris.ui.acervo.AcervoViewModel
+import app.billfolder.libris.ui.genres.GenresViewModel
+import app.billfolder.libris.ui.numeros.NumerosViewModel
+import app.billfolder.libris.ui.wishlist.WishlistViewModel
 import app.billfolder.libris.ui.ficha.FichaViewModel
 import app.billfolder.libris.ui.form.BookFormViewModel
 import app.billfolder.libris.ui.login.LoginViewModel
@@ -24,6 +27,9 @@ fun librisModule(baseUrl: String, tokens: TokenStore, engine: HttpClientEngine):
     single { AuthSession(get(), get()) }
     viewModelOf(::LoginViewModel)
     viewModelOf(::AcervoViewModel)
+    viewModelOf(::WishlistViewModel)
+    viewModelOf(::GenresViewModel)
+    viewModel { NumerosViewModel(get(), get()) }
     viewModel { (bookId: String) -> FichaViewModel(bookId, get(), get()) }
     viewModel { (bookId: String?) -> BookFormViewModel(bookId, get(), get()) }
 }

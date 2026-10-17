@@ -44,7 +44,7 @@ import app.billfolder.libris.ui.theme.LocalLibrisType
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
-fun AcervoScreen(onOpenBook: (String) -> Unit, onRegister: () -> Unit, viewModel: AcervoViewModel = koinViewModel()) {
+fun AcervoScreen(onOpenBook: (String) -> Unit, onRegister: () -> Unit, onManageGenres: () -> Unit, viewModel: AcervoViewModel = koinViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val type = LocalLibrisType.current
     var firstResume by remember { mutableStateOf(true) }
@@ -67,6 +67,7 @@ fun AcervoScreen(onOpenBook: (String) -> Unit, onRegister: () -> Unit, viewModel
         item {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 GenreMenu(state.genres.map { it.id to it.name }, state.genreId, viewModel::setGenre)
+                Text("gerenciar", fontFamily = type.body, fontSize = 12.sp, color = Libris.deskTextSoft, modifier = Modifier.clickable(onClick = onManageGenres))
                 Box(Modifier.weight(1f)) {
                     if (state.query.isEmpty()) Text("⌕ título ou autor…", fontFamily = type.body, fontSize = 14.sp, color = Libris.deskTextSoft)
                     BasicTextField(
