@@ -4,12 +4,11 @@ import app.billfolder.libris.domain.model.BookFormat.Digital
 import app.billfolder.libris.domain.model.BookFormat.Physical
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNull
 
 class FormatLabelTest {
     @Test
-    fun tag_onlyWhenThereIsADigitalCopy() {
-        assertNull(formatTag(listOf(Physical)))
+    fun tag_namesEveryFormat() {
+        assertEquals("físico", formatTag(listOf(Physical)))
         assertEquals("digital", formatTag(listOf(Digital)))
         assertEquals("físico + digital", formatTag(listOf(Physical, Digital)))
     }
@@ -22,11 +21,11 @@ class FormatLabelTest {
     }
 
     @Test
-    fun bookTag_mentionsWhatIsNotTheDefault() {
-        assertNull(bookTag(listOf(Physical), "pt"))
-        assertEquals("inglês", bookTag(listOf(Physical), "en"))
+    fun bookTag_alwaysNamesTheLanguageAndTheFormat() {
+        assertEquals("português · físico", bookTag(listOf(Physical), "pt"))
+        assertEquals("inglês · físico", bookTag(listOf(Physical), "en"))
         assertEquals("francês · digital", bookTag(listOf(Digital), "fr"))
-        assertEquals("digital", bookTag(listOf(Digital), "pt"))
+        assertEquals("português · físico + digital", bookTag(listOf(Physical, Digital), "pt"))
     }
 
     @Test

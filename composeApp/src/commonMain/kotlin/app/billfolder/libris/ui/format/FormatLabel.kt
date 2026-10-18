@@ -2,9 +2,9 @@ package app.billfolder.libris.ui.format
 
 import app.billfolder.libris.domain.model.BookFormat
 
-/** For lists: physical is the default, so only a digital copy is worth a tag. */
-fun formatTag(formats: List<BookFormat>): String? = when {
-    BookFormat.Digital !in formats -> null
+/** For lists: every book says how it is held, physical included. */
+fun formatTag(formats: List<BookFormat>): String = when {
+    BookFormat.Digital !in formats -> "físico"
     BookFormat.Physical in formats -> "físico + digital"
     else -> "digital"
 }

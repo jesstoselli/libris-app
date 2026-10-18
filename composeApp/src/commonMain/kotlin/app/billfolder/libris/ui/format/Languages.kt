@@ -14,6 +14,5 @@ val LANGUAGES = listOf(
 
 fun languageName(code: String): String = LANGUAGES.firstOrNull { it.first == code }?.second ?: code.uppercase()
 
-/** For cards: only what differs from a physical book in Portuguese is worth a tag ("inglês · digital"). */
-fun bookTag(formats: List<BookFormat>, language: String): String? =
-    listOfNotNull(languageName(language).lowercase().takeIf { language != "pt" }, formatTag(formats)).joinToString(" · ").ifEmpty { null }
+/** For cards: every book says its language and how it is held ("português · físico"). */
+fun bookTag(formats: List<BookFormat>, language: String): String = "${languageName(language).lowercase()} · ${formatTag(formats)}"
