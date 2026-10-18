@@ -1,4 +1,4 @@
-package app.billfolder.libris.ui.feature.ficha
+package app.billfolder.libris.ui.feature.bookdetail
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -28,7 +28,7 @@ import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 
-data class FichaState(
+data class BookDetailState(
     val book: Load<Book> = Load.Loading,
     val refreshing: Boolean = false,
     val notFound: Boolean = false,
@@ -48,10 +48,10 @@ data class FichaState(
     val canLog get() = pageInput.toIntOrNull() != null && !pending
 }
 
-class FichaViewModel(private val bookId: String, private val books: BookRepository, private val reading: ReadingRepository) : ViewModel() {
+class BookDetailViewModel(private val bookId: String, private val books: BookRepository, private val reading: ReadingRepository) : ViewModel() {
 
-    private val _state = MutableStateFlow(FichaState())
-    val state: StateFlow<FichaState> = _state.asStateFlow()
+    private val _state = MutableStateFlow(BookDetailState())
+    val state: StateFlow<BookDetailState> = _state.asStateFlow()
 
     private val _messages = Channel<String>(Channel.BUFFERED)
     /** One-off confirmations and errors for the snackbar. */

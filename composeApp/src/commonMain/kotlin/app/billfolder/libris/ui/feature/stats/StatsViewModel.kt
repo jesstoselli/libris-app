@@ -1,4 +1,4 @@
-package app.billfolder.libris.ui.feature.numeros
+package app.billfolder.libris.ui.feature.stats
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -17,7 +17,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 
-data class NumerosState(
+data class StatsState(
     val year: Int,
     val month: Int,
     val stats: Load<YearStats> = Load.Loading,
@@ -32,13 +32,13 @@ fun defaultMonth(year: Int, now: Pair<Int, Int>): Int = when {
     else -> 1
 }
 
-class NumerosViewModel(
+class StatsViewModel(
     private val stats: StatsRepository,
     private val now: () -> Pair<Int, Int> = { currentYearMonth() },
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(now().let { (y, m) -> NumerosState(y, m) })
-    val state: StateFlow<NumerosState> = _state.asStateFlow()
+    private val _state = MutableStateFlow(now().let { (y, m) -> StatsState(y, m) })
+    val state: StateFlow<StatsState> = _state.asStateFlow()
 
     private var yearJob: Job? = null
     private var monthJob: Job? = null

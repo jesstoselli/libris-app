@@ -22,11 +22,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.billfolder.libris.ui.common.Load
 import app.billfolder.libris.ui.components.BookCard
 import app.billfolder.libris.ui.components.DeskSearchField
-import app.billfolder.libris.ui.components.Ficha
+import app.billfolder.libris.ui.components.PaperCard
 import app.billfolder.libris.ui.components.PageHeading
 import app.billfolder.libris.ui.components.Refreshable
 import app.billfolder.libris.ui.components.SessionAction
-import app.billfolder.libris.ui.feature.acervo.GenreMenu
+import app.billfolder.libris.ui.feature.library.GenreMenu
 import app.billfolder.libris.ui.theme.Libris
 import app.billfolder.libris.ui.theme.LocalLibrisType
 import org.koin.compose.viewmodel.koinViewModel
@@ -60,14 +60,14 @@ fun WishlistScreen(
                 is Load.Failed -> item { Text(load.message, fontFamily = type.body, color = Libris.deskText) }
                 is Load.Loaded -> when {
                     load.value.isEmpty() -> item {
-                        Ficha(Modifier.fillMaxWidth(), foldedCorner = true) {
+                        PaperCard(Modifier.fillMaxWidth(), foldedCorner = true) {
                             Column {
                                 Text("Nenhum livro na wishlist.", fontFamily = type.body)
                                 Text("Registrar um livro que você quer", fontFamily = type.body, color = Libris.oxblood, modifier = Modifier.clickable(onClick = onRegister))
                             }
                         }
                     }
-                    state.visible.isEmpty() -> item { Ficha(Modifier.fillMaxWidth(), foldedCorner = true) { Text("Nenhum livro com esses filtros.", fontFamily = type.body) } }
+                    state.visible.isEmpty() -> item { PaperCard(Modifier.fillMaxWidth(), foldedCorner = true) { Text("Nenhum livro com esses filtros.", fontFamily = type.body) } }
                     else -> items(state.visible, key = { it.id }) { book -> BookCard(book, onClick = { onOpenBook(book.id) }) }
                 }
             }

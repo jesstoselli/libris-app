@@ -36,7 +36,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import app.billfolder.libris.ui.components.Ficha
+import app.billfolder.libris.ui.components.PaperCard
 import app.billfolder.libris.ui.components.LibrisIcons
 import app.billfolder.libris.ui.components.PrimaryButton
 import app.billfolder.libris.ui.components.RuledField
@@ -50,7 +50,7 @@ fun LoginScreen(viewModel: LoginViewModel = koinViewModel()) {
     val type = LocalLibrisType.current
 
     Box(Modifier.fillMaxSize().imePadding().padding(24.dp), contentAlignment = Alignment.Center) {
-        Ficha(Modifier.widthIn(max = 420.dp).fillMaxWidth(), padding = 26.dp, foldedCorner = true) {
+        PaperCard(Modifier.widthIn(max = 420.dp).fillMaxWidth(), padding = 26.dp, foldedCorner = true) {
             Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
                 Column {
                     Text("Libris", fontFamily = type.title, fontWeight = FontWeight.Bold, fontSize = 40.sp, letterSpacing = (-0.5).sp, color = Libris.oxblood)

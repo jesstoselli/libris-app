@@ -1,4 +1,4 @@
-package app.billfolder.libris.ui.feature.acervo
+package app.billfolder.libris.ui.feature.library
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -37,7 +37,7 @@ import app.billfolder.libris.domain.model.BookStatus
 import app.billfolder.libris.ui.common.Load
 import app.billfolder.libris.ui.components.BookCard
 import app.billfolder.libris.ui.components.DeskSearchField
-import app.billfolder.libris.ui.components.Ficha
+import app.billfolder.libris.ui.components.PaperCard
 import app.billfolder.libris.ui.components.PageHeading
 import app.billfolder.libris.ui.components.Refreshable
 import app.billfolder.libris.ui.components.STATUS_LABELS
@@ -48,17 +48,17 @@ import app.billfolder.libris.ui.theme.LocalLibrisType
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
-fun AcervoScreen(
+fun LibraryScreen(
     onOpenBook: (String) -> Unit,
     onRegister: () -> Unit,
     onManageGenres: () -> Unit,
     onLogout: () -> Unit,
-    viewModel: AcervoViewModel = koinViewModel(),
+    viewModel: LibraryViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val type = LocalLibrisType.current
     var firstResume by remember { mutableStateOf(true) }
-    // Coming back from a Ficha (status, logs, deletion) should show fresh data.
+    // Coming back from a book detail (status, logs, deletion) should show fresh data.
     LifecycleResumeEffect(Unit) {
         if (firstResume) firstResume = false else viewModel.refresh()
         onPauseOrDispose { }
@@ -95,7 +95,7 @@ fun AcervoScreen(
                 is Load.Failed -> item { Text(shown.message, fontFamily = type.body, color = Libris.deskText) }
                 is Load.Loaded -> if (shown.value.isEmpty()) {
                     item {
-                        Ficha(Modifier.fillMaxWidth(), foldedCorner = true) {
+                        PaperCard(Modifier.fillMaxWidth(), foldedCorner = true) {
                             Column {
                                 Text(if (state.hasFilters) "Nenhum livro com esses filtros." else "Nenhum livro por aqui ainda.", fontFamily = type.body)
                                 if (!state.hasFilters) {

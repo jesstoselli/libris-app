@@ -2,12 +2,12 @@ package app.billfolder.libris.ui.di
 
 import app.billfolder.libris.data.auth.TokenStore
 import app.billfolder.libris.di.dataModule
-import app.billfolder.libris.ui.feature.acervo.AcervoViewModel
-import app.billfolder.libris.ui.feature.ficha.FichaViewModel
+import app.billfolder.libris.ui.feature.library.LibraryViewModel
+import app.billfolder.libris.ui.feature.bookdetail.BookDetailViewModel
 import app.billfolder.libris.ui.feature.form.BookFormViewModel
 import app.billfolder.libris.ui.feature.genres.GenresViewModel
 import app.billfolder.libris.ui.feature.login.LoginViewModel
-import app.billfolder.libris.ui.feature.numeros.NumerosViewModel
+import app.billfolder.libris.ui.feature.stats.StatsViewModel
 import app.billfolder.libris.ui.feature.wishlist.WishlistViewModel
 import io.ktor.client.engine.HttpClientEngine
 import org.koin.core.context.startKoin
@@ -19,11 +19,11 @@ import org.koin.dsl.module
 /** The screens' ViewModels; they only see the domain repositories. */
 val presentationModule: Module = module {
     viewModelOf(::LoginViewModel)
-    viewModelOf(::AcervoViewModel)
+    viewModelOf(::LibraryViewModel)
     viewModelOf(::WishlistViewModel)
     viewModelOf(::GenresViewModel)
-    viewModel { NumerosViewModel(get()) }
-    viewModel { (bookId: String) -> FichaViewModel(bookId, get(), get()) }
+    viewModel { StatsViewModel(get()) }
+    viewModel { (bookId: String) -> BookDetailViewModel(bookId, get(), get()) }
     viewModel { (bookId: String?) -> BookFormViewModel(bookId, get(), get(), get()) }
 }
 

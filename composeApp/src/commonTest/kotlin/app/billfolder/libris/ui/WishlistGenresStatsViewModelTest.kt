@@ -3,8 +3,8 @@ package app.billfolder.libris.ui
 import app.billfolder.libris.domain.model.Genre
 import app.billfolder.libris.ui.common.Load
 import app.billfolder.libris.ui.feature.genres.GenresViewModel
-import app.billfolder.libris.ui.feature.numeros.NumerosViewModel
-import app.billfolder.libris.ui.feature.numeros.defaultMonth
+import app.billfolder.libris.ui.feature.stats.StatsViewModel
+import app.billfolder.libris.ui.feature.stats.defaultMonth
 import app.billfolder.libris.ui.feature.wishlist.WishlistViewModel
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
@@ -20,7 +20,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 
-class Cp4ViewModelsTest {
+class WishlistGenresStatsViewModelTest {
     private val dispatcher = StandardTestDispatcher()
 
     @BeforeTest fun setUp() = Dispatchers.setMain(dispatcher)
@@ -70,7 +70,7 @@ class Cp4ViewModelsTest {
     }
 
     @Test
-    fun numeros_defaultMonthRules() {
+    fun stats_defaultMonthRules() {
         assertEquals(10, defaultMonth(2026, 2026 to 10))
         assertEquals(12, defaultMonth(2025, 2026 to 10))
         assertEquals(1, defaultMonth(2027, 2026 to 10))
@@ -80,9 +80,9 @@ class Cp4ViewModelsTest {
     private val month = """{"year":2026,"month":10,"pagesRead":566,"finished":[],"progressed":[]}"""
 
     @Test
-    fun numeros_loadsCurrentYearAndMonth_thenNavigates() = runTest(dispatcher) {
+    fun stats_loadsCurrentYearAndMonth_thenNavigates() = runTest(dispatcher) {
         val fake = FakeApi(dispatcher) { req -> if (req.url.encodedPath.count { it == '/' } == 4) json(month) else json(year) }
-        val vm = NumerosViewModel(fake.stats) { 2026 to 10 }
+        val vm = StatsViewModel(fake.stats) { 2026 to 10 }
         advanceUntilIdle()
 
         assertEquals(setOf("/v1/stats/2026", "/v1/stats/2026/10"), fake.requests.map { it.url.encodedPath }.toSet())
@@ -95,9 +95,9 @@ class Cp4ViewModelsTest {
     }
 
     @Test
-    fun numeros_failedMonth_showsMessage_keepsYear() = runTest(dispatcher) {
+    fun stats_failedMonth_showsMessage_keepsYear() = runTest(dispatcher) {
         val fake = FakeApi(dispatcher) { req -> if (req.url.encodedPath.count { it == '/' } == 4) throw kotlinx.io.IOException("offline") else json(year) }
-        val vm = NumerosViewModel(fake.stats) { 2026 to 10 }
+        val vm = StatsViewModel(fake.stats) { 2026 to 10 }
         advanceUntilIdle()
 
         assertEquals(Load.Failed("Sem conexão com o servidor."), vm.state.value.detail)

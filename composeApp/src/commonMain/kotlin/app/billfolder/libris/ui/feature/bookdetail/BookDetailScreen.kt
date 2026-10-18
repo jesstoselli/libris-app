@@ -1,4 +1,4 @@
-package app.billfolder.libris.ui.feature.ficha
+package app.billfolder.libris.ui.feature.bookdetail
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -39,7 +39,7 @@ import app.billfolder.libris.ui.common.Load
 import app.billfolder.libris.ui.common.message
 import app.billfolder.libris.ui.components.BookCover
 import app.billfolder.libris.ui.components.ConfirmDialog
-import app.billfolder.libris.ui.components.Ficha
+import app.billfolder.libris.ui.components.PaperCard
 import app.billfolder.libris.ui.components.LibrisDatePicker
 import app.billfolder.libris.ui.components.LocalSnackbar
 import app.billfolder.libris.ui.components.PrimaryButton
@@ -64,11 +64,11 @@ private val STATUS_TONES = mapOf(
 )
 
 @Composable
-fun FichaScreen(
+fun BookDetailScreen(
     bookId: String,
     onBack: () -> Unit,
     onEdit: () -> Unit,
-    viewModel: FichaViewModel = koinViewModel(key = bookId) { parametersOf(bookId) }
+    viewModel: BookDetailViewModel = koinViewModel(key = bookId) { parametersOf(bookId) }
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val type = LocalLibrisType.current
@@ -95,7 +95,7 @@ fun FichaScreen(
                     modifier = Modifier.clickable(onClick = onBack).padding(vertical = 4.dp)
                 )
                 when {
-                    state.notFound -> Ficha(Modifier.fillMaxWidth()) {
+                    state.notFound -> PaperCard(Modifier.fillMaxWidth()) {
                         Text(
                             "Livro não encontrado.",
                             fontFamily = type.body
@@ -131,12 +131,12 @@ fun FichaScreen(
 }
 
 @Composable
-private fun BookSheet(book: Book, viewModel: FichaViewModel, onEdit: () -> Unit) {
+private fun BookSheet(book: Book, viewModel: BookDetailViewModel, onEdit: () -> Unit) {
     val type = LocalLibrisType.current
     var confirmDelete by remember { mutableStateOf(false) }
     var editingDates by remember { mutableStateOf(false) }
 
-    Ficha(Modifier.fillMaxWidth(), padding = 20.dp) {
+    PaperCard(Modifier.fillMaxWidth(), padding = 20.dp) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 BookCover(
@@ -353,13 +353,13 @@ private fun DateChip(label: String, value: LocalDate?, onPick: () -> Unit, onCle
 }
 
 @Composable
-private fun ReadingSheet(book: Book, state: FichaState, viewModel: FichaViewModel) {
+private fun ReadingSheet(book: Book, state: BookDetailState, viewModel: BookDetailViewModel) {
     val type = LocalLibrisType.current
     var pickingDate by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<ReadingLog?>(null) }
     var deleting by remember { mutableStateOf<ReadingLog?>(null) }
 
-    Ficha(Modifier.fillMaxWidth(), padding = 20.dp) {
+    PaperCard(Modifier.fillMaxWidth(), padding = 20.dp) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             SectionTitle("Registrar leitura")
             RuledField(
@@ -477,11 +477,11 @@ private fun EditLogDialog(log: ReadingLog, onSave: (LocalDate, Int) -> Unit, onD
 }
 
 @Composable
-private fun AcquireSheet(book: Book, viewModel: FichaViewModel) {
+private fun AcquireSheet(book: Book, viewModel: BookDetailViewModel) {
     val type = LocalLibrisType.current
     var pages by remember { mutableStateOf("") }
     val needsPages = book.totalPages == null
-    Ficha(Modifier.fillMaxWidth(), padding = 20.dp) {
+    PaperCard(Modifier.fillMaxWidth(), padding = 20.dp) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             SectionTitle("Wishlist")
             Text("Ainda não está no acervo.", fontFamily = type.body, color = Libris.inkSoft)

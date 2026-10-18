@@ -3,7 +3,7 @@ package app.billfolder.libris.ui
 import app.billfolder.libris.domain.model.BookStatus
 import app.billfolder.libris.domain.time.today
 import app.billfolder.libris.ui.common.Load
-import app.billfolder.libris.ui.feature.ficha.FichaViewModel
+import app.billfolder.libris.ui.feature.bookdetail.BookDetailViewModel
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import kotlin.test.AfterTest
@@ -21,7 +21,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 
-class FichaViewModelTest {
+class BookDetailViewModelTest {
     private val dispatcher = StandardTestDispatcher()
 
     @BeforeTest fun setUp() = Dispatchers.setMain(dispatcher)
@@ -33,7 +33,7 @@ class FichaViewModelTest {
     @Test
     fun loadsBookAndLogs() = runTest(dispatcher) {
         val fake = FakeApi(dispatcher) { req -> if (req.url.encodedPath.endsWith("/logs")) json(logs) else json(bookJson(status = "reading")) }
-        val vm = FichaViewModel("b1", fake.books, fake.reading)
+        val vm = BookDetailViewModel("b1", fake.books, fake.reading)
         advanceUntilIdle()
 
         assertEquals("O Nome da Rosa", (vm.state.value.book as Load.Loaded).value.title)
@@ -49,7 +49,7 @@ class FichaViewModelTest {
                 else -> json(bookJson())
             }
         }
-        val vm = FichaViewModel("b1", fake.books, fake.reading)
+        val vm = BookDetailViewModel("b1", fake.books, fake.reading)
         advanceUntilIdle()
 
         vm.onPage("140")
@@ -72,7 +72,7 @@ class FichaViewModelTest {
                 else -> json(bookJson())
             }
         }
-        val vm = FichaViewModel("b1", fake.books, fake.reading)
+        val vm = BookDetailViewModel("b1", fake.books, fake.reading)
         advanceUntilIdle()
 
         vm.onPage("600")
@@ -86,7 +86,7 @@ class FichaViewModelTest {
     @Test
     fun decimalPage_isNotSent() = runTest(dispatcher) {
         val fake = FakeApi(dispatcher) { req -> if (req.url.encodedPath.endsWith("/logs")) json("[]") else json(bookJson()) }
-        val vm = FichaViewModel("b1", fake.books, fake.reading)
+        val vm = BookDetailViewModel("b1", fake.books, fake.reading)
         advanceUntilIdle()
         val before = fake.requests.size
 
@@ -107,7 +107,7 @@ class FichaViewModelTest {
                 else -> json(bookJson(status = "reading"))
             }
         }
-        val vm = FichaViewModel("b1", fake.books, fake.reading)
+        val vm = BookDetailViewModel("b1", fake.books, fake.reading)
         advanceUntilIdle()
 
         vm.changeStatus(BookStatus.Read)
@@ -120,7 +120,7 @@ class FichaViewModelTest {
     @Test
     fun notFound_isFlagged() = runTest(dispatcher) {
         val fake = FakeApi(dispatcher) { json("""{"error":"not_found","message":"Livro não encontrado."}""", HttpStatusCode.NotFound) }
-        val vm = FichaViewModel("b1", fake.books, fake.reading)
+        val vm = BookDetailViewModel("b1", fake.books, fake.reading)
         advanceUntilIdle()
 
         assertTrue(vm.state.value.notFound)

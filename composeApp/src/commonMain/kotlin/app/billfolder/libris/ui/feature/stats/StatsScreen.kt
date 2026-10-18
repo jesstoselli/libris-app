@@ -1,4 +1,4 @@
-package app.billfolder.libris.ui.feature.numeros
+package app.billfolder.libris.ui.feature.stats
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -31,7 +31,7 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.billfolder.libris.domain.model.MonthStats
 import app.billfolder.libris.ui.common.Load
-import app.billfolder.libris.ui.components.Ficha
+import app.billfolder.libris.ui.components.PaperCard
 import app.billfolder.libris.ui.components.PageHeading
 import app.billfolder.libris.ui.components.Refreshable
 import app.billfolder.libris.ui.components.SessionAction
@@ -46,9 +46,9 @@ import org.koin.compose.viewmodel.koinViewModel
 fun thousands(n: Int): String = n.toString().reversed().chunked(3).joinToString(".").reversed()
 
 @Composable
-fun NumerosScreen(
+fun StatsScreen(
     onLogout: () -> Unit,
-    viewModel: NumerosViewModel = koinViewModel(),
+    viewModel: StatsViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val type = LocalLibrisType.current
@@ -72,7 +72,7 @@ fun NumerosScreen(
                 is Load.Failed -> Text(load.message, fontFamily = type.body, color = Libris.deskText)
                 is Load.Loaded -> {
                     val s = load.value
-                    Ficha(Modifier.fillMaxWidth(), padding = 20.dp) {
+                    PaperCard(Modifier.fillMaxWidth(), padding = 20.dp) {
                         Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
                             Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                                 Kpi(thousands(s.booksFinished), "terminados no ano", Modifier.weight(1f))
@@ -90,14 +90,14 @@ fun NumerosScreen(
                 is Load.Failed -> Text(d.message, fontFamily = type.body, color = Libris.deskText)
                 is Load.Loaded -> {
                     val m = monthName(state.month)
-                    Ficha(Modifier.fillMaxWidth()) {
+                    PaperCard(Modifier.fillMaxWidth()) {
                         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             Section("Terminados em $m · ${d.value.finished.size}")
                             if (d.value.finished.isEmpty()) Text("Nenhum livro terminado.", fontFamily = type.body, fontWeight = FontWeight.Light, color = Libris.inkSoft)
                             d.value.finished.forEach { f -> DetailRow(f.title, f.authors.joinToString(", "), formatShortDate(f.finishedAt)) }
                         }
                     }
-                    Ficha(Modifier.fillMaxWidth()) {
+                    PaperCard(Modifier.fillMaxWidth()) {
                         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             Section("Andaram em $m · ${thousands(d.value.pagesRead)} págs.")
                             if (d.value.progressed.isEmpty()) Text("Nenhuma leitura anotada.", fontFamily = type.body, fontWeight = FontWeight.Light, color = Libris.inkSoft)

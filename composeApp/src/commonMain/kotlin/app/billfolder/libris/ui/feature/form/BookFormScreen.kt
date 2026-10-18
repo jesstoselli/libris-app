@@ -39,7 +39,7 @@ import app.billfolder.libris.domain.model.BookOwnership
 import app.billfolder.libris.domain.model.BookStatus
 import app.billfolder.libris.domain.time.today
 import app.billfolder.libris.ui.components.BookCover
-import app.billfolder.libris.ui.components.Ficha
+import app.billfolder.libris.ui.components.PaperCard
 import app.billfolder.libris.ui.components.LibrisDatePicker
 import app.billfolder.libris.ui.components.LocalSnackbar
 import app.billfolder.libris.ui.components.PageHeading
@@ -101,7 +101,7 @@ fun BookFormScreen(
             )
             state.loadError?.let { Text(it, fontFamily = type.body, color = Libris.deskText) }
 
-            Ficha(Modifier.fillMaxWidth(), padding = 20.dp) {
+            PaperCard(Modifier.fillMaxWidth(), padding = 20.dp) {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     // Cover
                     Row(

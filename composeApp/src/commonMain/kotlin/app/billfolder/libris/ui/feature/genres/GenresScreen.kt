@@ -27,7 +27,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.billfolder.libris.domain.model.Genre
 import app.billfolder.libris.ui.common.Load
 import app.billfolder.libris.ui.components.ConfirmDialog
-import app.billfolder.libris.ui.components.Ficha
+import app.billfolder.libris.ui.components.PaperCard
 import app.billfolder.libris.ui.components.LocalSnackbar
 import app.billfolder.libris.ui.components.PageHeading
 import app.billfolder.libris.ui.components.Refreshable
@@ -50,7 +50,7 @@ fun GenresScreen(onBack: () -> Unit, viewModel: GenresViewModel = koinViewModel(
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text("‹ Voltar", fontFamily = type.body, color = Libris.deskText, modifier = Modifier.clickable(onClick = onBack))
             PageHeading("Gêneros")
-            Ficha(Modifier.fillMaxWidth()) {
+            PaperCard(Modifier.fillMaxWidth()) {
                 when (val load = state.genres) {
                     Load.Loading -> Text("Carregando…", fontFamily = type.body)
                     is Load.Failed -> Text(load.message, fontFamily = type.body)

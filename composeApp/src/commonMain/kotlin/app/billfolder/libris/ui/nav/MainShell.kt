@@ -28,11 +28,11 @@ import app.billfolder.libris.ui.components.LibrisIcons
 import app.billfolder.libris.ui.components.LocalSnackbar
 import app.billfolder.libris.ui.components.RibbonBar
 import app.billfolder.libris.ui.components.RibbonItem
-import app.billfolder.libris.ui.feature.acervo.AcervoScreen
-import app.billfolder.libris.ui.feature.ficha.FichaScreen
+import app.billfolder.libris.ui.feature.library.LibraryScreen
+import app.billfolder.libris.ui.feature.bookdetail.BookDetailScreen
 import app.billfolder.libris.ui.feature.form.BookFormScreen
 import app.billfolder.libris.ui.feature.genres.GenresScreen
-import app.billfolder.libris.ui.feature.numeros.NumerosScreen
+import app.billfolder.libris.ui.feature.stats.StatsScreen
 import app.billfolder.libris.ui.feature.wishlist.WishlistScreen
 import kotlin.reflect.KClass
 import kotlinx.coroutines.launch
@@ -45,7 +45,7 @@ fun MainShell(auth: AuthRepository = koinInject()) {
     val scope = rememberCoroutineScope()
     val logout = { scope.launch { auth.logout() }; Unit }
     fun isOn(route: KClass<*>) = entry?.destination?.hasRoute(route) == true
-    val wishlistFicha = entry?.takeIf { it.destination.hasRoute(FichaRoute::class) }?.toRoute<FichaRoute>()?.fromWishlist == true
+    val wishlistDetail = entry?.takeIf { it.destination.hasRoute(BookDetailRoute::class) }?.toRoute<BookDetailRoute>()?.fromWishlist == true
     fun go(route: Any) = nav.navigate(route) {
         popUpTo(nav.graph.findStartDestination().id) { saveState = true }
         launchSingleTop = true
@@ -56,37 +56,37 @@ fun MainShell(auth: AuthRepository = koinInject()) {
     CompositionLocalProvider(LocalSnackbar provides snackbar) {
         Column(Modifier.fillMaxSize()) {
             Box(Modifier.weight(1f).statusBarsPadding()) {
-                NavHost(nav, startDestination = AcervoRoute) {
-                    composable<AcervoRoute> {
-                        AcervoScreen(
-                            onOpenBook = { nav.navigate(FichaRoute(it)) },
-                            onRegister = { go(RegistrarRoute) },
+                NavHost(nav, startDestination = LibraryRoute) {
+                    composable<LibraryRoute> {
+                        LibraryScreen(
+                            onOpenBook = { nav.navigate(BookDetailRoute(it)) },
+                            onRegister = { go(AddBookRoute) },
                             onManageGenres = { nav.navigate(GenresRoute) },
                             onLogout = logout,
                         )
                     }
-                    composable<FichaRoute> { entry ->
-                        val id = entry.toRoute<FichaRoute>().id
-                        FichaScreen(id, onBack = { nav.popBackStack() }, onEdit = { nav.navigate(EditRoute(id)) })
+                    composable<BookDetailRoute> { entry ->
+                        val id = entry.toRoute<BookDetailRoute>().id
+                        BookDetailScreen(id, onBack = { nav.popBackStack() }, onEdit = { nav.navigate(EditRoute(id)) })
                     }
                     composable<EditRoute> { entry ->
                         BookFormScreen(entry.toRoute<EditRoute>().id, onSaved = { nav.popBackStack() }, onBack = { nav.popBackStack() })
                     }
                     composable<WishlistRoute> {
                         WishlistScreen(
-                            onOpenBook = { nav.navigate(FichaRoute(it, fromWishlist = true)) },
-                            onRegister = { go(RegistrarRoute) },
+                            onOpenBook = { nav.navigate(BookDetailRoute(it, fromWishlist = true)) },
+                            onRegister = { go(AddBookRoute) },
                             onLogout = logout,
                         )
                     }
-                    composable<NumerosRoute> { NumerosScreen(onLogout = logout) }
+                    composable<StatsRoute> { StatsScreen(onLogout = logout) }
                     composable<GenresRoute> { GenresScreen(onBack = { nav.popBackStack() }) }
-                    composable<RegistrarRoute> {
+                    composable<AddBookRoute> {
                         BookFormScreen(
                             null,
                             onSaved = { book ->
-                                val target: Any = if (book.ownership == BookOwnership.Owned) FichaRoute(book.id) else WishlistRoute
-                                nav.navigate(target) { popUpTo(RegistrarRoute) { inclusive = true } }
+                                val target: Any = if (book.ownership == BookOwnership.Owned) BookDetailRoute(book.id) else WishlistRoute
+                                nav.navigate(target) { popUpTo(AddBookRoute) { inclusive = true } }
                             },
                             onBack = null,
                             onLogout = logout,
@@ -96,10 +96,10 @@ fun MainShell(auth: AuthRepository = koinInject()) {
             }
             RibbonBar(
                 listOf(
-                    RibbonItem("Acervo", LibrisIcons.Book, isOn(AcervoRoute::class) || (isOn(FichaRoute::class) && !wishlistFicha) || isOn(EditRoute::class) || isOn(GenresRoute::class)) { go(AcervoRoute) },
-                    RibbonItem("Wishlist", LibrisIcons.Bookmark, isOn(WishlistRoute::class) || (isOn(FichaRoute::class) && wishlistFicha)) { go(WishlistRoute) },
-                    RibbonItem("Números", LibrisIcons.Chart, isOn(NumerosRoute::class)) { go(NumerosRoute) },
-                    RibbonItem("Registrar", LibrisIcons.Plus, isOn(RegistrarRoute::class)) { go(RegistrarRoute) },
+                    RibbonItem("Acervo", LibrisIcons.Book, isOn(LibraryRoute::class) || (isOn(BookDetailRoute::class) && !wishlistDetail) || isOn(EditRoute::class) || isOn(GenresRoute::class)) { go(LibraryRoute) },
+                    RibbonItem("Wishlist", LibrisIcons.Bookmark, isOn(WishlistRoute::class) || (isOn(BookDetailRoute::class) && wishlistDetail)) { go(WishlistRoute) },
+                    RibbonItem("Números", LibrisIcons.Chart, isOn(StatsRoute::class)) { go(StatsRoute) },
+                    RibbonItem("Registrar", LibrisIcons.Plus, isOn(AddBookRoute::class)) { go(AddBookRoute) },
                 ),
             )
         }

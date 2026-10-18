@@ -1,4 +1,4 @@
-package app.billfolder.libris.ui.feature.acervo
+package app.billfolder.libris.ui.feature.library
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -21,7 +21,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 
-data class AcervoState(
+data class LibraryState(
     val all: Load<List<Book>> = Load.Loading,
     val refreshing: Boolean = false,
     val filtered: Load<List<Book>>? = null,
@@ -42,10 +42,10 @@ data class AcervoState(
         }
 }
 
-class AcervoViewModel(private val books: BookRepository, private val genres: GenreRepository) : ViewModel() {
+class LibraryViewModel(private val books: BookRepository, private val genres: GenreRepository) : ViewModel() {
 
-    private val _state = MutableStateFlow(AcervoState())
-    val state: StateFlow<AcervoState> = _state.asStateFlow()
+    private val _state = MutableStateFlow(LibraryState())
+    val state: StateFlow<LibraryState> = _state.asStateFlow()
 
     private var filterJob: Job? = null
     private var searchJob: Job? = null
@@ -54,7 +54,7 @@ class AcervoViewModel(private val books: BookRepository, private val genres: Gen
         refresh()
     }
 
-    /** Reloads everything (also when coming back from a Ficha, where things may have changed). */
+    /** Reloads everything (also when coming back from a book detail, where things may have changed). */
     fun refresh(): List<Job> = listOfNotNull(
         viewModelScope.launch {
             runCatching { genres.list() }.onSuccess { g -> _state.update { it.copy(genres = g) } }

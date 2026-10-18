@@ -25,7 +25,7 @@ private val SHADOW = Color(0x59110D08)
  * continuous page, while collection cards benefit from the physical index-card cue.
  */
 @Composable
-fun Ficha(
+fun PaperCard(
     modifier: Modifier = Modifier,
     padding: Dp = 18.dp,
     foldedCorner: Boolean = false,

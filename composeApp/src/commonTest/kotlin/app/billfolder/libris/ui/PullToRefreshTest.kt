@@ -1,10 +1,10 @@
 package app.billfolder.libris.ui
 
 import app.billfolder.libris.ui.common.Load
-import app.billfolder.libris.ui.feature.acervo.AcervoViewModel
-import app.billfolder.libris.ui.feature.ficha.FichaViewModel
+import app.billfolder.libris.ui.feature.library.LibraryViewModel
+import app.billfolder.libris.ui.feature.bookdetail.BookDetailViewModel
 import app.billfolder.libris.ui.feature.genres.GenresViewModel
-import app.billfolder.libris.ui.feature.numeros.NumerosViewModel
+import app.billfolder.libris.ui.feature.stats.StatsViewModel
 import app.billfolder.libris.ui.feature.wishlist.WishlistViewModel
 import io.ktor.client.engine.mock.MockRequestHandleScope
 import io.ktor.client.request.HttpRequestData
@@ -52,9 +52,9 @@ class PullToRefreshTest {
     }
 
     @Test
-    fun acervo() = runTest(dispatcher) {
+    fun library() = runTest(dispatcher) {
         val server = FlakyServer(dispatcher) { req -> if (req.url.encodedPath == "/v1/genres") json("[]") else json("[${bookJson()}]") }
-        val vm = AcervoViewModel(server.fake.books, server.fake.genres)
+        val vm = LibraryViewModel(server.fake.books, server.fake.genres)
         pullAndCheck(server, vm::pullToRefresh) { vm.state.value.refreshing }
         assertIs<Load.Loaded<*>>(vm.state.value.shown)
     }
@@ -68,17 +68,17 @@ class PullToRefreshTest {
     }
 
     @Test
-    fun ficha() = runTest(dispatcher) {
+    fun bookDetail() = runTest(dispatcher) {
         val server = FlakyServer(dispatcher) { req -> if (req.url.encodedPath.endsWith("/logs")) json("[]") else json(bookJson(status = "reading")) }
-        val vm = FichaViewModel("b1", server.fake.books, server.fake.reading)
+        val vm = BookDetailViewModel("b1", server.fake.books, server.fake.reading)
         pullAndCheck(server, vm::pullToRefresh) { vm.state.value.refreshing }
         assertIs<Load.Loaded<*>>(vm.state.value.book)
     }
 
     @Test
-    fun numeros() = runTest(dispatcher) {
+    fun stats() = runTest(dispatcher) {
         val server = FlakyServer(dispatcher) { req -> if (req.url.encodedPath.count { it == '/' } == 4) json(month) else json(year) }
-        val vm = NumerosViewModel(server.fake.stats) { 2026 to 10 }
+        val vm = StatsViewModel(server.fake.stats) { 2026 to 10 }
         pullAndCheck(server, vm::pullToRefresh) { vm.state.value.refreshing }
         assertIs<Load.Loaded<*>>(vm.state.value.stats)
         assertIs<Load.Loaded<*>>(vm.state.value.detail)
