@@ -1,12 +1,19 @@
 package app.billfolder.libris.ui
 
-import app.billfolder.libris.shared.BookOwnership
-import app.billfolder.libris.shared.BookStatus
-import app.billfolder.libris.shared.todayIso
-import app.billfolder.libris.ui.form.BookFormViewModel
-import app.billfolder.libris.ui.form.FormResult
+import app.billfolder.libris.data.remote.dto.BookOwnership
+import app.billfolder.libris.data.remote.dto.BookStatus
+import app.billfolder.libris.domain.time.todayIso
+import app.billfolder.libris.ui.feature.form.BookFormViewModel
+import app.billfolder.libris.ui.feature.form.FormResult
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertIs
+import kotlin.test.assertTrue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -19,13 +26,6 @@ import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import kotlin.test.AfterTest
-import kotlin.test.BeforeTest
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertIs
-import kotlin.test.assertTrue
 
 class BookFormViewModelTest {
     private val dispatcher = StandardTestDispatcher()

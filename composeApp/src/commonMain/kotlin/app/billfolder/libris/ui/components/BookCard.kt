@@ -16,9 +16,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import app.billfolder.libris.shared.Book
-import app.billfolder.libris.shared.BookOwnership
-import app.billfolder.libris.shared.BookStatus
+import app.billfolder.libris.data.remote.dto.Book
+import app.billfolder.libris.data.remote.dto.BookOwnership
+import app.billfolder.libris.data.remote.dto.BookStatus
 import app.billfolder.libris.ui.theme.Libris
 import app.billfolder.libris.ui.theme.LocalLibrisType
 

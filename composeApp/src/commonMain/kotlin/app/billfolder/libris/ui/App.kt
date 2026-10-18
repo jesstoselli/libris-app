@@ -4,10 +4,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import app.billfolder.libris.shared.AccountState
-import app.billfolder.libris.shared.AuthSession
+import app.billfolder.libris.data.auth.AccountState
+import app.billfolder.libris.data.auth.AuthSession
 import app.billfolder.libris.ui.components.Desk
-import app.billfolder.libris.ui.login.LoginScreen
+import app.billfolder.libris.ui.feature.login.LoginScreen
 import app.billfolder.libris.ui.nav.MainShell
 import app.billfolder.libris.ui.theme.LibrisTheme
 import app.billfolder.libris.ui.theme.LocalLibrisType

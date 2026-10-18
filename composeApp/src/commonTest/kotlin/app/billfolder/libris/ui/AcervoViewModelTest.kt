@@ -1,8 +1,14 @@
 package app.billfolder.libris.ui
 
-import app.billfolder.libris.shared.BookStatus
-import app.billfolder.libris.ui.acervo.AcervoViewModel
+import app.billfolder.libris.data.remote.dto.BookStatus
+import app.billfolder.libris.ui.common.Load
+import app.billfolder.libris.ui.feature.acervo.AcervoViewModel
 import io.ktor.http.HttpStatusCode
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertIs
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
@@ -10,11 +16,6 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import kotlin.test.AfterTest
-import kotlin.test.BeforeTest
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertIs
 
 class AcervoViewModelTest {
     private val dispatcher = StandardTestDispatcher()

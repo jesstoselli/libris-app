@@ -7,8 +7,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
-import app.billfolder.libris.shared.isoFromPickerMillis
-import app.billfolder.libris.shared.pickerMillisFromIso
+import app.billfolder.libris.ui.format.isoFromPickerMillis
+import app.billfolder.libris.ui.format.pickerMillisFromIso
 import app.billfolder.libris.ui.theme.Libris
 import app.billfolder.libris.ui.theme.LocalLibrisType
 

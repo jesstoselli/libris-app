@@ -1,11 +1,18 @@
 package app.billfolder.libris.ui
 
-import app.billfolder.libris.shared.BookStatus
-import app.billfolder.libris.shared.todayIso
-import app.billfolder.libris.ui.ficha.FichaViewModel
-import app.billfolder.libris.ui.ficha.datesProblem
+import app.billfolder.libris.data.remote.dto.BookStatus
+import app.billfolder.libris.domain.time.todayIso
+import app.billfolder.libris.ui.common.Load
+import app.billfolder.libris.ui.feature.ficha.FichaViewModel
+import app.billfolder.libris.ui.feature.ficha.datesProblem
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -13,12 +20,6 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import kotlin.test.AfterTest
-import kotlin.test.BeforeTest
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
 
 class FichaViewModelTest {
     private val dispatcher = StandardTestDispatcher()

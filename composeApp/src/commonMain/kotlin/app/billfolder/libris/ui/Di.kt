@@ -1,22 +1,22 @@
 package app.billfolder.libris.ui
 
-import app.billfolder.libris.shared.AuthSession
-import app.billfolder.libris.shared.LibrisApi
-import app.billfolder.libris.shared.TokenStore
-import app.billfolder.libris.shared.librisHttpClient
-import app.billfolder.libris.ui.acervo.AcervoViewModel
-import app.billfolder.libris.ui.genres.GenresViewModel
-import app.billfolder.libris.ui.numeros.NumerosViewModel
-import app.billfolder.libris.ui.wishlist.WishlistViewModel
-import app.billfolder.libris.ui.ficha.FichaViewModel
-import app.billfolder.libris.ui.form.BookFormViewModel
-import app.billfolder.libris.ui.login.LoginViewModel
-import org.koin.core.module.dsl.viewModel
+import app.billfolder.libris.data.auth.AuthSession
+import app.billfolder.libris.data.auth.TokenStore
+import app.billfolder.libris.data.remote.LibrisApi
+import app.billfolder.libris.data.remote.librisHttpClient
+import app.billfolder.libris.ui.feature.acervo.AcervoViewModel
+import app.billfolder.libris.ui.feature.ficha.FichaViewModel
+import app.billfolder.libris.ui.feature.form.BookFormViewModel
+import app.billfolder.libris.ui.feature.genres.GenresViewModel
+import app.billfolder.libris.ui.feature.login.LoginViewModel
+import app.billfolder.libris.ui.feature.numeros.NumerosViewModel
+import app.billfolder.libris.ui.feature.wishlist.WishlistViewModel
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.HttpClientEngine
 import org.koin.core.context.startKoin
-import org.koin.core.module.dsl.viewModelOf
 import org.koin.core.module.Module
+import org.koin.core.module.dsl.viewModel
+import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 
 /** Everything the screens need; the platform supplies where the API lives, how tokens are kept and the HTTP engine. */

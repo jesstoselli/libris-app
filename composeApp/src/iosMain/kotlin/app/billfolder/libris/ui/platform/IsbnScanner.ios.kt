@@ -39,11 +39,11 @@ import platform.AVFoundation.requestAccessForMediaType
 import platform.CoreGraphics.CGRectZero
 import platform.QuartzCore.CATransaction
 import platform.UIKit.UIView
+import platform.darwin.DISPATCH_QUEUE_PRIORITY_DEFAULT
 import platform.darwin.NSObject
 import platform.darwin.dispatch_async
 import platform.darwin.dispatch_get_global_queue
 import platform.darwin.dispatch_get_main_queue
-import platform.darwin.DISPATCH_QUEUE_PRIORITY_DEFAULT
 
 @OptIn(ExperimentalForeignApi::class)
 @Composable

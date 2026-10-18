@@ -5,9 +5,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hasRoute
@@ -17,26 +22,21 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
-import app.billfolder.libris.ui.acervo.AcervoScreen
-import app.billfolder.libris.ui.ficha.FichaScreen
-import app.billfolder.libris.ui.form.BookFormScreen
-import app.billfolder.libris.ui.genres.GenresScreen
-import app.billfolder.libris.ui.numeros.NumerosScreen
-import app.billfolder.libris.ui.wishlist.WishlistScreen
-import app.billfolder.libris.shared.BookOwnership
-import app.billfolder.libris.ui.components.LocalSnackbar
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
-import app.billfolder.libris.shared.AuthSession
+import app.billfolder.libris.data.auth.AuthSession
+import app.billfolder.libris.data.remote.dto.BookOwnership
 import app.billfolder.libris.ui.components.LibrisIcons
+import app.billfolder.libris.ui.components.LocalSnackbar
 import app.billfolder.libris.ui.components.RibbonBar
 import app.billfolder.libris.ui.components.RibbonItem
+import app.billfolder.libris.ui.feature.acervo.AcervoScreen
+import app.billfolder.libris.ui.feature.ficha.FichaScreen
+import app.billfolder.libris.ui.feature.form.BookFormScreen
+import app.billfolder.libris.ui.feature.genres.GenresScreen
+import app.billfolder.libris.ui.feature.numeros.NumerosScreen
+import app.billfolder.libris.ui.feature.wishlist.WishlistScreen
+import kotlin.reflect.KClass
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
-import kotlin.reflect.KClass
 
 @Composable
 fun MainShell(session: AuthSession = koinInject()) {

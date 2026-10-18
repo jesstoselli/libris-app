@@ -1,14 +1,13 @@
 package app.billfolder.libris.ui
 
-import app.billfolder.libris.shared.AuthSession
-import app.billfolder.libris.shared.InMemoryTokenStore
-import app.billfolder.libris.shared.LibrisApi
-import app.billfolder.libris.shared.Session
-import app.billfolder.libris.shared.User
-import app.billfolder.libris.shared.librisHttpClient
+import app.billfolder.libris.data.auth.AuthSession
+import app.billfolder.libris.data.auth.InMemoryTokenStore
+import app.billfolder.libris.data.auth.Session
+import app.billfolder.libris.data.remote.LibrisApi
+import app.billfolder.libris.data.remote.librisHttpClient
+import app.billfolder.libris.data.remote.dto.User
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockEngineConfig
-import kotlinx.coroutines.CoroutineDispatcher
 import io.ktor.client.engine.mock.MockRequestHandleScope
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.request.HttpRequestData
@@ -17,6 +16,7 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.TextContent
 import io.ktor.http.headersOf
+import kotlinx.coroutines.CoroutineDispatcher
 
 const val BASE = "http://api.test"
 

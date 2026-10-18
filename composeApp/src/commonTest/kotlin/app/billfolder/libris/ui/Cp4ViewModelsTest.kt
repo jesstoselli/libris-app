@@ -1,23 +1,24 @@
 package app.billfolder.libris.ui
 
-import app.billfolder.libris.shared.Genre
-import app.billfolder.libris.ui.genres.GenresViewModel
-import app.billfolder.libris.ui.numeros.NumerosViewModel
-import app.billfolder.libris.ui.numeros.defaultMonth
-import app.billfolder.libris.ui.wishlist.WishlistViewModel
+import app.billfolder.libris.data.remote.dto.Genre
+import app.billfolder.libris.ui.common.Load
+import app.billfolder.libris.ui.feature.genres.GenresViewModel
+import app.billfolder.libris.ui.feature.numeros.NumerosViewModel
+import app.billfolder.libris.ui.feature.numeros.defaultMonth
+import app.billfolder.libris.ui.feature.wishlist.WishlistViewModel
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertIs
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import kotlin.test.AfterTest
-import kotlin.test.BeforeTest
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertIs
 
 class Cp4ViewModelsTest {
     private val dispatcher = StandardTestDispatcher()

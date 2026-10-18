@@ -1,14 +1,21 @@
 package app.billfolder.libris.ui
 
-import app.billfolder.libris.ui.acervo.AcervoViewModel
-import app.billfolder.libris.ui.ficha.FichaViewModel
-import app.billfolder.libris.ui.genres.GenresViewModel
-import app.billfolder.libris.ui.numeros.NumerosViewModel
-import app.billfolder.libris.ui.wishlist.WishlistViewModel
+import app.billfolder.libris.ui.common.Load
+import app.billfolder.libris.ui.feature.acervo.AcervoViewModel
+import app.billfolder.libris.ui.feature.ficha.FichaViewModel
+import app.billfolder.libris.ui.feature.genres.GenresViewModel
+import app.billfolder.libris.ui.feature.numeros.NumerosViewModel
+import app.billfolder.libris.ui.feature.wishlist.WishlistViewModel
 import io.ktor.client.engine.mock.MockRequestHandleScope
 import io.ktor.client.request.HttpRequestData
 import io.ktor.client.request.HttpResponseData
 import io.ktor.http.HttpStatusCode
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
+import kotlin.test.Test
+import kotlin.test.assertFalse
+import kotlin.test.assertIs
+import kotlin.test.assertTrue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestDispatcher
@@ -17,12 +24,6 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import kotlin.test.AfterTest
-import kotlin.test.BeforeTest
-import kotlin.test.Test
-import kotlin.test.assertFalse
-import kotlin.test.assertIs
-import kotlin.test.assertTrue
 
 /** Every screen recovers from a server error when the list is pulled down. */
 class PullToRefreshTest {
