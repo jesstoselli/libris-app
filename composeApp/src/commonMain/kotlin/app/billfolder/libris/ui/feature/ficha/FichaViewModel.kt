@@ -2,18 +2,19 @@ package app.billfolder.libris.ui.feature.ficha
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.billfolder.libris.domain.error.ApiException
 import app.billfolder.libris.domain.model.Book
 import app.billfolder.libris.domain.model.BookOwnership
 import app.billfolder.libris.domain.model.BookStatus
-import app.billfolder.libris.domain.error.ApiException
+import app.billfolder.libris.domain.model.ReadingLog
+import app.billfolder.libris.domain.model.ReadingProgress
 import app.billfolder.libris.domain.model.toDraft
 import app.billfolder.libris.domain.repository.BookRepository
 import app.billfolder.libris.domain.repository.ReadingRepository
-import kotlinx.datetime.LocalDate
+import app.billfolder.libris.domain.rules.readingDatesProblem
 import app.billfolder.libris.domain.time.today
-import app.billfolder.libris.domain.model.ReadingLog
-import app.billfolder.libris.domain.model.ReadingProgress
 import app.billfolder.libris.ui.common.Load
+import app.billfolder.libris.ui.common.message
 import app.billfolder.libris.ui.common.userMessage
 import app.billfolder.libris.ui.common.valueOrNull
 import kotlinx.coroutines.Job
@@ -25,6 +26,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDate
 
 data class FichaState(
     val book: Load<Book> = Load.Loading,
@@ -44,13 +46,6 @@ data class FichaState(
             else -> null
         }
     val canLog get() = pageInput.toIntOrNull() != null && !pending
-}
-
-/** Checks the "editar datas" pair the same way the book form does. */
-fun datesProblem(startedAt: LocalDate?, finishedAt: LocalDate?, today: LocalDate = today()): String? = when {
-    startedAt != null && finishedAt != null && finishedAt < startedAt -> "O término não pode ser antes do início."
-    (startedAt != null && startedAt > today) || (finishedAt != null && finishedAt > today) -> "As datas não podem estar no futuro."
-    else -> null
 }
 
 class FichaViewModel(private val bookId: String, private val books: BookRepository, private val reading: ReadingRepository) : ViewModel() {
@@ -105,7 +100,7 @@ class FichaViewModel(private val bookId: String, private val books: BookReposito
 
     fun saveDates(startedAt: LocalDate?, finishedAt: LocalDate?) {
         val book = _state.value.book.valueOrNull ?: return
-        datesProblem(startedAt, finishedAt)?.let { problem ->
+        readingDatesProblem(startedAt, finishedAt, today())?.message()?.let { problem ->
             viewModelScope.launch { _messages.send(problem) }
             return
         }

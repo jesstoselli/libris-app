@@ -4,7 +4,6 @@ import app.billfolder.libris.domain.model.BookStatus
 import app.billfolder.libris.domain.time.today
 import app.billfolder.libris.ui.common.Load
 import app.billfolder.libris.ui.feature.ficha.FichaViewModel
-import app.billfolder.libris.ui.feature.ficha.datesProblem
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import kotlin.test.AfterTest
@@ -125,12 +124,5 @@ class FichaViewModelTest {
         advanceUntilIdle()
 
         assertTrue(vm.state.value.notFound)
-    }
-
-    @Test
-    fun datesProblem_rules() {
-        assertEquals("O término não pode ser antes do início.", datesProblem(LocalDate.parse("2024-03-20"), LocalDate.parse("2024-03-01"), LocalDate.parse("2026-10-16")))
-        assertEquals("As datas não podem estar no futuro.", datesProblem(null, LocalDate.parse("2027-01-10"), LocalDate.parse("2026-10-16")))
-        assertNull(datesProblem(LocalDate.parse("2024-03-01"), LocalDate.parse("2024-03-20"), LocalDate.parse("2026-10-16")))
     }
 }

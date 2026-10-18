@@ -3,6 +3,7 @@ package app.billfolder.libris.ui.common
 import app.billfolder.libris.domain.error.ApiException
 import app.billfolder.libris.domain.error.NoConnectionException
 import app.billfolder.libris.domain.error.SessionExpiredException
+import app.billfolder.libris.domain.rules.DateProblem
 
 private const val NO_CONNECTION = "Sem conexão com o servidor."
 private const val GENERIC = "Algo deu errado. Tente de novo."
@@ -16,3 +17,8 @@ fun Throwable.userMessage(): String = when (this) {
 }
 
 val Throwable.apiCode: String? get() = (this as? ApiException)?.code
+
+fun DateProblem.message(): String = when (this) {
+    DateProblem.FinishBeforeStart -> "O término não pode ser antes do início."
+    DateProblem.InFuture -> "As datas não podem estar no futuro."
+}

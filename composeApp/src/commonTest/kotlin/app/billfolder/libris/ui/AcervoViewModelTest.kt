@@ -70,7 +70,7 @@ class AcervoViewModelTest {
 
     @Test
     fun offline_showsNoConnection() = runTest(dispatcher) {
-        val fake = FakeApi(dispatcher) { throw IllegalStateException("offline") }
+        val fake = FakeApi(dispatcher) { throw kotlinx.io.IOException("offline") }
         val vm = AcervoViewModel(fake.books, fake.genres)
         advanceUntilIdle()
 

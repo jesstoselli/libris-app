@@ -73,7 +73,7 @@ class AuthSessionTest {
     fun refreshNetworkFailure_keepsSession() = runTest {
         val tokens = signedIn()
         val server = FakeServer { request ->
-            if (request.url.encodedPath == "/v1/auth/refresh") throw IllegalStateException("offline")
+            if (request.url.encodedPath == "/v1/auth/refresh") throw kotlinx.io.IOException("offline")
             json("{}", HttpStatusCode.Unauthorized)
         }
         val session = AuthSession(server.api, tokens)
@@ -99,7 +99,7 @@ class AuthSessionTest {
     @Test
     fun logout_clearsEvenWhenServerFails() = runTest {
         val tokens = signedIn()
-        val server = FakeServer { throw IllegalStateException("offline") }
+        val server = FakeServer { throw kotlinx.io.IOException("offline") }
         val session = AuthSession(server.api, tokens)
 
         session.logout()

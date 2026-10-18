@@ -96,7 +96,7 @@ class Cp4ViewModelsTest {
 
     @Test
     fun numeros_failedMonth_showsMessage_keepsYear() = runTest(dispatcher) {
-        val fake = FakeApi(dispatcher) { req -> if (req.url.encodedPath.count { it == '/' } == 4) throw IllegalStateException("offline") else json(year) }
+        val fake = FakeApi(dispatcher) { req -> if (req.url.encodedPath.count { it == '/' } == 4) throw kotlinx.io.IOException("offline") else json(year) }
         val vm = NumerosViewModel(fake.stats) { 2026 to 10 }
         advanceUntilIdle()
 

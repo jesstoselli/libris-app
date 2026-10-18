@@ -32,9 +32,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.billfolder.libris.domain.model.Book
 import app.billfolder.libris.domain.model.BookOwnership
 import app.billfolder.libris.domain.model.BookStatus
-import app.billfolder.libris.domain.time.today
 import app.billfolder.libris.domain.model.ReadingLog
+import app.billfolder.libris.domain.rules.readingDatesProblem
+import app.billfolder.libris.domain.time.today
 import app.billfolder.libris.ui.common.Load
+import app.billfolder.libris.ui.common.message
 import app.billfolder.libris.ui.components.BookCover
 import app.billfolder.libris.ui.components.ConfirmDialog
 import app.billfolder.libris.ui.components.Ficha
@@ -298,7 +300,7 @@ private fun EditDates(book: Book, onSave: (LocalDate?, LocalDate?) -> Unit, onCa
     var start by remember { mutableStateOf(book.startedAt) }
     var end by remember { mutableStateOf(book.finishedAt) }
     var picking by remember { mutableStateOf<String?>(null) }
-    val problem = datesProblem(start, end)
+    val problem = readingDatesProblem(start, end, today())?.message()
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             DateChip("Início", start, { picking = "start" }, { start = null })

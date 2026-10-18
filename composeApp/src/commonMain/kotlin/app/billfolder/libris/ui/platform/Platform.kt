@@ -18,7 +18,4 @@ expect fun rememberCoverPicker(onPicked: (PickedImage) -> Unit, onError: (String
 @Composable
 expect fun IsbnScanner(onScanned: (String) -> Unit, onClose: () -> Unit)
 
-/** Book barcodes are EAN-13 in the "Bookland" ranges; anything else (prices, product codes) is ignored. */
-fun looksLikeIsbn(code: String?): Boolean = code != null && code.length == 13 && code.all { it.isDigit() } && (code.startsWith("978") || code.startsWith("979"))
-
 const val MAX_COVER_SIDE = 1600

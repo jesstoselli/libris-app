@@ -3,18 +3,22 @@ package app.billfolder.libris.ui.feature.form
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.billfolder.libris.domain.model.Book
+import app.billfolder.libris.domain.model.BookDraft
+import app.billfolder.libris.domain.model.BookLookup
 import app.billfolder.libris.domain.model.BookOwnership
 import app.billfolder.libris.domain.model.BookStatus
-import app.billfolder.libris.domain.model.BookLookup
-import app.billfolder.libris.domain.time.today
-import app.billfolder.libris.domain.model.BookDraft
 import app.billfolder.libris.domain.model.Genre
 import app.billfolder.libris.domain.model.LookupSource
 import app.billfolder.libris.domain.repository.BookRepository
 import app.billfolder.libris.domain.repository.CoverRepository
 import app.billfolder.libris.domain.repository.GenreRepository
-import kotlinx.datetime.LocalDate
+import app.billfolder.libris.domain.rules.BookRules
+import app.billfolder.libris.domain.rules.isSearchableIsbn
+import app.billfolder.libris.domain.rules.readingDatesProblem
+import app.billfolder.libris.domain.rules.withGenre
+import app.billfolder.libris.domain.time.today
 import app.billfolder.libris.ui.common.apiCode
+import app.billfolder.libris.ui.common.message
 import app.billfolder.libris.ui.common.userMessage
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
@@ -24,10 +28,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-
-private const val MAX_PAGES = 20000
-private const val MAX_GENRES = 10
-private const val MAX_AUTHORS = 10
+import kotlinx.datetime.LocalDate
 
 data class BookFormState(
     val editing: Book? = null,
@@ -68,36 +69,27 @@ data class BookFormState(
     // Field messages mirror the API validators, so a disabled button always says why.
     val titleError get() = when {
         title.isBlank() -> "Informe o título."
-        title.trim().length > 300 -> "O título pode ter no máximo 300 caracteres."
+        title.trim().length > BookRules.MAX_TITLE -> "O título pode ter no máximo ${BookRules.MAX_TITLE} caracteres."
         else -> null
     }
     val authorsError get() = when {
         authors.none { it.isNotBlank() } -> "Informe pelo menos um autor."
-        authors.any { it.trim().length > 200 } -> "Nome de autor muito longo."
+        authors.any { it.trim().length > BookRules.MAX_AUTHOR } -> "Nome de autor muito longo."
         else -> null
     }
     val pagesError: String? get() {
         if (totalPages.isBlank()) return if (owned) "Informe o número de páginas." else null
         val n = totalPages.toIntOrNull() ?: return "Use um número inteiro."
-        return if (n !in 1..MAX_PAGES) "Use de 1 a 20000 páginas." else null
+        return if (n !in BookRules.PAGES) "Use de ${BookRules.PAGES.first} a ${BookRules.PAGES.last} páginas." else null
     }
     val yearError: String? get() {
         if (publishedYear.isBlank()) return null
         val n = publishedYear.toIntOrNull() ?: return "Use um número inteiro."
-        return if (n !in 1400..2100) "Use um ano entre 1400 e 2100." else null
+        return if (n !in BookRules.YEARS) "Use um ano entre ${BookRules.YEARS.first} e ${BookRules.YEARS.last}." else null
     }
-    val datesError: String? get() {
-        val start = startedAt.takeIf { showStart }
-        val end = finishedAt.takeIf { showFinish }
-        val today = today()
-        return when {
-            start != null && end != null && end < start -> "O término não pode ser antes do início."
-            (start != null && start > today) || (end != null && end > today) -> "As datas não podem estar no futuro."
-            else -> null
-        }
-    }
+    val datesError: String? get() = readingDatesProblem(startedAt.takeIf { showStart }, finishedAt.takeIf { showFinish }, today())?.message()
     val canSubmit get() = listOf(titleError, authorsError, pagesError, yearError, datesError).all { it == null } && !uploading && !saving
-    val canLookUp get() = isbn.count { it.isDigit() || it == 'X' || it == 'x' } >= 10 && !lookingUp
+    val canLookUp get() = isSearchableIsbn(isbn) && !lookingUp
     val coverPreview get() = pendingCoverUrl.takeIf { coverId == null }
 
     fun shows(field: String, error: String?) = error.takeIf { field in touched }
@@ -148,7 +140,7 @@ class BookFormViewModel(
     fun onIsbn(v: String) = _state.update { it.copy(isbn = v, lookupError = null) }
     fun onTitle(v: String) = _state.update { it.copy(title = v, touched = it.touched + "title") }
     fun onAuthor(index: Int, v: String) = _state.update { s -> s.copy(authors = s.authors.mapIndexed { i, a -> if (i == index) v else a }, touched = s.touched + "authors") }
-    fun addAuthor() = _state.update { if (it.authors.size < MAX_AUTHORS) it.copy(authors = it.authors + "") else it }
+    fun addAuthor() = _state.update { if (it.authors.size < BookRules.MAX_AUTHORS) it.copy(authors = it.authors + "") else it }
     fun removeAuthor(index: Int) = _state.update { s -> if (s.authors.size > 1) s.copy(authors = s.authors.filterIndexed { i, _ -> i != index }) else s }
     fun onPages(v: String) = _state.update { it.copy(totalPages = v.trim(), touched = it.touched + "pages") }
     fun onYear(v: String) = _state.update { it.copy(publishedYear = v.trim(), touched = it.touched + "year") }
@@ -159,15 +151,9 @@ class BookFormViewModel(
     fun onStartedAt(v: LocalDate?) = _state.update { it.copy(startedAt = v) }
     fun onFinishedAt(v: LocalDate?) = _state.update { it.copy(finishedAt = v) }
 
-    /** Adds a genre once (case-insensitively), reusing the stored spelling when it already exists. */
-    fun addGenre(raw: String) = _state.update { it.copy(genres = withGenre(it.genres, raw)) }
+    fun addGenre(raw: String) = _state.update { it.copy(genres = it.genres.withGenre(raw, knownGenres())) }
 
-    private fun withGenre(genres: List<String>, raw: String): List<String> {
-        val name = raw.replace(",", "").trim()
-        if (name.isEmpty() || genres.size >= MAX_GENRES || genres.any { it.equals(name, ignoreCase = true) }) return genres
-        val known = _existingGenres.value.firstOrNull { it.name.equals(name, ignoreCase = true) }?.name ?: name
-        return genres + known
-    }
+    private fun knownGenres() = _existingGenres.value.map { it.name }
 
     fun removeGenre(name: String) = _state.update { it.copy(genres = it.genres - name) }
 
@@ -254,7 +240,7 @@ class BookFormViewModel(
             publisher = s.publisher.ifBlank { lookup.publisher.orEmpty() },
             publishedYear = s.publishedYear.ifBlank { lookup.publishedYear?.toString().orEmpty() },
             synopsis = s.synopsis.ifBlank { lookup.synopsis.orEmpty() },
-            genres = lookup.genres.fold(s.genres, ::withGenre),
+            genres = lookup.genres.fold(s.genres) { acc, g -> acc.withGenre(g, knownGenres()) },
             pendingCoverUrl = if (s.coverId == null) lookup.coverUrl ?: s.pendingCoverUrl else s.pendingCoverUrl,
         )
     }

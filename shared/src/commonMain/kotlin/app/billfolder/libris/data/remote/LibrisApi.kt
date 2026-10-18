@@ -51,7 +51,7 @@ import io.ktor.http.contentType
 import io.ktor.http.encodeURLPathPart
 import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
-import kotlinx.coroutines.CancellationException
+import kotlinx.io.IOException
 
 fun librisHttpClient(engine: HttpClientEngine): HttpClient = HttpClient(engine) {
     install(ContentNegotiation) { json(ApiJson) }
@@ -161,10 +161,8 @@ class LibrisApi(private val http: HttpClient, val baseUrl: String) {
     private suspend fun send(call: suspend () -> HttpResponse): HttpResponse {
         val response = try {
             call()
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            // The user only sees "Sem conexão"; the cause is what tells a dead network from a broken request.
+        } catch (e: IOException) {
+            // Only transport failures (offline, DNS, timeouts) are "no connection"; anything else is a bug and surfaces as one.
             println("Libris: request failed: ${e::class.simpleName}: ${e.message} (cause: ${e.cause})")
             throw NoConnectionException(e)
         }

@@ -68,9 +68,16 @@ class LibrisApiTest {
 
     @Test
     fun networkFailure_isNoConnection() = runTest {
-        val server = FakeServer { throw IllegalStateException("unreachable") }
+        val server = FakeServer { throw kotlinx.io.IOException("unreachable") }
 
         assertFailsWith<NoConnectionException> { server.api.listGenres("t") }
+    }
+
+    @Test
+    fun aBrokenRequest_isNotReportedAsNoConnection() = runTest {
+        val server = FakeServer { throw IllegalStateException("bug") }
+
+        assertFailsWith<IllegalStateException> { server.api.listGenres("t") }
     }
 
     @Test
