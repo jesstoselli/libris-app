@@ -12,7 +12,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
@@ -39,7 +38,6 @@ fun Stamp(
     active: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    tilt: Float = -1f,
     tone: Color = Libris.inkSoft,
     quiet: Boolean = false,
 ) {
@@ -54,7 +52,6 @@ fun Stamp(
             .padding(horizontal = 2.dp, vertical = 4.dp)
     } else {
         Modifier
-            .rotate(tilt)
             .background(if (active) Libris.oxblood else Libris.paper.copy(alpha = 0.92f), shape)
             .border(2.dp, if (active) Libris.deskText else tone, shape)
             .padding(horizontal = 10.dp, vertical = 5.dp)

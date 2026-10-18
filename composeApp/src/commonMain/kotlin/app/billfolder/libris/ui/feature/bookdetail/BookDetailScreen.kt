@@ -245,12 +245,11 @@ private fun BookSheet(book: Book, viewModel: BookDetailViewModel) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                BookStatus.entries.forEachIndexed { i, s ->
+                BookStatus.entries.forEach { s ->
                     Stamp(
                         STATUS_LABELS.getValue(s),
                         book.status == s,
                         { viewModel.changeStatus(s) },
-                        tilt = if (i % 2 == 0) -1f else 1f,
                         tone = STATUS_TONES.getValue(s)
                     )
                 }
