@@ -42,12 +42,13 @@ iosApp/      projeto Xcode que embute o framework do composeApp
 
 ## Visual
 
-O mesmo do Mac, adaptado pro celular:
+Definido em `docs/superpowers/specs/2026-10-17-libris-mobile-visual-refresh-design.md` (“Arquivo calmo + fita vinho”, aprovado pela Jess):
 
-- Mesa escura com o `libris-ledger-bg` (renderizado em PNG e repetido como textura), com o overlay escuro.
-- Fichas de papel, carimbos, Aleo nos títulos e Yantramanav no texto (TTF embutidos como Compose resources).
-- **A fita vira uma barra inferior de tecido** (cor `paper`), com os mesmos ícones: Acervo · Wishlist · Números · Registrar. No celular, uma fita lateral roubaria largura demais. *(Escolha minha; se preferir outra coisa, é só falar.)*
-- Acervo em lista de uma coluna. Ficha numa coluna só (dados → progresso/carimbos → registrar leitura → histórico).
+- Mesa escura com o `libris-ledger-bg` ampliado e em contraste baixo; fichas de papel com sombra curta e dobra no canto.
+- Navegação numa **fita vinho** no rodapé com quatro destinos: Acervo · Wishlist · Números · Registrar. “Sair” fica no topo das telas principais.
+- Ficha, formulário e Números são folhas contínuas; ações destrutivas ficam separadas no fim.
+- Aleo nos títulos e carimbos, Yantramanav no resto; vinho é o único destaque forte, latão aparece pouco, gêneros são neutros.
+- Todo alvo de toque tem pelo menos 48 dp.
 
 ## Comportamentos que valem igual ao Mac
 

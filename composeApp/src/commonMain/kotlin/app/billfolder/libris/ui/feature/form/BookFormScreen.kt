@@ -3,6 +3,8 @@ package app.billfolder.libris.ui.feature.form
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,6 +20,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -39,10 +42,10 @@ import app.billfolder.libris.domain.model.BookOwnership
 import app.billfolder.libris.domain.model.BookStatus
 import app.billfolder.libris.domain.time.today
 import app.billfolder.libris.ui.components.BookCover
-import app.billfolder.libris.ui.components.PaperCard
 import app.billfolder.libris.ui.components.LibrisDatePicker
 import app.billfolder.libris.ui.components.LocalSnackbar
 import app.billfolder.libris.ui.components.PageHeading
+import app.billfolder.libris.ui.components.PaperCard
 import app.billfolder.libris.ui.components.PrimaryButton
 import app.billfolder.libris.ui.components.RuledField
 import app.billfolder.libris.ui.components.STATUS_LABELS
@@ -92,7 +95,7 @@ fun BookFormScreen(
                     "‹ Voltar",
                     fontFamily = type.body,
                     color = Libris.deskText,
-                    modifier = Modifier.clickable(onClick = it)
+                    modifier = Modifier.clickable(onClick = it).minimumInteractiveComponentSize()
                 )
             }
             PageHeading(
@@ -208,7 +211,7 @@ fun BookFormScreen(
                                         "×",
                                         color = Libris.inkSoft,
                                         modifier = Modifier.clickable { viewModel.removeAuthor(i) }
-                                            .padding(8.dp)
+                                            .minimumInteractiveComponentSize()
                                     )
                                 }) else null,
                             )
@@ -369,7 +372,8 @@ private fun GenreChips(state: BookFormState, existing: List<String>, viewModel: 
                             )
                         }
                         .clickable { viewModel.removeGenre(g) }
-                        .padding(horizontal = 4.dp, vertical = 5.dp),
+                        .minimumInteractiveComponentSize()
+                        .padding(horizontal = 4.dp),
                 )
             }
         }
@@ -404,7 +408,8 @@ private fun GenreChips(state: BookFormState, existing: List<String>, viewModel: 
                                 )
                             }
                             .clickable { viewModel.addGenre(m); draft = "" }
-                            .padding(horizontal = 4.dp, vertical = 5.dp),
+                            .minimumInteractiveComponentSize()
+                            .padding(horizontal = 4.dp),
                     )
                 }
             }
@@ -422,12 +427,12 @@ private fun DateField(label: String, value: LocalDate?, onPick: () -> Unit, onCl
                 value?.let(::formatDate) ?: "escolher",
                 fontFamily = type.body,
                 fontSize = 17.sp,
-                modifier = Modifier.clickable(onClick = onPick).padding(vertical = 6.dp)
+                modifier = Modifier.clickable(onClick = onPick).minimumInteractiveComponentSize()
             )
             if (value != null) Text(
-                "  ×",
+                "×",
                 color = Libris.inkSoft,
-                modifier = Modifier.clickable(onClick = onClear)
+                modifier = Modifier.clickable(onClick = onClear).minimumInteractiveComponentSize()
             )
         }
     }
@@ -440,33 +445,43 @@ private fun LinkText(text: String, color: Color = Libris.oxblood, onClick: () ->
         fontFamily = LocalLibrisType.current.body,
         fontSize = 14.sp,
         color = color,
-        modifier = Modifier.clickable(onClick = onClick).padding(vertical = 2.dp)
+        modifier = Modifier.clickable(onClick = onClick).minimumInteractiveComponentSize()
     )
 }
 
+/** The bordered label stays small; the 48 dp box around it takes the touch. */
 @Composable
 private fun SmallButton(text: String, enabled: Boolean = true, onClick: () -> Unit) {
-    Text(
-        text,
-        fontFamily = LocalLibrisType.current.title,
-        fontSize = 13.sp,
-        color = if (enabled) Libris.oxblood else Libris.inkSoft.copy(alpha = 0.55f),
-        modifier = Modifier
-            .border(1.dp, if (enabled) Libris.brass else Libris.paperShade)
-            .clickable(enabled = enabled, onClick = onClick)
-            .padding(horizontal = 10.dp, vertical = 5.dp),
-    )
+    Box(
+        Modifier.clickable(enabled = enabled, role = Role.Button, onClick = onClick).minimumInteractiveComponentSize(),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text,
+            fontFamily = LocalLibrisType.current.title,
+            fontSize = 13.sp,
+            color = if (enabled) Libris.oxblood else Libris.inkSoft.copy(alpha = 0.55f),
+            modifier = Modifier
+                .border(1.dp, if (enabled) Libris.brass else Libris.paperShade)
+                .padding(horizontal = 10.dp, vertical = 5.dp),
+        )
+    }
 }
 
 @Composable
 private fun Toggle(text: String, on: Boolean, onClick: () -> Unit) {
-    Text(
-        text,
-        fontFamily = LocalLibrisType.current.title,
-        fontSize = 14.sp,
-        color = if (on) Libris.paper else Libris.inkSoft,
-        modifier = Modifier.background(if (on) Libris.inkSoft else Color.Transparent)
-            .border(2.dp, Libris.inkSoft).clickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 5.dp),
-    )
+    Box(
+        Modifier.selectable(selected = on, role = Role.RadioButton, onClick = onClick).minimumInteractiveComponentSize(),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text,
+            fontFamily = LocalLibrisType.current.title,
+            fontSize = 14.sp,
+            color = if (on) Libris.paper else Libris.inkSoft,
+            modifier = Modifier.background(if (on) Libris.inkSoft else Color.Transparent)
+                .border(2.dp, Libris.inkSoft)
+                .padding(horizontal = 14.dp, vertical = 5.dp),
+        )
+    }
 }

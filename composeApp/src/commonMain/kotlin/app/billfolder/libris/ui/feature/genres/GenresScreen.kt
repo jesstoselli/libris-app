@@ -13,6 +13,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -27,9 +28,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.billfolder.libris.domain.model.Genre
 import app.billfolder.libris.ui.common.Load
 import app.billfolder.libris.ui.components.ConfirmDialog
-import app.billfolder.libris.ui.components.PaperCard
 import app.billfolder.libris.ui.components.LocalSnackbar
 import app.billfolder.libris.ui.components.PageHeading
+import app.billfolder.libris.ui.components.PaperCard
 import app.billfolder.libris.ui.components.Refreshable
 import app.billfolder.libris.ui.components.RuledField
 import app.billfolder.libris.ui.theme.Libris
@@ -48,7 +49,7 @@ fun GenresScreen(onBack: () -> Unit, viewModel: GenresViewModel = koinViewModel(
 
     Refreshable(state.refreshing, viewModel::pullToRefresh) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text("‹ Voltar", fontFamily = type.body, color = Libris.deskText, modifier = Modifier.clickable(onClick = onBack))
+            Text("‹ Voltar", fontFamily = type.body, color = Libris.deskText, modifier = Modifier.clickable(onClick = onBack).minimumInteractiveComponentSize())
             PageHeading("Gêneros")
             PaperCard(Modifier.fillMaxWidth()) {
                 when (val load = state.genres) {
@@ -62,8 +63,8 @@ fun GenresScreen(onBack: () -> Unit, viewModel: GenresViewModel = koinViewModel(
                                 Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                                     Text(g.name, fontFamily = type.body, modifier = Modifier.weight(1f))
                                     Text("${g.bookCount} ${if (g.bookCount == 1) "livro" else "livros"}", fontFamily = type.body, fontSize = 13.sp, color = Libris.inkSoft)
-                                    Text("✎", color = Libris.inkSoft, modifier = Modifier.clickable { viewModel.clearRenameError(); renaming = g }.padding(10.dp))
-                                    Text("×", color = Libris.inkSoft, modifier = Modifier.clickable { deleting = g }.padding(10.dp))
+                                    Text("✎", color = Libris.inkSoft, modifier = Modifier.clickable { viewModel.clearRenameError(); renaming = g }.minimumInteractiveComponentSize())
+                                    Text("×", color = Libris.inkSoft, modifier = Modifier.clickable { deleting = g }.minimumInteractiveComponentSize())
                                 }
                                 if (index < load.value.lastIndex) {
                                     HorizontalDivider(color = Libris.paperShade.copy(alpha = 0.7f))

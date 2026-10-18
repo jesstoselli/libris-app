@@ -11,9 +11,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -21,6 +24,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -31,8 +36,8 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.billfolder.libris.domain.model.MonthStats
 import app.billfolder.libris.ui.common.Load
-import app.billfolder.libris.ui.components.PaperCard
 import app.billfolder.libris.ui.components.PageHeading
+import app.billfolder.libris.ui.components.PaperCard
 import app.billfolder.libris.ui.components.Refreshable
 import app.billfolder.libris.ui.components.SessionAction
 import app.billfolder.libris.ui.format.formatShortDate
@@ -63,45 +68,45 @@ fun StatsScreen(
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 PageHeading("Números de ${state.year}", action = { SessionAction(onLogout) })
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Text("‹ ${state.year - 1}", fontFamily = type.body, color = Libris.deskTextSoft, modifier = Modifier.clickable { viewModel.goToYear(state.year - 1) }.padding(vertical = 6.dp))
-                    Text("${state.year + 1} ›", fontFamily = type.body, color = Libris.deskTextSoft, modifier = Modifier.clickable { viewModel.goToYear(state.year + 1) }.padding(vertical = 6.dp))
+                    Text("‹ ${state.year - 1}", fontFamily = type.body, color = Libris.deskTextSoft, modifier = Modifier.clickable { viewModel.goToYear(state.year - 1) }.minimumInteractiveComponentSize())
+                    Text("${state.year + 1} ›", fontFamily = type.body, color = Libris.deskTextSoft, modifier = Modifier.clickable { viewModel.goToYear(state.year + 1) }.minimumInteractiveComponentSize())
                 }
             }
             when (val load = state.stats) {
                 Load.Loading -> Text("Carregando…", fontFamily = type.body, color = Libris.deskTextSoft)
                 is Load.Failed -> Text(load.message, fontFamily = type.body, color = Libris.deskText)
-                is Load.Loaded -> {
+                // One continuous ruled sheet: the year at a glance, the months, then the selected month.
+                is Load.Loaded -> PaperCard(Modifier.fillMaxWidth(), padding = 20.dp) {
                     val s = load.value
-                    PaperCard(Modifier.fillMaxWidth(), padding = 20.dp) {
-                        Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
-                            Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                                Kpi(thousands(s.booksFinished), "terminados no ano", Modifier.weight(1f))
-                                Kpi(thousands(s.pagesRead), "páginas no ano", Modifier.weight(1f))
-                                Kpi(thousands(s.readingNow), "em leitura agora", Modifier.weight(1f))
-                            }
+                    Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                            Kpi(thousands(s.booksFinished), "terminados no ano", Modifier.weight(1f))
+                            Kpi(thousands(s.pagesRead), "páginas no ano", Modifier.weight(1f))
+                            Kpi(thousands(s.readingNow), "em leitura agora", Modifier.weight(1f))
+                        }
+                        SheetDivider()
+                        Column {
                             Text("Páginas lidas por mês · toque num mês", fontFamily = type.body, fontSize = 13.sp, color = Libris.inkSoft)
                             MonthBars(s.months, state.month, viewModel::selectMonth)
                         }
-                    }
-                }
-            }
-            when (val d = state.detail) {
-                Load.Loading -> Unit
-                is Load.Failed -> Text(d.message, fontFamily = type.body, color = Libris.deskText)
-                is Load.Loaded -> {
-                    val m = monthName(state.month)
-                    PaperCard(Modifier.fillMaxWidth()) {
-                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Section("Terminados em $m · ${d.value.finished.size}")
-                            if (d.value.finished.isEmpty()) Text("Nenhum livro terminado.", fontFamily = type.body, fontWeight = FontWeight.Light, color = Libris.inkSoft)
-                            d.value.finished.forEach { f -> DetailRow(f.title, f.authors.joinToString(", "), formatShortDate(f.finishedAt)) }
-                        }
-                    }
-                    PaperCard(Modifier.fillMaxWidth()) {
-                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Section("Andaram em $m · ${thousands(d.value.pagesRead)} págs.")
-                            if (d.value.progressed.isEmpty()) Text("Nenhuma leitura anotada.", fontFamily = type.body, fontWeight = FontWeight.Light, color = Libris.inkSoft)
-                            d.value.progressed.forEach { p -> DetailRow(p.title, null, "+${thousands(p.pagesRead)}") }
+                        when (val d = state.detail) {
+                            Load.Loading -> Unit
+                            is Load.Failed -> Text(d.message, fontFamily = type.body, color = Libris.oxblood)
+                            is Load.Loaded -> {
+                                val m = monthName(state.month)
+                                SheetDivider()
+                                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Section("Terminados em $m · ${d.value.finished.size}")
+                                    if (d.value.finished.isEmpty()) Text("Nenhum livro terminado.", fontFamily = type.body, fontWeight = FontWeight.Light, color = Libris.inkSoft)
+                                    d.value.finished.forEach { f -> DetailRow(f.title, f.authors.joinToString(", "), formatShortDate(f.finishedAt)) }
+                                }
+                                SheetDivider()
+                                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Section("Andaram em $m · ${thousands(d.value.pagesRead)} págs.")
+                                    if (d.value.progressed.isEmpty()) Text("Nenhuma leitura anotada.", fontFamily = type.body, fontWeight = FontWeight.Light, color = Libris.inkSoft)
+                                    d.value.progressed.forEach { p -> DetailRow(p.title, null, "+${thousands(p.pagesRead)}") }
+                                }
+                            }
                         }
                     }
                 }
@@ -111,6 +116,9 @@ fun StatsScreen(
 }
 
 @Composable
+private fun SheetDivider() = Box(Modifier.fillMaxWidth().height(1.dp).background(Libris.rule.copy(alpha = 0.6f)))
+
+@Composable
 private fun MonthBars(months: List<MonthStats>, selected: Int, onSelect: (Int) -> Unit) {
     val type = LocalLibrisType.current
     val max = months.maxOfOrNull { it.pagesRead } ?: 0
@@ -118,7 +126,7 @@ private fun MonthBars(months: List<MonthStats>, selected: Int, onSelect: (Int) -
         months.forEach { m ->
             val on = m.month == selected
             Column(
-                Modifier.weight(1f).fillMaxHeight().clickable { onSelect(m.month) }.semantics { contentDescription = "${monthName(m.month)}: ${m.pagesRead} páginas" },
+                Modifier.weight(1f).fillMaxHeight().selectable(selected = on, role = Role.Tab) { onSelect(m.month) }.semantics { contentDescription = "${monthName(m.month)}: ${m.pagesRead} páginas" },
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(if (m.pagesRead > 0) m.pagesRead.toString() else "", fontFamily = type.body, fontSize = 9.sp, color = Libris.inkSoft, maxLines = 1)
@@ -128,6 +136,8 @@ private fun MonthBars(months: List<MonthStats>, selected: Int, onSelect: (Int) -
                 }
                 Box(Modifier.fillMaxWidth().height(1.5.dp).background(Libris.inkSoft))
                 Text(monthShort(m.month), fontFamily = type.body, fontSize = 11.sp, fontWeight = if (on) FontWeight.Bold else FontWeight.Normal, color = if (on) Libris.oxblood else Libris.inkSoft, textAlign = TextAlign.Center)
+                // The selected month is marked by shape too, not only by color.
+                Box(Modifier.width(14.dp).height(2.dp).background(if (on) Libris.oxblood else Color.Transparent))
             }
         }
     }

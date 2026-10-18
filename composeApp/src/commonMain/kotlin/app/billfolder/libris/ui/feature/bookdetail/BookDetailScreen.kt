@@ -1,18 +1,22 @@
 package app.billfolder.libris.ui.feature.bookdetail
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -39,9 +43,9 @@ import app.billfolder.libris.ui.common.Load
 import app.billfolder.libris.ui.common.message
 import app.billfolder.libris.ui.components.BookCover
 import app.billfolder.libris.ui.components.ConfirmDialog
-import app.billfolder.libris.ui.components.PaperCard
 import app.billfolder.libris.ui.components.LibrisDatePicker
 import app.billfolder.libris.ui.components.LocalSnackbar
+import app.billfolder.libris.ui.components.PaperCard
 import app.billfolder.libris.ui.components.PrimaryButton
 import app.billfolder.libris.ui.components.ProgressBar
 import app.billfolder.libris.ui.components.Refreshable
@@ -88,12 +92,21 @@ fun BookDetailScreen(
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(18.dp)
             ) {
-                Text(
-                    "‹ Voltar",
-                    fontFamily = type.body,
-                    color = Libris.deskText,
-                    modifier = Modifier.clickable(onClick = onBack).padding(vertical = 4.dp)
-                )
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "‹ Voltar",
+                        fontFamily = type.body,
+                        color = Libris.deskText,
+                        modifier = Modifier.clickable(onClick = onBack).minimumInteractiveComponentSize(),
+                    )
+                    Spacer(Modifier.weight(1f))
+                    if (state.book is Load.Loaded) Text(
+                        "✎ Editar livro",
+                        fontFamily = type.body,
+                        color = Libris.deskText,
+                        modifier = Modifier.clickable(onClick = onEdit).minimumInteractiveComponentSize(),
+                    )
+                }
                 when {
                     state.notFound -> PaperCard(Modifier.fillMaxWidth()) {
                         Text(
@@ -115,13 +128,15 @@ fun BookDetailScreen(
                             color = Libris.deskText
                         )
 
-                        is Load.Loaded -> {
-                            BookSheet(load.value, viewModel, onEdit)
-                            if (load.value.ownership == BookOwnership.Owned) ReadingSheet(
-                                load.value,
-                                state,
-                                viewModel
-                            ) else AcquireSheet(load.value, viewModel)
+                        // One continuous sheet: the book, then reading (or "Comprei"), then the destructive action last.
+                        is Load.Loaded -> PaperCard(Modifier.fillMaxWidth(), padding = 20.dp) {
+                            Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
+                                BookSheet(load.value, viewModel)
+                                SheetDivider()
+                                if (load.value.ownership == BookOwnership.Owned) ReadingSheet(state, viewModel) else AcquireSheet(load.value, viewModel)
+                                SheetDivider()
+                                DeleteBook(load.value, viewModel)
+                            }
                         }
                     }
                 }
@@ -131,152 +146,144 @@ fun BookDetailScreen(
 }
 
 @Composable
-private fun BookSheet(book: Book, viewModel: BookDetailViewModel, onEdit: () -> Unit) {
+private fun BookSheet(book: Book, viewModel: BookDetailViewModel) {
     val type = LocalLibrisType.current
-    var confirmDelete by remember { mutableStateOf(false) }
     var editingDates by remember { mutableStateOf(false) }
 
-    PaperCard(Modifier.fillMaxWidth(), padding = 20.dp) {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                BookCover(
-                    book.coverUrl,
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            BookCover(
+                book.coverUrl,
+                book.title,
+                width = 104.dp,
+                height = 154.dp,
+                fontSize = 13.sp
+            )
+            Column(Modifier.weight(1f)) {
+                Text(
+                    "FICHA",
+                    fontFamily = type.title,
+                    fontSize = 13.sp,
+                    letterSpacing = 1.5.sp,
+                    color = Libris.oxblood
+                )
+                Text(
                     book.title,
-                    width = 104.dp,
-                    height = 154.dp,
-                    fontSize = 13.sp
+                    fontFamily = type.title,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 24.sp,
+                    lineHeight = 26.sp,
+                    color = Libris.oxblood
                 )
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        "FICHA",
-                        fontFamily = type.title,
-                        fontSize = 13.sp,
-                        letterSpacing = 1.5.sp,
-                        color = Libris.oxblood
-                    )
-                    Text(
-                        book.title,
-                        fontFamily = type.title,
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 24.sp,
-                        lineHeight = 26.sp,
-                        color = Libris.oxblood
-                    )
-                    Text(
-                        "de ${book.authors.joinToString(", ")}",
-                        fontFamily = type.body,
-                        fontSize = 14.sp,
-                        color = Libris.inkSoft
-                    )
-                    publication(book)?.let {
-                        Text(
-                            it,
-                            fontFamily = type.body,
-                            fontSize = 14.sp,
-                            color = Libris.inkSoft
-                        )
-                    }
-                }
-            }
-            if (book.genres.isNotEmpty()) {
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    book.genres.forEach {
-                        Text(
-                            it.name,
-                            fontFamily = type.body,
-                            fontSize = 12.sp,
-                            color = Libris.inkSoft,
-                            modifier = Modifier
-                                .drawBehind {
-                                    drawLine(
-                                        Libris.brass,
-                                        Offset(0f, size.height),
-                                        Offset(size.width, size.height),
-                                        1.dp.toPx(),
-                                    )
-                                }
-                                .padding(horizontal = 3.dp, vertical = 4.dp),
-                        )
-                    }
-                }
-            }
-            book.synopsis?.let {
                 Text(
-                    it,
-                    fontFamily = type.body,
-                    fontWeight = FontWeight.Light,
-                    fontSize = 14.sp,
-                    lineHeight = 20.sp
-                )
-            }
-
-            if (book.ownership == BookOwnership.Owned) {
-                Text(
-                    "Progresso · pág. ${book.currentPage} de ${book.totalPages} (${book.percent}%)",
+                    "de ${book.authors.joinToString(", ")}",
                     fontFamily = type.body,
                     fontSize = 14.sp,
                     color = Libris.inkSoft
                 )
-                ProgressBar(if (book.status == BookStatus.Read) 100 else book.percent)
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    BookStatus.entries.forEachIndexed { i, s ->
-                        Stamp(
-                            STATUS_LABELS.getValue(s),
-                            book.status == s,
-                            { viewModel.changeStatus(s) },
-                            tilt = if (i % 2 == 0) -1f else 1f,
-                            tone = STATUS_TONES.getValue(s)
-                        )
-                    }
-                }
-                Text(
-                    "Início: ${book.startedAt?.let(::formatDate) ?: "—"} · Término: ${
-                        book.finishedAt?.let(
-                            ::formatDate
-                        ) ?: "—"
-                    }",
-                    fontFamily = type.body, fontSize = 14.sp, color = Libris.inkSoft,
-                )
-                if (editingDates) {
-                    EditDates(
-                        book,
-                        onSave = { s, f -> viewModel.saveDates(s, f); editingDates = false },
-                        onCancel = { editingDates = false })
-                } else {
+                publication(book)?.let {
                     Text(
-                        "✎ editar datas",
+                        it,
                         fontFamily = type.body,
                         fontSize = 14.sp,
-                        color = Libris.oxblood,
-                        modifier = Modifier.clickable { editingDates = true })
+                        color = Libris.inkSoft
+                    )
                 }
             }
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(20.dp),
-                modifier = Modifier.padding(top = 8.dp)
+        }
+        if (book.genres.isNotEmpty()) {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
+                book.genres.forEach {
+                    Text(
+                        it.name,
+                        fontFamily = type.body,
+                        fontSize = 12.sp,
+                        color = Libris.inkSoft,
+                        modifier = Modifier
+                            .drawBehind {
+                                drawLine(
+                                    Libris.brass,
+                                    Offset(0f, size.height),
+                                    Offset(size.width, size.height),
+                                    1.dp.toPx(),
+                                )
+                            }
+                            .padding(horizontal = 3.dp, vertical = 4.dp),
+                    )
+                }
+            }
+        }
+        book.synopsis?.let {
+            Text(
+                it,
+                fontFamily = type.body,
+                fontWeight = FontWeight.Light,
+                fontSize = 14.sp,
+                lineHeight = 20.sp
+            )
+        }
+
+        if (book.ownership == BookOwnership.Owned) {
+            Text(
+                "Progresso · pág. ${book.currentPage} de ${book.totalPages} (${book.percent}%)",
+                fontFamily = type.body,
+                fontSize = 14.sp,
+                color = Libris.inkSoft
+            )
+            ProgressBar(if (book.status == BookStatus.Read) 100 else book.percent)
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                BookStatus.entries.forEachIndexed { i, s ->
+                    Stamp(
+                        STATUS_LABELS.getValue(s),
+                        book.status == s,
+                        { viewModel.changeStatus(s) },
+                        tilt = if (i % 2 == 0) -1f else 1f,
+                        tone = STATUS_TONES.getValue(s)
+                    )
+                }
+            }
+            Text(
+                "Início: ${book.startedAt?.let(::formatDate) ?: "—"} · Término: ${
+                    book.finishedAt?.let(
+                        ::formatDate
+                    ) ?: "—"
+                }",
+                fontFamily = type.body, fontSize = 14.sp, color = Libris.inkSoft,
+            )
+            if (editingDates) {
+                EditDates(
+                    book,
+                    onSave = { s, f -> viewModel.saveDates(s, f); editingDates = false },
+                    onCancel = { editingDates = false })
+            } else {
                 Text(
-                    "Editar livro",
+                    "✎ editar datas",
                     fontFamily = type.body,
                     fontSize = 14.sp,
                     color = Libris.oxblood,
-                    modifier = Modifier.clickable(onClick = onEdit)
-                )
-                Text(
-                    "Apagar livro",
-                    fontFamily = type.body,
-                    fontSize = 14.sp,
-                    color = Libris.inkSoft,
-                    modifier = Modifier.clickable { confirmDelete = true })
+                    modifier = Modifier.clickable { editingDates = true }.minimumInteractiveComponentSize())
             }
         }
     }
+}
+
+/** Kept apart at the end of the sheet so it never competes with "Anotar". */
+@Composable
+private fun DeleteBook(book: Book, viewModel: BookDetailViewModel) {
+    var confirmDelete by remember { mutableStateOf(false) }
+    Text(
+        "Apagar livro",
+        fontFamily = LocalLibrisType.current.body,
+        fontSize = 14.sp,
+        color = Libris.inkSoft,
+        modifier = Modifier.clickable { confirmDelete = true }.minimumInteractiveComponentSize(),
+    )
     if (confirmDelete) {
         ConfirmDialog(
             "Apagar \"${book.title}\"? Os registros de leitura vão junto.",
@@ -312,13 +319,13 @@ private fun EditDates(book: Book, onSave: (LocalDate?, LocalDate?) -> Unit, onCa
                 "Cancelar",
                 fontFamily = type.body,
                 color = Libris.inkSoft,
-                modifier = Modifier.clickable(onClick = onCancel)
+                modifier = Modifier.clickable(onClick = onCancel).minimumInteractiveComponentSize()
             )
             Text(
                 "Salvar datas",
                 fontFamily = type.title,
                 color = if (problem == null) Libris.oxblood else Libris.inkSoft,
-                modifier = Modifier.clickable(enabled = problem == null) { onSave(start, end) })
+                modifier = Modifier.clickable(enabled = problem == null) { onSave(start, end) }.minimumInteractiveComponentSize())
         }
     }
     picking?.let { which ->
@@ -341,77 +348,75 @@ private fun DateChip(label: String, value: LocalDate?, onPick: () -> Unit, onCle
                 fontFamily = type.body,
                 fontSize = 16.sp,
                 color = Libris.ink,
-                modifier = Modifier.clickable(onClick = onPick)
+                modifier = Modifier.clickable(onClick = onPick).minimumInteractiveComponentSize()
             )
             if (value != null) Text(
-                "  ×",
+                "×",
                 color = Libris.inkSoft,
-                modifier = Modifier.clickable(onClick = onClear)
+                modifier = Modifier.clickable(onClick = onClear).minimumInteractiveComponentSize()
             )
         }
     }
 }
 
 @Composable
-private fun ReadingSheet(book: Book, state: BookDetailState, viewModel: BookDetailViewModel) {
+private fun ReadingSheet(state: BookDetailState, viewModel: BookDetailViewModel) {
     val type = LocalLibrisType.current
     var pickingDate by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<ReadingLog?>(null) }
     var deleting by remember { mutableStateOf<ReadingLog?>(null) }
 
-    PaperCard(Modifier.fillMaxWidth(), padding = 20.dp) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            SectionTitle("Registrar leitura")
-            RuledField(
-                "Parei na página",
-                state.pageInput,
-                viewModel::onPage,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                error = state.pageProblem ?: state.logError,
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        SectionTitle("Registrar leitura")
+        RuledField(
+            "Parei na página",
+            state.pageInput,
+            viewModel::onPage,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            error = state.pageProblem ?: state.logError,
+        )
+        Column {
+            Text("Data", fontFamily = type.body, fontSize = 13.sp, color = Libris.inkSoft)
+            Text(
+                if (state.date == today()) "hoje, ${formatDate(state.date)}" else formatDate(
+                    state.date
+                ),
+                fontFamily = type.body,
+                fontSize = 17.sp,
+                modifier = Modifier.clickable { pickingDate = true }.minimumInteractiveComponentSize()
             )
-            Column {
-                Text("Data", fontFamily = type.body, fontSize = 13.sp, color = Libris.inkSoft)
-                Text(
-                    if (state.date == today()) "hoje, ${formatDate(state.date)}" else formatDate(
-                        state.date
-                    ),
-                    fontFamily = type.body,
-                    fontSize = 17.sp,
-                    modifier = Modifier.clickable { pickingDate = true }.padding(vertical = 6.dp)
-                )
-            }
-            PrimaryButton(
-                "Anotar",
-                enabled = state.canLog && state.pageProblem == null,
-                onClick = viewModel::addLog
-            )
+        }
+        PrimaryButton(
+            "Anotar",
+            enabled = state.canLog && state.pageProblem == null,
+            onClick = viewModel::addLog
+        )
 
-            SectionTitle("Histórico", Modifier.padding(top = 12.dp))
-            if (state.logs.isEmpty()) {
+        SectionTitle("Histórico", Modifier.padding(top = 12.dp))
+        if (state.logs.isEmpty()) {
+            Text(
+                "Nenhuma leitura anotada ainda.",
+                fontFamily = type.body,
+                fontWeight = FontWeight.Light,
+                color = Libris.inkSoft
+            )
+        }
+        state.logs.forEach { log ->
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    "Nenhuma leitura anotada ainda.",
-                    fontFamily = type.body,
-                    fontWeight = FontWeight.Light,
-                    color = Libris.inkSoft
+                    "${formatShortDate(log.date)} · pág. ${if (log.fromPage == 0) "início" else log.fromPage} → ${log.page} · +${log.pagesRead}",
+                    fontFamily = type.body, fontSize = 14.sp, modifier = Modifier.weight(1f),
                 )
-            }
-            state.logs.forEach { log ->
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        "${formatShortDate(log.date)} · pág. ${if (log.fromPage == 0) "início" else log.fromPage} → ${log.page} · +${log.pagesRead}",
-                        fontFamily = type.body, fontSize = 14.sp, modifier = Modifier.weight(1f),
-                    )
-                    Text(
-                        "✎",
-                        color = Libris.inkSoft,
-                        modifier = Modifier.clickable { editing = log }.padding(8.dp)
-                    )
-                    Text(
-                        "×",
-                        color = Libris.inkSoft,
-                        modifier = Modifier.clickable { deleting = log }.padding(8.dp)
-                    )
-                }
+                Text(
+                    "✎",
+                    color = Libris.inkSoft,
+                    modifier = Modifier.clickable { editing = log }.minimumInteractiveComponentSize()
+                )
+                Text(
+                    "×",
+                    color = Libris.inkSoft,
+                    modifier = Modifier.clickable { deleting = log }.minimumInteractiveComponentSize()
+                )
             }
         }
     }
@@ -454,7 +459,7 @@ private fun EditLogDialog(log: ReadingLog, onSave: (LocalDate, Int) -> Unit, onD
                 Text(
                     "Data: ${formatDate(date)}",
                     fontFamily = type.body,
-                    modifier = Modifier.clickable { picking = true })
+                    modifier = Modifier.clickable { picking = true }.minimumInteractiveComponentSize())
             }
         },
         confirmButton = {
@@ -481,21 +486,19 @@ private fun AcquireSheet(book: Book, viewModel: BookDetailViewModel) {
     val type = LocalLibrisType.current
     var pages by remember { mutableStateOf("") }
     val needsPages = book.totalPages == null
-    PaperCard(Modifier.fillMaxWidth(), padding = 20.dp) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            SectionTitle("Wishlist")
-            Text("Ainda não está no acervo.", fontFamily = type.body, color = Libris.inkSoft)
-            if (needsPages) RuledField(
-                "Páginas totais",
-                pages,
-                { pages = it.filter(Char::isDigit) },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-            )
-            PrimaryButton(
-                "Comprei",
-                enabled = !needsPages || (pages.toIntOrNull() ?: 0) >= 1,
-                onClick = { viewModel.acquire(if (needsPages) pages.toInt() else null) })
-        }
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        SectionTitle("Wishlist")
+        Text("Ainda não está no acervo.", fontFamily = type.body, color = Libris.inkSoft)
+        if (needsPages) RuledField(
+            "Páginas totais",
+            pages,
+            { pages = it.filter(Char::isDigit) },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+        )
+        PrimaryButton(
+            "Comprei",
+            enabled = !needsPages || (pages.toIntOrNull() ?: 0) >= 1,
+            onClick = { viewModel.acquire(if (needsPages) pages.toInt() else null) })
     }
 }
 
@@ -509,3 +512,6 @@ private fun SectionTitle(text: String, modifier: Modifier = Modifier) {
         modifier = modifier
     )
 }
+
+@Composable
+private fun SheetDivider() = Box(Modifier.fillMaxWidth().height(1.dp).background(Libris.rule.copy(alpha = 0.6f)))

@@ -3,8 +3,10 @@ package app.billfolder.libris.ui.nav
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
@@ -14,6 +16,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -22,18 +25,19 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
-import app.billfolder.libris.domain.repository.AuthRepository
 import app.billfolder.libris.domain.model.BookOwnership
+import app.billfolder.libris.domain.repository.AuthRepository
 import app.billfolder.libris.ui.components.LibrisIcons
 import app.billfolder.libris.ui.components.LocalSnackbar
 import app.billfolder.libris.ui.components.RibbonBar
 import app.billfolder.libris.ui.components.RibbonItem
-import app.billfolder.libris.ui.feature.library.LibraryScreen
 import app.billfolder.libris.ui.feature.bookdetail.BookDetailScreen
 import app.billfolder.libris.ui.feature.form.BookFormScreen
 import app.billfolder.libris.ui.feature.genres.GenresScreen
+import app.billfolder.libris.ui.feature.library.LibraryScreen
 import app.billfolder.libris.ui.feature.stats.StatsScreen
 import app.billfolder.libris.ui.feature.wishlist.WishlistScreen
+import app.billfolder.libris.ui.theme.Libris
 import kotlin.reflect.KClass
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
@@ -103,6 +107,11 @@ fun MainShell(auth: AuthRepository = koinInject()) {
                 ),
             )
         }
-        Box(Modifier.fillMaxSize().padding(bottom = 86.dp), contentAlignment = Alignment.BottomCenter) { SnackbarHost(snackbar) }
+        // Above the ribbon (about 66 dp) plus whatever the system bar takes, so a message never hides behind navigation.
+        Box(Modifier.fillMaxSize().navigationBarsPadding().padding(bottom = 74.dp), contentAlignment = Alignment.BottomCenter) {
+            SnackbarHost(snackbar) { data ->
+                Snackbar(data, containerColor = Libris.paper, contentColor = Libris.ink, actionColor = Libris.oxblood, shape = RectangleShape)
+            }
+        }
     }
 }

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -22,8 +23,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.billfolder.libris.ui.common.Load
 import app.billfolder.libris.ui.components.BookCard
 import app.billfolder.libris.ui.components.DeskSearchField
-import app.billfolder.libris.ui.components.PaperCard
 import app.billfolder.libris.ui.components.PageHeading
+import app.billfolder.libris.ui.components.PaperCard
 import app.billfolder.libris.ui.components.Refreshable
 import app.billfolder.libris.ui.components.SessionAction
 import app.billfolder.libris.ui.feature.library.GenreMenu
@@ -63,7 +64,7 @@ fun WishlistScreen(
                         PaperCard(Modifier.fillMaxWidth(), foldedCorner = true) {
                             Column {
                                 Text("Nenhum livro na wishlist.", fontFamily = type.body)
-                                Text("Registrar um livro que você quer", fontFamily = type.body, color = Libris.oxblood, modifier = Modifier.clickable(onClick = onRegister))
+                                Text("Registrar um livro que você quer", fontFamily = type.body, color = Libris.oxblood, modifier = Modifier.clickable(onClick = onRegister).minimumInteractiveComponentSize())
                             }
                         }
                     }

@@ -20,6 +20,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -37,8 +38,8 @@ import app.billfolder.libris.domain.model.BookStatus
 import app.billfolder.libris.ui.common.Load
 import app.billfolder.libris.ui.components.BookCard
 import app.billfolder.libris.ui.components.DeskSearchField
-import app.billfolder.libris.ui.components.PaperCard
 import app.billfolder.libris.ui.components.PageHeading
+import app.billfolder.libris.ui.components.PaperCard
 import app.billfolder.libris.ui.components.Refreshable
 import app.billfolder.libris.ui.components.STATUS_LABELS
 import app.billfolder.libris.ui.components.SessionAction
@@ -84,7 +85,7 @@ fun LibraryScreen(
                             fontFamily = type.body,
                             fontSize = 12.sp,
                             color = Libris.deskTextSoft,
-                            modifier = Modifier.clickable(onClick = onManageGenres).padding(vertical = 8.dp),
+                            modifier = Modifier.clickable(onClick = onManageGenres).minimumInteractiveComponentSize(),
                         )
                     }
                     DeskSearchField(state.query, viewModel::setQuery, "⌕ título ou autor…", Modifier.fillMaxWidth())
@@ -99,7 +100,7 @@ fun LibraryScreen(
                             Column {
                                 Text(if (state.hasFilters) "Nenhum livro com esses filtros." else "Nenhum livro por aqui ainda.", fontFamily = type.body)
                                 if (!state.hasFilters) {
-                                    Text("Registrar o primeiro livro", fontFamily = type.body, color = Libris.oxblood, modifier = Modifier.clickable(onClick = onRegister).padding(top = 6.dp))
+                                    Text("Registrar o primeiro livro", fontFamily = type.body, color = Libris.oxblood, modifier = Modifier.clickable(onClick = onRegister).minimumInteractiveComponentSize().padding(top = 6.dp))
                                 }
                             }
                         }
