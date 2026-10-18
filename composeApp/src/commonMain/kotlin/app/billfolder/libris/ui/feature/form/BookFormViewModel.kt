@@ -38,6 +38,7 @@ data class BookFormState(
     val title: String = "",
     val authors: List<String> = listOf(""),
     val totalPages: String = "",
+    val currentPage: String = "",
     val publishedYear: String = "",
     val publisher: String = "",
     val synopsis: String = "",
@@ -66,6 +67,15 @@ data class BookFormState(
     val showStart: Boolean
         get() = editing?.let { it.ownership == BookOwnership.Owned && it.status != BookStatus.NotStarted }
             ?: (ownership == BookOwnership.Owned && status != BookStatus.NotStarted)
+    /** Only when registering a book mid-read: "não iniciado" has no progress and "lido" is the whole book. */
+    val showCurrentPage: Boolean
+        get() = editing == null && ownership == BookOwnership.Owned && status in setOf(BookStatus.Reading, BookStatus.Abandoned)
+    val currentPageError: String? get() {
+        if (!showCurrentPage || currentPage.isBlank()) return null
+        val n = currentPage.toIntOrNull() ?: return "Use um número inteiro."
+        val total = totalPages.toIntOrNull() ?: return null
+        return if (n !in 1..total) "Use de 1 a $total." else null
+    }
     val showFinish: Boolean get() = if (editing != null) showStart else showStart && status == BookStatus.Read
 
     // Field messages mirror the API validators, so a disabled button always says why.
@@ -90,7 +100,7 @@ data class BookFormState(
         return if (n !in BookRules.YEARS) "Use um ano entre ${BookRules.YEARS.first} e ${BookRules.YEARS.last}." else null
     }
     val datesError: String? get() = readingDatesProblem(startedAt.takeIf { showStart }, finishedAt.takeIf { showFinish }, today())?.message()
-    val canSubmit get() = listOf(titleError, authorsError, pagesError, yearError, datesError).all { it == null } && !uploading && !saving
+    val canSubmit get() = listOf(titleError, authorsError, pagesError, yearError, datesError, currentPageError).all { it == null } && !uploading && !saving
     val canLookUp get() = isSearchableIsbn(isbn) && !lookingUp
     val coverPreview get() = pendingCoverUrl.takeIf { coverId == null }
 
@@ -145,6 +155,7 @@ class BookFormViewModel(
     fun addAuthor() = _state.update { if (it.authors.size < BookRules.MAX_AUTHORS) it.copy(authors = it.authors + "") else it }
     fun removeAuthor(index: Int) = _state.update { s -> if (s.authors.size > 1) s.copy(authors = s.authors.filterIndexed { i, _ -> i != index }) else s }
     fun onPages(v: String) = _state.update { it.copy(totalPages = v.trim(), touched = it.touched + "pages") }
+    fun onCurrentPage(v: String) = _state.update { it.copy(currentPage = v.trim()) }
     fun onYear(v: String) = _state.update { it.copy(publishedYear = v.trim(), touched = it.touched + "year") }
     fun onPublisher(v: String) = _state.update { it.copy(publisher = v) }
     fun onSynopsis(v: String) = _state.update { it.copy(synopsis = v) }
@@ -291,4 +302,5 @@ private fun BookFormState.toDraft(coverId: String?) = BookDraft(
     status = if (ownership == BookOwnership.Owned) status else null,
     startedAt = startedAt.takeIf { showStart },
     finishedAt = finishedAt.takeIf { showFinish },
+    currentPage = currentPage.toIntOrNull().takeIf { showCurrentPage },
 )

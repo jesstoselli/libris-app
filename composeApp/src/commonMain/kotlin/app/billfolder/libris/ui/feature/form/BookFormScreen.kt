@@ -294,6 +294,16 @@ fun BookFormScreen(
                         }
                     }
 
+                    if (state.showCurrentPage) {
+                        RuledField(
+                            "Já li até a página",
+                            state.currentPage,
+                            viewModel::onCurrentPage,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            error = state.currentPageError,
+                        )
+                    }
+
                     if (state.showStart || state.showFinish) {
                         Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
                             if (state.showStart) DateField(

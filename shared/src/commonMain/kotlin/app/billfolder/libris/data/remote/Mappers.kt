@@ -99,7 +99,7 @@ internal fun BookDto.toDomain(coverSrc: (String?) -> String?) = Book(
 
 internal fun BookDraft.toCreate(today: LocalDate) = CreateBookRequest(
     title, authors, isbn, totalPages, publisher, publishedYear, synopsis, coverId, genres,
-    ownership.toDto(), status?.toDto(), startedAt?.toString(), finishedAt?.toString(), today.toString(), formats.toWire(),
+    ownership.toDto(), status?.toDto(), startedAt?.toString(), finishedAt?.toString(), today.toString(), formats.toWire(), currentPage,
 )
 
 internal fun BookDraft.toUpdate() = UpdateBookRequest(

@@ -76,6 +76,8 @@ data class CreateBookRequest(
     val finishedAt: String?,
     val today: String,
     val formats: List<BookFormatDto>,
+    /** A book registered mid-read: the API turns it into the first reading log. */
+    val currentPage: Int? = null,
 )
 
 @Serializable

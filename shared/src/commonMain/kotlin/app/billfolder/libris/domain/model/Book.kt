@@ -51,6 +51,8 @@ data class BookDraft(
     val startedAt: LocalDate? = null,
     val finishedAt: LocalDate? = null,
     val formats: Set<BookFormat> = setOf(BookFormat.Physical),
+    /** Only when creating a book that is being read or was abandoned: the page already reached. */
+    val currentPage: Int? = null,
 )
 
 fun Book.toDraft() = BookDraft(
