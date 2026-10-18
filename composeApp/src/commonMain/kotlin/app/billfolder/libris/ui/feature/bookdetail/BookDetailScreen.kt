@@ -42,8 +42,11 @@ import app.billfolder.libris.domain.time.today
 import app.billfolder.libris.ui.common.Load
 import app.billfolder.libris.ui.common.message
 import app.billfolder.libris.ui.components.BookCover
+import app.billfolder.libris.ui.components.ButtonVariant
 import app.billfolder.libris.ui.components.ConfirmDialog
+import app.billfolder.libris.ui.components.LibrisButton
 import app.billfolder.libris.ui.components.LibrisDatePicker
+import app.billfolder.libris.ui.components.LibrisIconButton
 import app.billfolder.libris.ui.components.LocalSnackbar
 import app.billfolder.libris.ui.components.PaperCard
 import app.billfolder.libris.ui.components.PrimaryButton
@@ -94,19 +97,9 @@ fun BookDetailScreen(
                 verticalArrangement = Arrangement.spacedBy(18.dp)
             ) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        "‹ Voltar",
-                        fontFamily = type.body,
-                        color = Libris.deskText,
-                        modifier = Modifier.clickable(onClick = onBack).minimumInteractiveComponentSize(),
-                    )
+                    LibrisButton("‹ Voltar", onBack, variant = ButtonVariant.Quiet, onDesk = true)
                     Spacer(Modifier.weight(1f))
-                    if (state.book is Load.Loaded) Text(
-                        "✎ Editar livro",
-                        fontFamily = type.body,
-                        color = Libris.deskText,
-                        modifier = Modifier.clickable(onClick = onEdit).minimumInteractiveComponentSize(),
-                    )
+                    if (state.book is Load.Loaded) LibrisButton("✎ Editar livro", onEdit, variant = ButtonVariant.Quiet, onDesk = true)
                 }
                 when {
                     state.notFound -> PaperCard(Modifier.fillMaxWidth()) {
@@ -268,12 +261,7 @@ private fun BookSheet(book: Book, viewModel: BookDetailViewModel) {
                     onSave = { s, f -> viewModel.saveDates(s, f); editingDates = false },
                     onCancel = { editingDates = false })
             } else {
-                Text(
-                    "✎ editar datas",
-                    fontFamily = type.body,
-                    fontSize = 14.sp,
-                    color = Libris.oxblood,
-                    modifier = Modifier.clickable { editingDates = true }.minimumInteractiveComponentSize())
+                LibrisButton("✎ Editar datas", { editingDates = true }, variant = ButtonVariant.Quiet)
             }
         }
     }
@@ -283,13 +271,7 @@ private fun BookSheet(book: Book, viewModel: BookDetailViewModel) {
 @Composable
 private fun DeleteBook(book: Book, viewModel: BookDetailViewModel) {
     var confirmDelete by remember { mutableStateOf(false) }
-    Text(
-        "Apagar livro",
-        fontFamily = LocalLibrisType.current.body,
-        fontSize = 14.sp,
-        color = Libris.inkSoft,
-        modifier = Modifier.clickable { confirmDelete = true }.minimumInteractiveComponentSize(),
-    )
+    LibrisButton("Apagar livro", { confirmDelete = true }, variant = ButtonVariant.Danger)
     if (confirmDelete) {
         ConfirmDialog(
             "Apagar \"${book.title}\"? Os registros de leitura vão junto.",
@@ -320,18 +302,9 @@ private fun EditDates(book: Book, onSave: (LocalDate?, LocalDate?) -> Unit, onCa
             DateChip("Término", end, { picking = "end" }, { end = null })
         }
         problem?.let { Text(it, fontFamily = type.body, fontSize = 13.sp, color = Libris.oxblood) }
-        Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
-            Text(
-                "Cancelar",
-                fontFamily = type.body,
-                color = Libris.inkSoft,
-                modifier = Modifier.clickable(onClick = onCancel).minimumInteractiveComponentSize()
-            )
-            Text(
-                "Salvar datas",
-                fontFamily = type.title,
-                color = if (problem == null) Libris.oxblood else Libris.inkSoft,
-                modifier = Modifier.clickable(enabled = problem == null) { onSave(start, end) }.minimumInteractiveComponentSize())
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            LibrisButton("Cancelar", onCancel, variant = ButtonVariant.Secondary)
+            LibrisButton("Salvar datas", { onSave(start, end) }, variant = ButtonVariant.Primary, enabled = problem == null)
         }
     }
     picking?.let { which ->
@@ -356,11 +329,7 @@ private fun DateChip(label: String, value: LocalDate?, onPick: () -> Unit, onCle
                 color = Libris.ink,
                 modifier = Modifier.clickable(onClick = onPick).minimumInteractiveComponentSize()
             )
-            if (value != null) Text(
-                "×",
-                color = Libris.inkSoft,
-                modifier = Modifier.clickable(onClick = onClear).minimumInteractiveComponentSize()
-            )
+            if (value != null) LibrisIconButton("×", "Limpar $label", onClear)
         }
     }
 }
@@ -413,16 +382,8 @@ private fun ReadingSheet(state: BookDetailState, viewModel: BookDetailViewModel)
                     "${formatShortDate(log.date)} · pág. ${if (log.fromPage == 0) "início" else log.fromPage} → ${log.page} · +${log.pagesRead}",
                     fontFamily = type.body, fontSize = 14.sp, modifier = Modifier.weight(1f),
                 )
-                Text(
-                    "✎",
-                    color = Libris.inkSoft,
-                    modifier = Modifier.clickable { editing = log }.minimumInteractiveComponentSize()
-                )
-                Text(
-                    "×",
-                    color = Libris.inkSoft,
-                    modifier = Modifier.clickable { deleting = log }.minimumInteractiveComponentSize()
-                )
+                LibrisIconButton("✎", "Editar registro", { editing = log })
+                LibrisIconButton("×", "Apagar registro", { deleting = log })
             }
         }
     }
@@ -469,19 +430,10 @@ private fun EditLogDialog(log: ReadingLog, onSave: (LocalDate, Int) -> Unit, onD
             }
         },
         confirmButton = {
-            androidx.compose.material3.TextButton(onClick = {
-                page.toIntOrNull()?.let { onSave(date, it) }
-            }, enabled = page.toIntOrNull() != null) {
-                Text("Salvar", fontFamily = type.title, color = Libris.oxblood)
-            }
+            LibrisButton("Salvar", { page.toIntOrNull()?.let { onSave(date, it) } }, enabled = page.toIntOrNull() != null)
         },
         dismissButton = {
-            androidx.compose.material3.TextButton(onClick = onDismiss) {
-                Text(
-                    "Cancelar",
-                    color = Libris.inkSoft
-                )
-            }
+            LibrisButton("Cancelar", onDismiss, variant = ButtonVariant.Secondary)
         },
     )
     if (picking) LibrisDatePicker(date, today(), { date = it }) { picking = false }

@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,6 +16,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -24,7 +26,9 @@ import app.billfolder.libris.domain.model.BookFormat
 import app.billfolder.libris.ui.common.Load
 import app.billfolder.libris.ui.components.BookCard
 import app.billfolder.libris.ui.components.DeskSearchField
-import app.billfolder.libris.ui.components.FilterMenu
+import app.billfolder.libris.ui.components.FilterSection
+import app.billfolder.libris.ui.components.FiltersButton
+import app.billfolder.libris.ui.components.FiltersSheet
 import app.billfolder.libris.ui.components.PageHeading
 import app.billfolder.libris.ui.components.PaperCard
 import app.billfolder.libris.ui.components.Refreshable
@@ -43,19 +47,20 @@ fun WishlistScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val type = LocalLibrisType.current
     var firstResume by remember { mutableStateOf(true) }
+    var showFilters by remember { mutableStateOf(false) }
     LifecycleResumeEffect(Unit) {
         if (firstResume) firstResume = false else viewModel.refresh()
         onPauseOrDispose { }
     }
 
     Refreshable(state.refreshing, viewModel::pullToRefresh) {
-        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 20.dp, top = 20.dp, end = 20.dp, bottom = 96.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             item { PageHeading("Wishlist", state.subtitle, action = { SessionAction(onLogout) }) }
+            // Search leads; genre and format live in the Filtros sheet.
             item {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterMenu("Gênero", state.genres.map { it.id to it.name }, state.genreId, viewModel::setGenre)
-                    FilterMenu("Formato", listOf(BookFormat.Physical to "Físico", BookFormat.Digital to "Digital"), state.format, viewModel::setFormat)
-                    DeskSearchField(state.query, viewModel::setQuery, "⌕ título ou autor…", Modifier.fillMaxWidth())
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    DeskSearchField(state.query, viewModel::setQuery, "Buscar por título ou autor", Modifier.weight(1f))
+                    FiltersButton(listOfNotNull(state.genreId, state.format).size, { showFilters = true })
                 }
             }
             when (val load = state.books) {
@@ -74,6 +79,12 @@ fun WishlistScreen(
                     else -> items(state.visible, key = { it.id }) { book -> BookCard(book, onClick = { onOpenBook(book.id) }) }
                 }
             }
+        }
+    }
+    if (showFilters) {
+        FiltersSheet(onDismiss = { showFilters = false }, onClear = { viewModel.setGenre(null); viewModel.setFormat(null) }) {
+            FilterSection("Gênero", state.genres.map { it.id to it.name }, state.genreId, viewModel::setGenre)
+            FilterSection("Formato", listOf(BookFormat.Physical to "Físico", BookFormat.Digital to "Digital"), state.format, viewModel::setFormat)
         }
     }
 }

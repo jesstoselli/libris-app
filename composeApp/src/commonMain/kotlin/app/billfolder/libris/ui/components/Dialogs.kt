@@ -29,8 +29,9 @@ fun ConfirmDialog(message: String, confirmLabel: String, onConfirm: () -> Unit, 
         onDismissRequest = onDismiss,
         containerColor = Libris.paper,
         text = { Text(message, fontFamily = type.body, color = Libris.ink) },
-        confirmButton = { TextButton(onClick = onConfirm) { Text(confirmLabel, fontFamily = type.title, color = Libris.oxblood) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar", fontFamily = type.body, color = Libris.inkSoft) } },
+        // Every confirm here removes something, so it answers as the danger button.
+        confirmButton = { LibrisButton(confirmLabel, onConfirm, variant = ButtonVariant.Danger) },
+        dismissButton = { LibrisButton("Cancelar", onDismiss, variant = ButtonVariant.Secondary) },
     )
 }
 
@@ -70,11 +71,9 @@ fun LibrisDatePicker(initial: LocalDate?, max: LocalDate?, onPicked: (LocalDate)
         onDismissRequest = onDismiss,
         colors = colors,
         confirmButton = {
-            TextButton(onClick = { state.selectedDateMillis?.let { onPicked(dateFromPickerMillis(it)) }; onDismiss() }) {
-                Text("OK", color = Libris.oxblood)
-            }
+            LibrisButton("OK", { state.selectedDateMillis?.let { onPicked(dateFromPickerMillis(it)) }; onDismiss() }, variant = ButtonVariant.Quiet)
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar", color = Libris.inkSoft) } },
+        dismissButton = { LibrisButton("Cancelar", onDismiss, variant = ButtonVariant.Quiet) },
     ) {
         DatePicker(
             state,

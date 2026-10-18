@@ -27,6 +27,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import app.billfolder.libris.domain.model.BookOwnership
 import app.billfolder.libris.domain.repository.AuthRepository
+import app.billfolder.libris.ui.components.AddBookButton
 import app.billfolder.libris.ui.components.LibrisIcons
 import app.billfolder.libris.ui.components.LocalSnackbar
 import app.billfolder.libris.ui.components.RibbonBar
@@ -103,12 +104,18 @@ fun MainShell(auth: AuthRepository = koinInject()) {
                     RibbonItem("Acervo", LibrisIcons.Book, isOn(LibraryRoute::class) || (isOn(BookDetailRoute::class) && !wishlistDetail) || isOn(EditRoute::class) || isOn(GenresRoute::class)) { go(LibraryRoute) },
                     RibbonItem("Wishlist", LibrisIcons.Bookmark, isOn(WishlistRoute::class) || (isOn(BookDetailRoute::class) && wishlistDetail)) { go(WishlistRoute) },
                     RibbonItem("Números", LibrisIcons.Chart, isOn(StatsRoute::class)) { go(StatsRoute) },
-                    RibbonItem("Registrar", LibrisIcons.Plus, isOn(AddBookRoute::class)) { go(AddBookRoute) },
                 ),
             )
         }
-        // Above the ribbon (about 66 dp) plus whatever the system bar takes, so a message never hides behind navigation.
-        Box(Modifier.fillMaxSize().navigationBarsPadding().padding(bottom = 74.dp), contentAlignment = Alignment.BottomCenter) {
+        // Registrar floats over the three lists; on a form, a sheet or a sub-screen it would only cover content.
+        val showAdd = isOn(LibraryRoute::class) || isOn(WishlistRoute::class) || isOn(StatsRoute::class)
+        if (showAdd) {
+            Box(Modifier.fillMaxSize().navigationBarsPadding().padding(end = 20.dp, bottom = 82.dp), contentAlignment = Alignment.BottomEnd) {
+                AddBookButton({ go(AddBookRoute) })
+            }
+        }
+        // Above the ribbon (about 66 dp) plus whatever the system bar takes, and above the floating button when it is there.
+        Box(Modifier.fillMaxSize().navigationBarsPadding().padding(bottom = if (showAdd) 146.dp else 74.dp), contentAlignment = Alignment.BottomCenter) {
             SnackbarHost(snackbar) { data ->
                 Snackbar(data, containerColor = Libris.paper, contentColor = Libris.ink, actionColor = Libris.oxblood, shape = RectangleShape)
             }

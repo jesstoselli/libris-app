@@ -42,13 +42,13 @@ fun RibbonBar(items: List<RibbonItem>, modifier: Modifier = Modifier) {
     Row(
         modifier
             .fillMaxWidth()
-            .background(Brush.horizontalGradient(listOf(Color(0xFF591411), Libris.oxblood, Color(0xFF56110F))))
+            .background(Brush.horizontalGradient(listOf(Color(0xFF661715), Libris.oxblood, Color(0xFF641614))))
             .drawBehind {
                 drawLine(Libris.brass.copy(alpha = 0.42f), Offset(0f, 0f), Offset(size.width, 0f), strokeWidth = 1.dp.toPx())
                 var x = 2.dp.toPx()
                 while (x < size.width) {
-                    drawLine(Color.White.copy(alpha = 0.025f), Offset(x, 0f), Offset(x, size.height), strokeWidth = 1.dp.toPx())
-                    x += 3.dp.toPx()
+                    drawLine(Color.White.copy(alpha = 0.012f), Offset(x, 0f), Offset(x, size.height), strokeWidth = 1.dp.toPx())
+                    x += 4.dp.toPx()
                 }
             }
             .navigationBarsPadding()

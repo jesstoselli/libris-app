@@ -5,14 +5,13 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
@@ -39,24 +38,17 @@ fun Stamp(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     tone: Color = Libris.inkSoft,
-    quiet: Boolean = false,
 ) {
     val type = LocalLibrisType.current
-    val shape = RoundedCornerShape(3.dp)
-    val visual = if (quiet) {
+    val shape = RoundedCornerShape(2.dp)
+    val visual =
         Modifier
-            .background(Color.Transparent)
-            .drawBehind {
-                if (active) drawLine(Libris.brass, Offset(0f, size.height), Offset(size.width, size.height), 2.dp.toPx())
-            }
-            .padding(horizontal = 2.dp, vertical = 4.dp)
-    } else {
-        Modifier
+            .heightIn(min = ControlHeight)
             .background(if (active) Libris.oxblood else Libris.paper.copy(alpha = 0.92f), shape)
-            .border(2.dp, if (active) Libris.deskText else tone, shape)
-            .padding(horizontal = 10.dp, vertical = 5.dp)
-    }
-    // The 48 dp box takes the touch; the stamp itself stays tight around its label (and the quiet underline under it).
+            .border(1.5.dp, if (active) Libris.oxblood else tone, shape)
+            .padding(horizontal = 14.dp)
+            .wrapContentHeight(Alignment.CenterVertically)
+    // The 48 dp box takes the touch; the stamp is drawn at the shared control height.
     Box(
         modifier
             .heightIn(min = 48.dp)
@@ -65,14 +57,12 @@ fun Stamp(
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            label.uppercase(),
-            fontFamily = type.title,
-            fontWeight = FontWeight.SemiBold,
-            fontSize = 12.sp,
-            letterSpacing = 0.8.sp,
-            color = if (quiet) {
-                if (active) Libris.deskText else Libris.deskTextSoft.copy(alpha = 0.78f)
-            } else if (active) Libris.paper else tone,
+            // A control, so it speaks Yantramanav in sentence case.
+            label,
+            fontFamily = type.body,
+            fontWeight = FontWeight.Medium,
+            fontSize = 15.sp,
+            color = if (active) Libris.paper else tone,
             modifier = visual,
         )
     }

@@ -39,8 +39,12 @@ import app.billfolder.libris.domain.model.BookFormat
 import app.billfolder.libris.domain.model.BookStatus
 import app.billfolder.libris.ui.common.Load
 import app.billfolder.libris.ui.components.BookCard
+import app.billfolder.libris.ui.components.ButtonVariant
 import app.billfolder.libris.ui.components.DeskSearchField
-import app.billfolder.libris.ui.components.FilterMenu
+import app.billfolder.libris.ui.components.FilterSection
+import app.billfolder.libris.ui.components.FiltersButton
+import app.billfolder.libris.ui.components.FiltersSheet
+import app.billfolder.libris.ui.components.LibrisButton
 import app.billfolder.libris.ui.components.PageHeading
 import app.billfolder.libris.ui.components.PaperCard
 import app.billfolder.libris.ui.components.Refreshable
@@ -62,6 +66,7 @@ fun LibraryScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val type = LocalLibrisType.current
     var firstResume by remember { mutableStateOf(true) }
+    var showFilters by remember { mutableStateOf(false) }
     // Coming back from a book detail (status, logs, deletion) should show fresh data.
     LifecycleResumeEffect(Unit) {
         if (firstResume) firstResume = false else viewModel.refresh()
@@ -69,30 +74,13 @@ fun LibraryScreen(
     }
 
     Refreshable(state.refreshing, viewModel::pullToRefresh) {
-        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 20.dp, top = 20.dp, end = 20.dp, bottom = 96.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             item { PageHeading("Acervo de leituras", state.subtitle, action = { SessionAction(onLogout) }) }
+            // Search leads; status, genre and format live in the Filtros sheet.
             item {
-                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                    Stamp("Todos", state.status == null, { viewModel.setStatus(null) }, quiet = true)
-                    BookStatus.entries.forEach { s ->
-                        Stamp(STATUS_LABELS.getValue(s), state.status == s, { viewModel.setStatus(s) }, quiet = true)
-                    }
-                }
-            }
-            item {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FlowRow(verticalArrangement = Arrangement.spacedBy(8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), itemVerticalAlignment = Alignment.CenterVertically) {
-                        FilterMenu("Gênero", state.genres.map { it.id to it.name }, state.genreId, viewModel::setGenre)
-                        FilterMenu("Formato", listOf(BookFormat.Physical to "Físico", BookFormat.Digital to "Digital"), state.format, viewModel::setFormat)
-                        Text(
-                            "Gerenciar gêneros",
-                            fontFamily = type.body,
-                            fontSize = 12.sp,
-                            color = Libris.deskTextSoft,
-                            modifier = Modifier.clickable(onClick = onManageGenres).minimumInteractiveComponentSize(),
-                        )
-                    }
-                    DeskSearchField(state.query, viewModel::setQuery, "⌕ título ou autor…", Modifier.fillMaxWidth())
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    DeskSearchField(state.query, viewModel::setQuery, "Buscar por título ou autor", Modifier.weight(1f))
+                    FiltersButton(listOfNotNull(state.status, state.genreId, state.format).size, { showFilters = true })
                 }
             }
             when (val shown = state.shown) {
@@ -115,6 +103,17 @@ fun LibraryScreen(
                     }
                 }
             }
+        }
+    }
+    if (showFilters) {
+        FiltersSheet(
+            onDismiss = { showFilters = false },
+            onClear = { viewModel.setStatus(null); viewModel.setGenre(null); viewModel.setFormat(null) },
+        ) {
+            FilterSection("Situação", BookStatus.entries.map { it to STATUS_LABELS.getValue(it) }, state.status, viewModel::setStatus, allLabel = "Todas")
+            FilterSection("Gênero", state.genres.map { it.id to it.name }, state.genreId, viewModel::setGenre)
+            FilterSection("Formato", listOf(BookFormat.Physical to "Físico", BookFormat.Digital to "Digital"), state.format, viewModel::setFormat)
+            LibrisButton("Gerenciar gêneros", { showFilters = false; onManageGenres() }, variant = ButtonVariant.Quiet)
         }
     }
 }

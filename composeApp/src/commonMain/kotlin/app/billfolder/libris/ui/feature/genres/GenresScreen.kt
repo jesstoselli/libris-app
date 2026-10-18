@@ -27,7 +27,10 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.billfolder.libris.domain.model.Genre
 import app.billfolder.libris.ui.common.Load
+import app.billfolder.libris.ui.components.ButtonVariant
 import app.billfolder.libris.ui.components.ConfirmDialog
+import app.billfolder.libris.ui.components.LibrisButton
+import app.billfolder.libris.ui.components.LibrisIconButton
 import app.billfolder.libris.ui.components.LocalSnackbar
 import app.billfolder.libris.ui.components.PageHeading
 import app.billfolder.libris.ui.components.PaperCard
@@ -49,7 +52,7 @@ fun GenresScreen(onBack: () -> Unit, viewModel: GenresViewModel = koinViewModel(
 
     Refreshable(state.refreshing, viewModel::pullToRefresh) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text("‹ Voltar", fontFamily = type.body, color = Libris.deskText, modifier = Modifier.clickable(onClick = onBack).minimumInteractiveComponentSize())
+            LibrisButton("‹ Voltar", onBack, variant = ButtonVariant.Quiet, onDesk = true)
             PageHeading("Gêneros")
             PaperCard(Modifier.fillMaxWidth()) {
                 when (val load = state.genres) {
@@ -63,8 +66,8 @@ fun GenresScreen(onBack: () -> Unit, viewModel: GenresViewModel = koinViewModel(
                                 Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                                     Text(g.name, fontFamily = type.body, modifier = Modifier.weight(1f))
                                     Text("${g.bookCount} ${if (g.bookCount == 1) "livro" else "livros"}", fontFamily = type.body, fontSize = 13.sp, color = Libris.inkSoft)
-                                    Text("✎", color = Libris.inkSoft, modifier = Modifier.clickable { viewModel.clearRenameError(); renaming = g }.minimumInteractiveComponentSize())
-                                    Text("×", color = Libris.inkSoft, modifier = Modifier.clickable { deleting = g }.minimumInteractiveComponentSize())
+                                    LibrisIconButton("✎", "Renomear ${g.name}", { viewModel.clearRenameError(); renaming = g })
+                                    LibrisIconButton("×", "Apagar ${g.name}", { deleting = g })
                                 }
                                 if (index < load.value.lastIndex) {
                                     HorizontalDivider(color = Libris.paperShade.copy(alpha = 0.7f))
@@ -84,8 +87,8 @@ fun GenresScreen(onBack: () -> Unit, viewModel: GenresViewModel = koinViewModel(
             containerColor = Libris.paper,
             title = { Text("Renomear gênero", fontFamily = type.title, color = Libris.oxblood) },
             text = { RuledField("Nome", name, { name = it }, error = state.renameError) },
-            confirmButton = { TextButton(onClick = { viewModel.rename(g, name) }) { Text("Salvar", fontFamily = type.title, color = Libris.oxblood) } },
-            dismissButton = { TextButton(onClick = { renaming = null }) { Text("Cancelar", color = Libris.inkSoft) } },
+            confirmButton = { LibrisButton("Salvar", { viewModel.rename(g, name) }) },
+            dismissButton = { LibrisButton("Cancelar", { renaming = null }, variant = ButtonVariant.Secondary) },
         )
     }
     deleting?.let { g ->

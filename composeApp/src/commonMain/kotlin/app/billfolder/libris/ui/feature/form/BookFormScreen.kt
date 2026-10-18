@@ -10,12 +10,14 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -33,6 +35,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -44,6 +47,9 @@ import app.billfolder.libris.domain.model.BookOwnership
 import app.billfolder.libris.domain.model.BookStatus
 import app.billfolder.libris.domain.time.today
 import app.billfolder.libris.ui.components.BookCover
+import app.billfolder.libris.ui.components.ButtonVariant
+import app.billfolder.libris.ui.components.ControlHeight
+import app.billfolder.libris.ui.components.LibrisButton
 import app.billfolder.libris.ui.components.LibrisDatePicker
 import app.billfolder.libris.ui.components.LocalSnackbar
 import app.billfolder.libris.ui.components.PageHeading
@@ -132,10 +138,7 @@ fun BookFormScreen(
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             LinkText("Escolher da galeria") { picker.fromGallery() }
                             if (picker.cameraAvailable) LinkText("Fotografar a capa") { picker.fromCamera() }
-                            if (src != null) LinkText(
-                                "Remover capa",
-                                Libris.inkSoft
-                            ) { viewModel.removeCover() }
+                            if (src != null) LinkText("Remover capa") { viewModel.removeCover() }
                             if (state.uploading) Text(
                                 "Enviando capa…",
                                 fontFamily = type.body,
@@ -228,7 +231,7 @@ fun BookFormScreen(
                                 color = Libris.oxblood
                             )
                         }
-                        if (state.authors.size < 10) LinkText("+ autor") { viewModel.addAuthor() }
+                        if (state.authors.size < 10) LinkText("+ Autor") { viewModel.addAuthor() }
                     }
 
                     Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
@@ -461,37 +464,14 @@ private fun DateField(label: String, value: LocalDate?, onPick: () -> Unit, onCl
 }
 
 @Composable
-private fun LinkText(text: String, color: Color = Libris.oxblood, onClick: () -> Unit) {
-    Text(
-        text,
-        fontFamily = LocalLibrisType.current.body,
-        fontSize = 14.sp,
-        color = color,
-        modifier = Modifier.clickable(onClick = onClick).minimumInteractiveComponentSize()
-    )
-}
-
-/** The bordered label stays small; the 48 dp box around it takes the touch. */
-@Composable
-private fun SmallButton(text: String, enabled: Boolean = true, onClick: () -> Unit) {
-    Box(
-        Modifier.clickable(enabled = enabled, role = Role.Button, onClick = onClick).minimumInteractiveComponentSize(),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text,
-            fontFamily = LocalLibrisType.current.title,
-            fontSize = 13.sp,
-            color = if (enabled) Libris.oxblood else Libris.inkSoft.copy(alpha = 0.55f),
-            modifier = Modifier
-                .border(1.dp, if (enabled) Libris.brass else Libris.paperShade)
-                .padding(horizontal = 10.dp, vertical = 5.dp),
-        )
-    }
-}
+private fun LinkText(text: String, onClick: () -> Unit) = LibrisButton(text, onClick, variant = ButtonVariant.Quiet)
 
 @Composable
+private fun SmallButton(text: String, enabled: Boolean = true, onClick: () -> Unit) =
+    LibrisButton(text, onClick, variant = ButtonVariant.Secondary, enabled = enabled)
+
 /** One choice among several, or with [multi] a box of its own that can be ticked alongside others. */
+@Composable
 private fun Toggle(text: String, on: Boolean, multi: Boolean = false, onClick: () -> Unit) {
     val choice = if (multi) {
         Modifier.toggleable(value = on, role = Role.Checkbox, onValueChange = { onClick() })
@@ -499,17 +479,20 @@ private fun Toggle(text: String, on: Boolean, multi: Boolean = false, onClick: (
         Modifier.selectable(selected = on, role = Role.RadioButton, onClick = onClick)
     }
     Box(
-        choice.minimumInteractiveComponentSize(),
+        Modifier
+            .heightIn(min = ControlHeight)
+            .background(if (on) Libris.inkSoft else Color.Transparent, RoundedCornerShape(2.dp))
+            .border(1.dp, Libris.inkSoft, RoundedCornerShape(2.dp))
+            .then(choice)
+            .padding(horizontal = 16.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text,
-            fontFamily = LocalLibrisType.current.title,
-            fontSize = 14.sp,
-            color = if (on) Libris.paper else Libris.inkSoft,
-            modifier = Modifier.background(if (on) Libris.inkSoft else Color.Transparent)
-                .border(2.dp, Libris.inkSoft)
-                .padding(horizontal = 14.dp, vertical = 5.dp),
+            fontFamily = LocalLibrisType.current.body,
+            fontWeight = FontWeight.Medium,
+            fontSize = 15.sp,
+            color = if (on) Libris.paper else Libris.ink,
         )
     }
 }

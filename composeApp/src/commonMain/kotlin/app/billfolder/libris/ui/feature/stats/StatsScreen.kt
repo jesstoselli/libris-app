@@ -38,6 +38,8 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.billfolder.libris.domain.model.MonthStats
 import app.billfolder.libris.ui.common.Load
+import app.billfolder.libris.ui.components.ButtonVariant
+import app.billfolder.libris.ui.components.LibrisButton
 import app.billfolder.libris.ui.components.PageHeading
 import app.billfolder.libris.ui.components.PaperCard
 import app.billfolder.libris.ui.components.Refreshable
@@ -66,12 +68,12 @@ fun StatsScreen(
     }
 
     Refreshable(state.refreshing, viewModel::pullToRefresh) {
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 20.dp, top = 20.dp, end = 20.dp, bottom = 96.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 PageHeading("Números de ${state.year}", action = { SessionAction(onLogout) })
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Text("‹ ${state.year - 1}", fontFamily = type.body, color = Libris.deskTextSoft, modifier = Modifier.clickable { viewModel.goToYear(state.year - 1) }.minimumInteractiveComponentSize())
-                    Text("${state.year + 1} ›", fontFamily = type.body, color = Libris.deskTextSoft, modifier = Modifier.clickable { viewModel.goToYear(state.year + 1) }.minimumInteractiveComponentSize())
+                    LibrisButton("‹ ${state.year - 1}", { viewModel.goToYear(state.year - 1) }, variant = ButtonVariant.Quiet, onDesk = true)
+                    LibrisButton("${state.year + 1} ›", { viewModel.goToYear(state.year + 1) }, variant = ButtonVariant.Quiet, onDesk = true)
                 }
             }
             when (val load = state.stats) {
