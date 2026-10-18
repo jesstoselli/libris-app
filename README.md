@@ -4,8 +4,8 @@ App do Libris pra Android e iOS (Kotlin Multiplatform + Compose Multiplatform). 
 
 ## Módulos
 
-- `shared/`: modelos da API, cliente Ktor, sessão/tokens, datas. Testes: `./gradlew :shared:jvmTest`.
-- `composeApp/`: telas em Compose Multiplatform, tema, Koin; Keychain no iOS.
+- `shared/`: `domain` (modelos, interfaces de repositório, regras, erros, "hoje"), `data` (cliente Ktor + DTOs, sessão/tokens com Prefs no Android e Keychain no iOS, repositórios) e `di` (módulo Koin de dados). Testes: `./gradlew :shared:jvmTest`.
+- `composeApp/`: a apresentação, em `ui/` — `feature/` (tela + ViewModel de cada fluxo), `common/` (estado de carga, mensagens pt-BR), `format/` (datas pt-BR), `components/`, `theme/`, `nav/`, `platform/` e `di/` (ViewModels). As telas só conhecem `domain`.
 - `androidApp/`: app Android.
 - `iosApp/`: projeto Xcode que embute o framework `ComposeApp`.
 
