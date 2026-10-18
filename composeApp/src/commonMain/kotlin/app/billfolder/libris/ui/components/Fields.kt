@@ -45,7 +45,7 @@ fun RuledField(
 ) {
     val type = LocalLibrisType.current
     Column(modifier.fillMaxWidth()) {
-        Text(label, fontFamily = type.body, fontSize = 13.sp, color = Libris.inkSoft)
+        if (label.isNotEmpty()) Text(label, fontFamily = type.body, fontSize = 13.sp, color = Libris.inkSoft)
         Row(verticalAlignment = Alignment.CenterVertically) {
             BasicTextField(
                 value = value,

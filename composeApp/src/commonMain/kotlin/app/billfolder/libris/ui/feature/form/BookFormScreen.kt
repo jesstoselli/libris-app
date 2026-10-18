@@ -195,7 +195,8 @@ fun BookFormScreen(
                     )
 
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text(
+                        // One author: the field carries the label itself, so no empty label line is left behind.
+                        if (state.authors.size > 1) Text(
                             "Autor(es)",
                             fontFamily = type.body,
                             fontSize = 13.sp,
@@ -203,7 +204,7 @@ fun BookFormScreen(
                         )
                         state.authors.forEachIndexed { i, author ->
                             RuledField(
-                                if (state.authors.size > 1) "Autor ${i + 1}" else "",
+                                if (state.authors.size > 1) "Autor ${i + 1}" else "Autor(es)",
                                 author,
                                 { viewModel.onAuthor(i, it) },
                                 trailing = if (state.authors.size > 1) ({

@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -25,6 +26,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -122,22 +124,30 @@ private fun SheetDivider() = Box(Modifier.fillMaxWidth().height(1.dp).background
 private fun MonthBars(months: List<MonthStats>, selected: Int, onSelect: (Int) -> Unit) {
     val type = LocalLibrisType.current
     val max = months.maxOfOrNull { it.pagesRead } ?: 0
-    Row(Modifier.fillMaxWidth().height(170.dp).padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        months.forEach { m ->
-            val on = m.month == selected
-            Column(
-                Modifier.weight(1f).fillMaxHeight().selectable(selected = on, role = Role.Tab) { onSelect(m.month) }.semantics { contentDescription = "${monthName(m.month)}: ${m.pagesRead} páginas" },
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Text(if (m.pagesRead > 0) m.pagesRead.toString() else "", fontFamily = type.body, fontSize = 9.sp, color = Libris.inkSoft, maxLines = 1)
-                Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.BottomCenter) {
-                    val fraction = if (max == 0) 0f else m.pagesRead.toFloat() / max
-                    Box(Modifier.fillMaxWidth().fillMaxHeight(fraction).background(if (on) Libris.oxblood else Libris.brass))
+    // One label size for all twelve months, sized to the column: narrow screens with large text keep "jan" on one line
+    // and every axis tick at the same height.
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val column = (maxWidth - 4.dp * 11) / 12
+        val fontScale = LocalDensity.current.fontScale
+        val labelSize = minOf(11f, column.value * 0.55f / fontScale).sp
+        val valueSize = minOf(9f, column.value * 0.45f / fontScale).sp
+        Row(Modifier.fillMaxWidth().height(170.dp).padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            months.forEach { m ->
+                val on = m.month == selected
+                Column(
+                    Modifier.weight(1f).fillMaxHeight().selectable(selected = on, role = Role.Tab) { onSelect(m.month) }.semantics { contentDescription = "${monthName(m.month)}: ${m.pagesRead} páginas" },
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(if (m.pagesRead > 0) m.pagesRead.toString() else "", fontFamily = type.body, fontSize = valueSize, color = Libris.inkSoft, maxLines = 1, softWrap = false)
+                    Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.BottomCenter) {
+                        val fraction = if (max == 0) 0f else m.pagesRead.toFloat() / max
+                        Box(Modifier.fillMaxWidth().fillMaxHeight(fraction).background(if (on) Libris.oxblood else Libris.brass))
+                    }
+                    Box(Modifier.fillMaxWidth().height(1.5.dp).background(Libris.inkSoft))
+                    Text(monthShort(m.month), fontFamily = type.body, fontSize = labelSize, fontWeight = if (on) FontWeight.Bold else FontWeight.Normal, color = if (on) Libris.oxblood else Libris.inkSoft, textAlign = TextAlign.Center, maxLines = 1, softWrap = false)
+                    // The selected month is marked by shape too, not only by color.
+                    Box(Modifier.width(14.dp).height(2.dp).background(if (on) Libris.oxblood else Color.Transparent))
                 }
-                Box(Modifier.fillMaxWidth().height(1.5.dp).background(Libris.inkSoft))
-                Text(monthShort(m.month), fontFamily = type.body, fontSize = 11.sp, fontWeight = if (on) FontWeight.Bold else FontWeight.Normal, color = if (on) Libris.oxblood else Libris.inkSoft, textAlign = TextAlign.Center)
-                // The selected month is marked by shape too, not only by color.
-                Box(Modifier.width(14.dp).height(2.dp).background(if (on) Libris.oxblood else Color.Transparent))
             }
         }
     }
