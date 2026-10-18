@@ -235,7 +235,7 @@ private fun BookSheet(book: Book, viewModel: BookDetailViewModel) {
 
         if (book.ownership == BookOwnership.Owned) {
             Text(
-                "Progresso · pág. ${book.currentPage} de ${book.totalPages} (${book.percent}%)",
+                if (book.status == BookStatus.Read) "Progresso · Lido · ${book.totalPages} págs." else "Progresso · pág. ${book.currentPage} de ${book.totalPages} (${book.percent}%)",
                 fontFamily = type.body,
                 fontSize = 14.sp,
                 color = Libris.inkSoft
