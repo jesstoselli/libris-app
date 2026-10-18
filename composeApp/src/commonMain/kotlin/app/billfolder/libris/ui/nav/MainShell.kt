@@ -43,6 +43,7 @@ fun MainShell(session: AuthSession = koinInject()) {
     val nav = rememberNavController()
     val entry by nav.currentBackStackEntryAsState()
     val scope = rememberCoroutineScope()
+    val logout = { scope.launch { session.logout() }; Unit }
     fun isOn(route: KClass<*>) = entry?.destination?.hasRoute(route) == true
     val wishlistFicha = entry?.takeIf { it.destination.hasRoute(FichaRoute::class) }?.toRoute<FichaRoute>()?.fromWishlist == true
     fun go(route: Any) = nav.navigate(route) {
@@ -53,42 +54,55 @@ fun MainShell(session: AuthSession = koinInject()) {
 
     val snackbar = remember { SnackbarHostState() }
     CompositionLocalProvider(LocalSnackbar provides snackbar) {
-    Column(Modifier.fillMaxSize()) {
-        Box(Modifier.weight(1f).statusBarsPadding()) {
-            NavHost(nav, startDestination = AcervoRoute) {
-                composable<AcervoRoute> {
-                    AcervoScreen(onOpenBook = { nav.navigate(FichaRoute(it)) }, onRegister = { go(RegistrarRoute) }, onManageGenres = { nav.navigate(GenresRoute) })
-                }
-                composable<FichaRoute> { entry ->
-                    val id = entry.toRoute<FichaRoute>().id
-                    FichaScreen(id, onBack = { nav.popBackStack() }, onEdit = { nav.navigate(EditRoute(id)) })
-                }
-                composable<EditRoute> { entry ->
-                    BookFormScreen(entry.toRoute<EditRoute>().id, onSaved = { nav.popBackStack() }, onBack = { nav.popBackStack() })
-                }
-                composable<WishlistRoute> {
-                    WishlistScreen(onOpenBook = { nav.navigate(FichaRoute(it, fromWishlist = true)) }, onRegister = { go(RegistrarRoute) })
-                }
-                composable<NumerosRoute> { NumerosScreen() }
-                composable<GenresRoute> { GenresScreen(onBack = { nav.popBackStack() }) }
-                composable<RegistrarRoute> {
-                    BookFormScreen(null, onSaved = { book ->
-                        val target: Any = if (book.ownership == BookOwnership.Owned) FichaRoute(book.id) else WishlistRoute
-                        nav.navigate(target) { popUpTo(RegistrarRoute) { inclusive = true } }
-                    }, onBack = null)
+        Column(Modifier.fillMaxSize()) {
+            Box(Modifier.weight(1f).statusBarsPadding()) {
+                NavHost(nav, startDestination = AcervoRoute) {
+                    composable<AcervoRoute> {
+                        AcervoScreen(
+                            onOpenBook = { nav.navigate(FichaRoute(it)) },
+                            onRegister = { go(RegistrarRoute) },
+                            onManageGenres = { nav.navigate(GenresRoute) },
+                            onLogout = logout,
+                        )
+                    }
+                    composable<FichaRoute> { entry ->
+                        val id = entry.toRoute<FichaRoute>().id
+                        FichaScreen(id, onBack = { nav.popBackStack() }, onEdit = { nav.navigate(EditRoute(id)) })
+                    }
+                    composable<EditRoute> { entry ->
+                        BookFormScreen(entry.toRoute<EditRoute>().id, onSaved = { nav.popBackStack() }, onBack = { nav.popBackStack() })
+                    }
+                    composable<WishlistRoute> {
+                        WishlistScreen(
+                            onOpenBook = { nav.navigate(FichaRoute(it, fromWishlist = true)) },
+                            onRegister = { go(RegistrarRoute) },
+                            onLogout = logout,
+                        )
+                    }
+                    composable<NumerosRoute> { NumerosScreen(onLogout = logout) }
+                    composable<GenresRoute> { GenresScreen(onBack = { nav.popBackStack() }) }
+                    composable<RegistrarRoute> {
+                        BookFormScreen(
+                            null,
+                            onSaved = { book ->
+                                val target: Any = if (book.ownership == BookOwnership.Owned) FichaRoute(book.id) else WishlistRoute
+                                nav.navigate(target) { popUpTo(RegistrarRoute) { inclusive = true } }
+                            },
+                            onBack = null,
+                            onLogout = logout,
+                        )
+                    }
                 }
             }
+            RibbonBar(
+                listOf(
+                    RibbonItem("Acervo", LibrisIcons.Book, isOn(AcervoRoute::class) || (isOn(FichaRoute::class) && !wishlistFicha) || isOn(EditRoute::class) || isOn(GenresRoute::class)) { go(AcervoRoute) },
+                    RibbonItem("Wishlist", LibrisIcons.Bookmark, isOn(WishlistRoute::class) || (isOn(FichaRoute::class) && wishlistFicha)) { go(WishlistRoute) },
+                    RibbonItem("Números", LibrisIcons.Chart, isOn(NumerosRoute::class)) { go(NumerosRoute) },
+                    RibbonItem("Registrar", LibrisIcons.Plus, isOn(RegistrarRoute::class)) { go(RegistrarRoute) },
+                ),
+            )
         }
-        RibbonBar(
-            listOf(
-                RibbonItem("Acervo", LibrisIcons.Book, isOn(AcervoRoute::class) || (isOn(FichaRoute::class) && !wishlistFicha) || isOn(EditRoute::class) || isOn(GenresRoute::class)) { go(AcervoRoute) },
-                RibbonItem("Wishlist", LibrisIcons.Bookmark, isOn(WishlistRoute::class) || (isOn(FichaRoute::class) && wishlistFicha)) { go(WishlistRoute) },
-                RibbonItem("Números", LibrisIcons.Chart, isOn(NumerosRoute::class)) { go(NumerosRoute) },
-                RibbonItem("Registrar", LibrisIcons.Plus, isOn(RegistrarRoute::class)) { go(RegistrarRoute) },
-                RibbonItem("Sair", LibrisIcons.Exit, false) { scope.launch { session.logout() } },
-            ),
-        )
-    }
-    Box(Modifier.fillMaxSize().padding(bottom = 80.dp), contentAlignment = Alignment.BottomCenter) { SnackbarHost(snackbar) }
+        Box(Modifier.fillMaxSize().padding(bottom = 86.dp), contentAlignment = Alignment.BottomCenter) { SnackbarHost(snackbar) }
     }
 }

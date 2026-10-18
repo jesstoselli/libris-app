@@ -15,7 +15,7 @@ import androidx.compose.ui.unit.dp
 import app.billfolder.libris.ui.theme.Libris
 
 @Composable
-fun ProgressBar(percent: Int, modifier: Modifier = Modifier, height: Dp = 6.dp) {
+fun ProgressBar(percent: Int, modifier: Modifier = Modifier, height: Dp = 4.dp) {
     val fraction = percent.coerceIn(0, 100) / 100f
     Box(
         modifier

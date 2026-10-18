@@ -36,6 +36,8 @@ import app.billfolder.libris.shared.monthShort
 import app.billfolder.libris.ui.Load
 import app.billfolder.libris.ui.components.Refreshable
 import app.billfolder.libris.ui.components.Ficha
+import app.billfolder.libris.ui.components.PageHeading
+import app.billfolder.libris.ui.components.SessionAction
 import app.billfolder.libris.ui.theme.Libris
 import app.billfolder.libris.ui.theme.LocalLibrisType
 import org.koin.compose.viewmodel.koinViewModel
@@ -44,7 +46,10 @@ import org.koin.compose.viewmodel.koinViewModel
 fun thousands(n: Int): String = n.toString().reversed().chunked(3).joinToString(".").reversed()
 
 @Composable
-fun NumerosScreen(viewModel: NumerosViewModel = koinViewModel()) {
+fun NumerosScreen(
+    onLogout: () -> Unit,
+    viewModel: NumerosViewModel = koinViewModel(),
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val type = LocalLibrisType.current
     var firstResume by remember { mutableStateOf(true) }
@@ -55,8 +60,8 @@ fun NumerosScreen(viewModel: NumerosViewModel = koinViewModel()) {
 
     Refreshable(state.refreshing, viewModel::pullToRefresh) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Column {
-                Text("Números de ${state.year}", fontFamily = type.title, fontWeight = FontWeight.ExtraBold, fontSize = 30.sp, color = Libris.deskText)
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                PageHeading("Números de ${state.year}", action = { SessionAction(onLogout) })
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     Text("‹ ${state.year - 1}", fontFamily = type.body, color = Libris.deskTextSoft, modifier = Modifier.clickable { viewModel.goToYear(state.year - 1) }.padding(vertical = 6.dp))
                     Text("${state.year + 1} ›", fontFamily = type.body, color = Libris.deskTextSoft, modifier = Modifier.clickable { viewModel.goToYear(state.year + 1) }.padding(vertical = 6.dp))
@@ -67,13 +72,13 @@ fun NumerosScreen(viewModel: NumerosViewModel = koinViewModel()) {
                 is Load.Failed -> Text(load.message, fontFamily = type.body, color = Libris.deskText)
                 is Load.Loaded -> {
                     val s = load.value
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Kpi(thousands(s.booksFinished), "terminados no ano", Modifier.weight(1f))
-                        Kpi(thousands(s.pagesRead), "páginas no ano", Modifier.weight(1f))
-                        Kpi(thousands(s.readingNow), "em leitura agora", Modifier.weight(1f))
-                    }
-                    Ficha(Modifier.fillMaxWidth()) {
-                        Column {
+                    Ficha(Modifier.fillMaxWidth(), padding = 20.dp) {
+                        Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                                Kpi(thousands(s.booksFinished), "terminados no ano", Modifier.weight(1f))
+                                Kpi(thousands(s.pagesRead), "páginas no ano", Modifier.weight(1f))
+                                Kpi(thousands(s.readingNow), "em leitura agora", Modifier.weight(1f))
+                            }
                             Text("Páginas lidas por mês · toque num mês", fontFamily = type.body, fontSize = 13.sp, color = Libris.inkSoft)
                             MonthBars(s.months, state.month, viewModel::selectMonth)
                         }
@@ -131,16 +136,14 @@ private fun MonthBars(months: List<MonthStats>, selected: Int, onSelect: (Int) -
 @Composable
 private fun Kpi(value: String, label: String, modifier: Modifier) {
     val type = LocalLibrisType.current
-    Ficha(modifier, padding = 12.dp) {
-        Column {
-            Text(value, fontFamily = type.title, fontWeight = FontWeight.ExtraBold, fontSize = 28.sp, color = Libris.oxblood)
-            Text(label.uppercase(), fontFamily = type.body, fontSize = 10.sp, letterSpacing = 0.6.sp, lineHeight = 12.sp, color = Libris.inkSoft)
-        }
+    Column(modifier) {
+        Text(value, fontFamily = type.title, fontWeight = FontWeight.Bold, fontSize = 28.sp, color = Libris.oxblood)
+        Text(label, fontFamily = type.body, fontSize = 10.sp, lineHeight = 12.sp, color = Libris.inkSoft)
     }
 }
 
 @Composable
-private fun Section(text: String) = Text(text.uppercase(), fontFamily = LocalLibrisType.current.title, fontSize = 13.sp, letterSpacing = 1.2.sp, color = Libris.oxblood)
+private fun Section(text: String) = Text(text, fontFamily = LocalLibrisType.current.title, fontSize = 14.sp, color = Libris.oxblood)
 
 @Composable
 private fun DetailRow(title: String, sub: String?, trailing: String) {

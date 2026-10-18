@@ -16,7 +16,7 @@ import app.billfolder.libris.ui.generated.resources.ledger_bg
 import app.billfolder.libris.ui.theme.Libris
 import org.jetbrains.compose.resources.imageResource
 
-/** The library desk: ledger texture tiled over the desk colour, under a dark veil so what sits on it stays legible. */
+/** One quiet ledger field: present enough to set the scene, never loud enough to compete with the books. */
 @Composable
 fun Desk(modifier: Modifier = Modifier, content: @Composable BoxScope.() -> Unit) {
     val texture = imageResource(Res.drawable.ledger_bg)
@@ -26,7 +26,7 @@ fun Desk(modifier: Modifier = Modifier, content: @Composable BoxScope.() -> Unit
             .fillMaxSize()
             .background(Libris.desk)
             .drawBehind {
-                drawRect(brush, alpha = 0.55f)
+                drawRect(brush, alpha = 0.38f)
                 drawRect(Libris.deskOverlay)
             },
         content = content,

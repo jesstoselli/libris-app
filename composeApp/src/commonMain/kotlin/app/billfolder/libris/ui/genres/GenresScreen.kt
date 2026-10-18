@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -57,12 +58,15 @@ fun GenresScreen(onBack: () -> Unit, viewModel: GenresViewModel = koinViewModel(
                         Text("Nenhum gênero ainda. Eles aparecem quando você cadastra livros.", fontFamily = type.body, color = Libris.inkSoft)
                     } else {
                         Column {
-                            load.value.forEach { g ->
+                            load.value.forEachIndexed { index, g ->
                                 Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                                     Text(g.name, fontFamily = type.body, modifier = Modifier.weight(1f))
                                     Text("${g.bookCount} ${if (g.bookCount == 1) "livro" else "livros"}", fontFamily = type.body, fontSize = 13.sp, color = Libris.inkSoft)
                                     Text("✎", color = Libris.inkSoft, modifier = Modifier.clickable { viewModel.clearRenameError(); renaming = g }.padding(10.dp))
                                     Text("×", color = Libris.inkSoft, modifier = Modifier.clickable { deleting = g }.padding(10.dp))
+                                }
+                                if (index < load.value.lastIndex) {
+                                    HorizontalDivider(color = Libris.paperShade.copy(alpha = 0.7f))
                                 }
                             }
                         }

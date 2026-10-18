@@ -50,11 +50,12 @@ fun LoginScreen(viewModel: LoginViewModel = koinViewModel()) {
     val type = LocalLibrisType.current
 
     Box(Modifier.fillMaxSize().imePadding().padding(24.dp), contentAlignment = Alignment.Center) {
-        Ficha(Modifier.widthIn(max = 420.dp).fillMaxWidth(), padding = 24.dp) {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Ficha(Modifier.widthIn(max = 420.dp).fillMaxWidth(), padding = 26.dp, foldedCorner = true) {
+            Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
                 Column {
-                    Text("Libris", fontFamily = type.title, fontWeight = FontWeight.ExtraBold, fontSize = 40.sp, color = Libris.oxblood)
+                    Text("Libris", fontFamily = type.title, fontWeight = FontWeight.Bold, fontSize = 40.sp, letterSpacing = (-0.5).sp, color = Libris.oxblood)
                     Text("Seu acervo de leituras", fontFamily = type.body, fontWeight = FontWeight.Light, color = Libris.inkSoft)
+                    Box(Modifier.padding(top = 10.dp).fillMaxWidth(0.18f).height(2.dp).background(Libris.brass))
                 }
                 RuledField(
                     label = "E-mail",

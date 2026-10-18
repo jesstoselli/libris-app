@@ -1,12 +1,14 @@
 package app.billfolder.libris.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -17,6 +19,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.VisualTransformation
@@ -68,11 +72,42 @@ fun PrimaryButton(label: String, enabled: Boolean, onClick: () -> Unit, modifier
         modifier
             .fillMaxWidth()
             .alpha(if (enabled) 1f else 0.5f)
+            .heightIn(min = 48.dp)
             .background(Libris.oxblood)
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
-            .padding(vertical = 12.dp),
+            .padding(vertical = 11.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Text(label.uppercase(), fontFamily = type.title, fontSize = 16.sp, letterSpacing = 1.3.sp, color = Libris.paper)
+        Text(label, fontFamily = type.title, fontSize = 16.sp, color = Libris.paper)
+    }
+}
+
+@Composable
+fun DeskSearchField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    modifier: Modifier = Modifier,
+) {
+    val type = LocalLibrisType.current
+    Box(
+        modifier
+            .heightIn(min = 44.dp)
+            .background(Color(0x61171810))
+            .border(1.dp, Libris.deskTextSoft.copy(alpha = 0.24f), RectangleShape)
+            .padding(horizontal = 10.dp, vertical = 9.dp),
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        if (value.isEmpty()) {
+            Text(placeholder, fontFamily = type.body, fontSize = 14.sp, color = Libris.deskTextSoft.copy(alpha = 0.78f))
+        }
+        BasicTextField(
+            value = value,
+            onValueChange = onValueChange,
+            singleLine = true,
+            textStyle = TextStyle(fontFamily = type.body, fontSize = 14.sp, color = Libris.deskText),
+            cursorBrush = SolidColor(Libris.brass),
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 }
