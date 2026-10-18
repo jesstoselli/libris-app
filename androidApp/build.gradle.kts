@@ -1,7 +1,17 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeCompiler)
 }
+
+val PRODUCTION_API_URL = "https://libris-api.billfolder.app"
+
+/** `libris.apiUrl=http://10.0.2.2:5090` in local.properties points debug builds at the API running on this Mac (emulator only). */
+val localApiUrl: String? = rootProject.file("local.properties").takeIf { it.exists() }
+    ?.let { file -> Properties().apply { file.inputStream().use(::load) } }
+    ?.getProperty("libris.apiUrl")
+    ?.takeIf { it.isNotBlank() }
 
 android {
     namespace = "app.billfolder.libris.android"
@@ -19,11 +29,11 @@ android {
 
     buildTypes {
         debug {
-            // The emulator reaches the Mac's localhost through 10.0.2.2.
-            buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:5090\"")
+            // Debug builds run on real phones too, where a local address goes nowhere; the local API is opt-in.
+            buildConfigField("String", "API_BASE_URL", "\"${localApiUrl ?: PRODUCTION_API_URL}\"")
         }
         release {
-            buildConfigField("String", "API_BASE_URL", "\"https://libris-api.billfolder.app\"")
+            buildConfigField("String", "API_BASE_URL", "\"$PRODUCTION_API_URL\"")
             isMinifyEnabled = false
             signingConfig = signingConfigs.getByName("debug")
         }

@@ -12,7 +12,7 @@ App do Libris pra Android e iOS (Kotlin Multiplatform + Compose Multiplatform). 
 ## Android
 
 ```bash
-./gradlew :androidApp:assembleDebug     # API local (http://10.0.2.2:5090, só no emulador)
+./gradlew :androidApp:assembleDebug     # produção; pra API local no emulador, ponha libris.apiUrl=http://10.0.2.2:5090 no local.properties
 ./gradlew :androidApp:assembleRelease   # produção (libris-api.billfolder.app)
 ```
 
