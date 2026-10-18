@@ -7,6 +7,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -34,10 +35,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.billfolder.libris.domain.model.BookFormat
 import app.billfolder.libris.domain.model.BookStatus
 import app.billfolder.libris.ui.common.Load
 import app.billfolder.libris.ui.components.BookCard
 import app.billfolder.libris.ui.components.DeskSearchField
+import app.billfolder.libris.ui.components.FilterMenu
 import app.billfolder.libris.ui.components.PageHeading
 import app.billfolder.libris.ui.components.PaperCard
 import app.billfolder.libris.ui.components.Refreshable
@@ -78,8 +81,9 @@ fun LibraryScreen(
             }
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        GenreMenu(state.genres.map { it.id to it.name }, state.genreId, viewModel::setGenre)
+                    FlowRow(verticalArrangement = Arrangement.spacedBy(8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), itemVerticalAlignment = Alignment.CenterVertically) {
+                        FilterMenu("Gênero", state.genres.map { it.id to it.name }, state.genreId, viewModel::setGenre)
+                        FilterMenu("Formato", listOf(BookFormat.Physical to "Físico", BookFormat.Digital to "Digital"), state.format, viewModel::setFormat)
                         Text(
                             "Gerenciar gêneros",
                             fontFamily = type.body,
@@ -110,33 +114,6 @@ fun LibraryScreen(
                         BookCard(book, onClick = { onOpenBook(book.id) })
                     }
                 }
-            }
-        }
-    }
-}
-
-@Composable
-fun GenreMenu(genres: List<Pair<String, String>>, selected: String?, onSelect: (String?) -> Unit) {
-    val type = LocalLibrisType.current
-    var open by remember { mutableStateOf(false) }
-    val label = genres.firstOrNull { it.first == selected }?.second ?: "todos"
-    Box {
-        Text(
-            "Gênero: $label ▾",
-            fontFamily = type.body,
-            fontSize = 14.sp,
-            color = Libris.deskText,
-            modifier = Modifier
-                .heightIn(min = 44.dp)
-                .background(Color(0x61171810))
-                .border(1.dp, Libris.deskTextSoft.copy(alpha = 0.24f), RectangleShape)
-                .clickable { open = true }
-                .padding(horizontal = 10.dp, vertical = 10.dp),
-        )
-        DropdownMenu(open, onDismissRequest = { open = false }, containerColor = Libris.paper) {
-            DropdownMenuItem(text = { Text("Todos", fontFamily = type.body) }, onClick = { onSelect(null); open = false })
-            genres.forEach { (id, name) ->
-                DropdownMenuItem(text = { Text(name, fontFamily = type.body) }, onClick = { onSelect(id); open = false })
             }
         }
     }

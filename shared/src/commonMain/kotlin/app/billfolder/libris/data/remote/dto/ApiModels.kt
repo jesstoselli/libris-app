@@ -25,6 +25,12 @@ enum class BookStatusDto(val wire: String) {
     @SerialName("abandoned") Abandoned("abandoned"),
 }
 
+@Serializable
+enum class BookFormatDto {
+    @SerialName("physical") Physical,
+    @SerialName("digital") Digital,
+}
+
 @Serializable data class GenreRefDto(val id: String, val name: String)
 
 @Serializable data class GenreDto(val id: String, val name: String, val bookCount: Int)
@@ -49,6 +55,8 @@ data class BookDto(
     val addedAt: String,
     val currentPage: Int = 0,
     val percent: Int = 0,
+    /** Absent from APIs older than formats; every book was physical then. */
+    val formats: List<BookFormatDto> = listOf(BookFormatDto.Physical),
 )
 
 @Serializable
@@ -67,6 +75,7 @@ data class CreateBookRequest(
     val startedAt: String?,
     val finishedAt: String?,
     val today: String,
+    val formats: List<BookFormatDto>,
 )
 
 @Serializable
@@ -82,6 +91,7 @@ data class UpdateBookRequest(
     val genres: List<String>,
     val startedAt: String?,
     val finishedAt: String?,
+    val formats: List<BookFormatDto>,
 )
 
 data class BookListQuery(
@@ -89,6 +99,7 @@ data class BookListQuery(
     val status: BookStatusDto? = null,
     val genreId: String? = null,
     val q: String? = null,
+    val format: BookFormatDto? = null,
 )
 
 @Serializable data class ReadingLogDto(val id: String, val date: String, val page: Int, val fromPage: Int, val pagesRead: Int)

@@ -9,9 +9,11 @@ import app.billfolder.libris.data.remote.json
 import app.billfolder.libris.data.remote.user
 import app.billfolder.libris.domain.model.BookDraft
 import app.billfolder.libris.domain.model.BookFilter
+import app.billfolder.libris.domain.model.BookFormat
 import app.billfolder.libris.domain.model.BookOwnership
 import app.billfolder.libris.domain.model.BookStatus
 import app.billfolder.libris.domain.model.LookupSource
+import io.ktor.http.HttpMethod
 import io.ktor.http.content.TextContent
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
@@ -73,5 +75,26 @@ class RemoteRepositoriesTest {
 
         assertEquals(listOf(LookupSource.GoogleBooks, LookupSource.OpenLibrary), found.sources)
         assertEquals(listOf("Ficção"), found.genres)
+    }
+
+    @Test
+    fun formats_defaultToPhysical_whenTheApiDoesNotSendThem() = runTest {
+        val server = FakeServer { json(book) }
+
+        assertEquals(listOf(BookFormat.Physical), books(server).get("b1").formats)
+    }
+
+    @Test
+    fun formats_travelBothWays() = runTest {
+        val digital = book.replace("\"percent\":100", "\"percent\":100,\"formats\":[\"digital\"]")
+        val server = FakeServer { req -> if (req.method == HttpMethod.Get && req.url.encodedPath == "/v1/books") json("[$digital]") else json(digital) }
+        val repo = books(server)
+
+        assertEquals(listOf(BookFormat.Digital), repo.get("b1").formats)
+        repo.list(BookFilter(format = BookFormat.Digital))
+        assertEquals("digital", server.requests.last().url.parameters["format"])
+        repo.create(BookDraft("T", listOf("A"), formats = setOf(BookFormat.Digital, BookFormat.Physical)))
+        val body = (server.requests.last().body as TextContent).text
+        assertEquals(true, body.contains(""""formats":["physical","digital"]"""), body)
     }
 }

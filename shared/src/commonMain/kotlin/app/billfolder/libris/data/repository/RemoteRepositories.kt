@@ -35,7 +35,7 @@ class RemoteBookRepository(
     private val today: () -> LocalDate = { localToday() },
 ) : BookRepository {
     override suspend fun list(filter: BookFilter): List<Book> {
-        val query = BookListQuery(filter.ownership?.toDto(), filter.status?.toDto(), filter.genreId, filter.query?.trim()?.ifBlank { null })
+        val query = BookListQuery(filter.ownership?.toDto(), filter.status?.toDto(), filter.genreId, filter.query?.trim()?.ifBlank { null }, filter.format?.toDto())
         return session.authorized { api.listBooks(it, query) }.map { it.toDomain(api::coverSrc) }
     }
 

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.billfolder.libris.domain.model.Book
 import app.billfolder.libris.domain.model.BookFilter
+import app.billfolder.libris.domain.model.BookFormat
 import app.billfolder.libris.domain.model.BookOwnership
 import app.billfolder.libris.domain.model.Genre
 import app.billfolder.libris.domain.repository.BookRepository
@@ -25,6 +26,7 @@ data class WishlistState(
     val refreshing: Boolean = false,
     val genres: List<Genre> = emptyList(),
     val genreId: String? = null,
+    val format: BookFormat? = null,
     val query: String = "",
 ) {
     val subtitle get() = books.valueOrNull?.let { "${it.size} ${if (it.size == 1) "livro" else "livros"} pra procurar" }
@@ -35,6 +37,7 @@ data class WishlistState(
             val term = fold(query.trim())
             return books.valueOrNull.orEmpty().filter { b ->
                 (genreId == null || b.genres.any { it.id == genreId }) &&
+                    (format == null || format in b.formats) &&
                     (term.isEmpty() || fold(b.title).contains(term) || b.authors.any { fold(it).contains(term) })
             }
         }
@@ -49,6 +52,8 @@ class WishlistViewModel(private val books: BookRepository, private val genres: G
     }
 
     fun setGenre(id: String?) = _state.update { it.copy(genreId = id) }
+
+    fun setFormat(format: BookFormat?) = _state.update { it.copy(format = format) }
 
     fun setQuery(q: String) = _state.update { it.copy(query = q) }
 

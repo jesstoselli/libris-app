@@ -5,6 +5,7 @@ import app.billfolder.libris.data.remote.dto.AcquireBody
 import app.billfolder.libris.data.remote.dto.ApiJson
 import app.billfolder.libris.data.remote.dto.AuthBody
 import app.billfolder.libris.data.remote.dto.BookDto
+import app.billfolder.libris.data.remote.dto.BookFormatDto
 import app.billfolder.libris.data.remote.dto.BookListQuery
 import app.billfolder.libris.data.remote.dto.BookOwnershipDto
 import app.billfolder.libris.data.remote.dto.BookStatusDto
@@ -79,6 +80,7 @@ class LibrisApi(private val http: HttpClient, val baseUrl: String) {
                 query.status?.let { parameter("status", it.wire) }
                 query.genreId?.takeIf { it.isNotBlank() }?.let { parameter("genreId", it) }
                 query.q?.takeIf { it.isNotBlank() }?.let { parameter("q", it) }
+                query.format?.let { parameter("format", if (it == BookFormatDto.Physical) "physical" else "digital") }
             }
         }.body()
 

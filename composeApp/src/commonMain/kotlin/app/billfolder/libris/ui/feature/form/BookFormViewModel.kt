@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.billfolder.libris.domain.model.Book
 import app.billfolder.libris.domain.model.BookDraft
+import app.billfolder.libris.domain.model.BookFormat
 import app.billfolder.libris.domain.model.BookLookup
 import app.billfolder.libris.domain.model.BookOwnership
 import app.billfolder.libris.domain.model.BookStatus
@@ -41,6 +42,7 @@ data class BookFormState(
     val publisher: String = "",
     val synopsis: String = "",
     val genres: List<String> = emptyList(),
+    val formats: Set<BookFormat> = setOf(BookFormat.Physical),
     val ownership: BookOwnership = BookOwnership.Owned,
     val status: BookStatus = BookStatus.NotStarted,
     val startedAt: LocalDate? = null,
@@ -147,6 +149,12 @@ class BookFormViewModel(
     fun onPublisher(v: String) = _state.update { it.copy(publisher = v) }
     fun onSynopsis(v: String) = _state.update { it.copy(synopsis = v) }
     fun onOwnership(v: BookOwnership) = _state.update { it.copy(ownership = v) }
+
+    /** A book always has at least one format, so the last one can't be unticked. */
+    fun toggleFormat(format: BookFormat) = _state.update { s ->
+        val next = if (format in s.formats) s.formats - format else s.formats + format
+        if (next.isEmpty()) s else s.copy(formats = next)
+    }
     fun onStatus(v: BookStatus) = _state.update { it.copy(status = v) }
     fun onStartedAt(v: LocalDate?) = _state.update { it.copy(startedAt = v) }
     fun onFinishedAt(v: LocalDate?) = _state.update { it.copy(finishedAt = v) }
@@ -256,6 +264,7 @@ class BookFormViewModel(
             publisher = book.publisher.orEmpty(),
             synopsis = book.synopsis.orEmpty(),
             genres = book.genres.map { g -> g.name },
+            formats = book.formats.toSet(),
             startedAt = book.startedAt,
             finishedAt = book.finishedAt,
             coverId = book.coverId,
@@ -277,6 +286,7 @@ private fun BookFormState.toDraft(coverId: String?) = BookDraft(
     synopsis = synopsis.orNull(),
     coverId = coverId,
     genres = genres,
+    formats = formats,
     ownership = ownership,
     status = if (ownership == BookOwnership.Owned) status else null,
     startedAt = startedAt.takeIf { showStart },

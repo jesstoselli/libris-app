@@ -1,6 +1,7 @@
 package app.billfolder.libris.data.remote
 
 import app.billfolder.libris.data.remote.dto.BookDto
+import app.billfolder.libris.data.remote.dto.BookFormatDto
 import app.billfolder.libris.data.remote.dto.BookOwnershipDto
 import app.billfolder.libris.data.remote.dto.BookStatusDto
 import app.billfolder.libris.data.remote.dto.CoverDto
@@ -14,6 +15,7 @@ import app.billfolder.libris.data.remote.dto.UserDto
 import app.billfolder.libris.data.remote.dto.YearStatsDto
 import app.billfolder.libris.domain.model.Book
 import app.billfolder.libris.domain.model.BookDraft
+import app.billfolder.libris.domain.model.BookFormat
 import app.billfolder.libris.domain.model.BookLookup
 import app.billfolder.libris.domain.model.BookOwnership
 import app.billfolder.libris.domain.model.BookStatus
@@ -43,6 +45,18 @@ internal fun BookOwnership.toDto() = when (this) {
     BookOwnership.Owned -> BookOwnershipDto.Owned
     BookOwnership.Wishlist -> BookOwnershipDto.Wishlist
 }
+
+internal fun BookFormatDto.toDomain() = when (this) {
+    BookFormatDto.Physical -> BookFormat.Physical
+    BookFormatDto.Digital -> BookFormat.Digital
+}
+
+internal fun BookFormat.toDto() = when (this) {
+    BookFormat.Physical -> BookFormatDto.Physical
+    BookFormat.Digital -> BookFormatDto.Digital
+}
+
+private fun Collection<BookFormat>.toWire() = sortedBy { it.ordinal }.map { it.toDto() }
 
 internal fun BookStatusDto.toDomain() = when (this) {
     BookStatusDto.NotStarted -> BookStatus.NotStarted
@@ -80,15 +94,16 @@ internal fun BookDto.toDomain(coverSrc: (String?) -> String?) = Book(
     addedAt = addedAt.toDate(),
     currentPage = currentPage,
     percent = percent,
+    formats = formats.map { it.toDomain() }.distinct().sortedBy { it.ordinal },
 )
 
 internal fun BookDraft.toCreate(today: LocalDate) = CreateBookRequest(
     title, authors, isbn, totalPages, publisher, publishedYear, synopsis, coverId, genres,
-    ownership.toDto(), status?.toDto(), startedAt?.toString(), finishedAt?.toString(), today.toString(),
+    ownership.toDto(), status?.toDto(), startedAt?.toString(), finishedAt?.toString(), today.toString(), formats.toWire(),
 )
 
 internal fun BookDraft.toUpdate() = UpdateBookRequest(
-    title, authors, isbn, totalPages, publisher, publishedYear, synopsis, coverId, genres, startedAt?.toString(), finishedAt?.toString(),
+    title, authors, isbn, totalPages, publisher, publishedYear, synopsis, coverId, genres, startedAt?.toString(), finishedAt?.toString(), formats.toWire(),
 )
 
 internal fun ReadingLogDto.toDomain() = ReadingLog(id, date.toDate(), page, fromPage, pagesRead)

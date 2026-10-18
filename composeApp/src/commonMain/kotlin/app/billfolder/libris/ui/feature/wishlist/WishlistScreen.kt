@@ -20,14 +20,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.billfolder.libris.domain.model.BookFormat
 import app.billfolder.libris.ui.common.Load
 import app.billfolder.libris.ui.components.BookCard
 import app.billfolder.libris.ui.components.DeskSearchField
+import app.billfolder.libris.ui.components.FilterMenu
 import app.billfolder.libris.ui.components.PageHeading
 import app.billfolder.libris.ui.components.PaperCard
 import app.billfolder.libris.ui.components.Refreshable
 import app.billfolder.libris.ui.components.SessionAction
-import app.billfolder.libris.ui.feature.library.GenreMenu
 import app.billfolder.libris.ui.theme.Libris
 import app.billfolder.libris.ui.theme.LocalLibrisType
 import org.koin.compose.viewmodel.koinViewModel
@@ -52,7 +53,8 @@ fun WishlistScreen(
             item { PageHeading("Wishlist", state.subtitle, action = { SessionAction(onLogout) }) }
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    GenreMenu(state.genres.map { it.id to it.name }, state.genreId, viewModel::setGenre)
+                    FilterMenu("Gênero", state.genres.map { it.id to it.name }, state.genreId, viewModel::setGenre)
+                    FilterMenu("Formato", listOf(BookFormat.Physical to "Físico", BookFormat.Digital to "Digital"), state.format, viewModel::setFormat)
                     DeskSearchField(state.query, viewModel::setQuery, "⌕ título ou autor…", Modifier.fillMaxWidth())
                 }
             }

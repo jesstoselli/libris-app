@@ -3,8 +3,6 @@ package app.billfolder.libris.ui.feature.form
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.ui.semantics.Role
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +14,8 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -32,12 +32,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.billfolder.libris.domain.model.Book
+import app.billfolder.libris.domain.model.BookFormat
 import app.billfolder.libris.domain.model.BookOwnership
 import app.billfolder.libris.domain.model.BookStatus
 import app.billfolder.libris.domain.time.today
@@ -52,6 +54,7 @@ import app.billfolder.libris.ui.components.STATUS_LABELS
 import app.billfolder.libris.ui.components.SessionAction
 import app.billfolder.libris.ui.components.Stamp
 import app.billfolder.libris.ui.format.formatDate
+import app.billfolder.libris.ui.format.label
 import app.billfolder.libris.ui.platform.IsbnScanner
 import app.billfolder.libris.ui.platform.rememberCoverPicker
 import app.billfolder.libris.ui.theme.Libris
@@ -265,6 +268,14 @@ fun BookFormScreen(
                                 ) { viewModel.onOwnership(BookOwnership.Wishlist) }
                             }
                         }
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text("Formato", fontFamily = type.title, fontSize = 16.sp)
+                            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                BookFormat.entries.forEach { f ->
+                                    Toggle(f.label(), f in state.formats, multi = true) { viewModel.toggleFormat(f) }
+                                }
+                            }
+                        }
                         if (state.ownership == BookOwnership.Owned) {
                             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text("Situação", fontFamily = type.title, fontSize = 16.sp)
@@ -470,9 +481,15 @@ private fun SmallButton(text: String, enabled: Boolean = true, onClick: () -> Un
 }
 
 @Composable
-private fun Toggle(text: String, on: Boolean, onClick: () -> Unit) {
+/** One choice among several, or with [multi] a box of its own that can be ticked alongside others. */
+private fun Toggle(text: String, on: Boolean, multi: Boolean = false, onClick: () -> Unit) {
+    val choice = if (multi) {
+        Modifier.toggleable(value = on, role = Role.Checkbox, onValueChange = { onClick() })
+    } else {
+        Modifier.selectable(selected = on, role = Role.RadioButton, onClick = onClick)
+    }
     Box(
-        Modifier.selectable(selected = on, role = Role.RadioButton, onClick = onClick).minimumInteractiveComponentSize(),
+        choice.minimumInteractiveComponentSize(),
         contentAlignment = Alignment.Center,
     ) {
         Text(

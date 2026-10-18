@@ -53,6 +53,7 @@ import app.billfolder.libris.ui.components.RuledField
 import app.billfolder.libris.ui.components.STATUS_LABELS
 import app.billfolder.libris.ui.components.Stamp
 import app.billfolder.libris.ui.format.formatDate
+import app.billfolder.libris.ui.format.formatName
 import app.billfolder.libris.ui.format.formatShortDate
 import app.billfolder.libris.ui.theme.Libris
 import app.billfolder.libris.ui.theme.LocalLibrisType
@@ -177,6 +178,12 @@ private fun BookSheet(book: Book, viewModel: BookDetailViewModel) {
                 )
                 Text(
                     "de ${book.authors.joinToString(", ")}",
+                    fontFamily = type.body,
+                    fontSize = 14.sp,
+                    color = Libris.inkSoft
+                )
+                Text(
+                    "Formato: ${formatName(book.formats).lowercase()}",
                     fontFamily = type.body,
                     fontSize = 14.sp,
                     color = Libris.inkSoft

@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.sp
 import app.billfolder.libris.domain.model.Book
 import app.billfolder.libris.domain.model.BookOwnership
 import app.billfolder.libris.domain.model.BookStatus
+import app.billfolder.libris.ui.format.formatTag
 import app.billfolder.libris.ui.theme.Libris
 import app.billfolder.libris.ui.theme.LocalLibrisType
 
@@ -38,6 +39,9 @@ fun BookCard(book: Book, onClick: () -> Unit, modifier: Modifier = Modifier) {
             Column(Modifier.weight(1f)) {
                 Text(book.title, fontFamily = type.title, fontWeight = FontWeight.Bold, fontSize = 18.sp, lineHeight = 20.sp, color = Libris.oxblood, maxLines = 3, overflow = TextOverflow.Ellipsis)
                 Text(book.authors.joinToString(", "), fontFamily = type.body, fontSize = 14.sp, color = Libris.inkSoft)
+                formatTag(book.formats)?.let { tag ->
+                    Text(tag.uppercase(), fontFamily = type.title, fontSize = 10.sp, letterSpacing = 1.sp, color = Libris.inkSoft, modifier = Modifier.padding(top = 2.dp))
+                }
                 progressLine(book)?.let { line ->
                     Text(line, fontFamily = type.body, fontSize = 14.sp, color = Libris.inkSoft)
                     ProgressBar(if (book.status == BookStatus.Read) 100 else book.percent, Modifier.padding(top = 6.dp, bottom = 4.dp))

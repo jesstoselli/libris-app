@@ -38,9 +38,11 @@ fun bookJson(
     percent: Int = 0,
     startedAt: String? = null,
     finishedAt: String? = null,
+    formats: List<String>? = null,
 ): String {
     fun q(v: String?) = v?.let { "\"$it\"" } ?: "null"
-    return """{"id":"$id","title":"$title","authors":["Umberto Eco"],"ownership":"$ownership","status":${q(status)},"totalPages":${totalPages ?: "null"},"addedAt":"2026-10-01","genres":[],"currentPage":$currentPage,"percent":$percent,"startedAt":${q(startedAt)},"finishedAt":${q(finishedAt)}}"""
+    val formatsField = formats?.let { f -> ""","formats":[${f.joinToString(",") { "\"$it\"" }}]""" }.orEmpty()
+    return """{"id":"$id","title":"$title","authors":["Umberto Eco"],"ownership":"$ownership","status":${q(status)},"totalPages":${totalPages ?: "null"},"addedAt":"2026-10-01","genres":[],"currentPage":$currentPage,"percent":$percent,"startedAt":${q(startedAt)},"finishedAt":${q(finishedAt)}$formatsField}"""
 }
 
 /** [dispatcher] must be the test's, so advanceUntilIdle() also waits for the fake HTTP calls. */

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.billfolder.libris.domain.model.Book
 import app.billfolder.libris.domain.model.BookFilter
+import app.billfolder.libris.domain.model.BookFormat
 import app.billfolder.libris.domain.model.BookOwnership
 import app.billfolder.libris.domain.model.BookStatus
 import app.billfolder.libris.domain.model.Genre
@@ -27,10 +28,11 @@ data class LibraryState(
     val filtered: Load<List<Book>>? = null,
     val status: BookStatus? = null,
     val genreId: String? = null,
+    val format: BookFormat? = null,
     val query: String = "",
     val genres: List<Genre> = emptyList(),
 ) {
-    val hasFilters get() = status != null || genreId != null || query.isNotBlank()
+    val hasFilters get() = status != null || genreId != null || format != null || query.isNotBlank()
 
     /** What the list shows: the unfiltered load doubles as the "Todos" view, so no filter means one request. */
     val shown: Load<List<Book>> get() = if (hasFilters) filtered ?: Load.Loading else all
@@ -38,7 +40,15 @@ data class LibraryState(
     val subtitle: String?
         get() = all.valueOrNull?.let { books ->
             val reading = books.count { it.status == BookStatus.Reading }
-            "${books.size} ${if (books.size == 1) "livro" else "livros"} no acervo · $reading em leitura"
+            val base = "${books.size} ${if (books.size == 1) "livro" else "livros"} no acervo · $reading em leitura"
+            // Only worth saying once something is digital; a book with both counts on each side.
+            if (books.none { BookFormat.Digital in it.formats }) {
+                base
+            } else {
+                val physical = books.count { BookFormat.Physical in it.formats }
+                val digital = books.count { BookFormat.Digital in it.formats }
+                "$base · $physical ${if (physical == 1) "físico" else "físicos"} · $digital ${if (digital == 1) "digital" else "digitais"}"
+            }
         }
 }
 
@@ -82,6 +92,11 @@ class LibraryViewModel(private val books: BookRepository, private val genres: Ge
         loadFiltered()
     }
 
+    fun setFormat(format: BookFormat?) {
+        _state.update { it.copy(format = format) }
+        loadFiltered()
+    }
+
     fun setGenre(genreId: String?) {
         _state.update { it.copy(genreId = genreId) }
         loadFiltered()
@@ -105,7 +120,7 @@ class LibraryViewModel(private val books: BookRepository, private val genres: Ge
         }
         _state.update { it.copy(filtered = Load.Loading) }
         filterJob = viewModelScope.launch {
-            val load = loadOf { books.list(BookFilter(BookOwnership.Owned, s.status, s.genreId, s.query)) }
+            val load = loadOf { books.list(BookFilter(BookOwnership.Owned, s.status, s.genreId, s.query, s.format)) }
             _state.update { it.copy(filtered = load) }
         }
         return filterJob
