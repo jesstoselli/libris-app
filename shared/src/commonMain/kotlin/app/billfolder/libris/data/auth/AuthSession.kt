@@ -34,7 +34,6 @@ class InMemoryTokenStore(private var session: Session? = null) : TokenStore {
     }
 }
 
-
 class AuthSession(private val api: LibrisApi, private val tokens: TokenStore) : AuthRepository {
 
     private val refreshLock = Mutex()

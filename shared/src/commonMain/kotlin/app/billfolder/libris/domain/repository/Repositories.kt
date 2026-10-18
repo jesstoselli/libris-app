@@ -16,7 +16,7 @@ import app.billfolder.libris.domain.model.YearStats
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.datetime.LocalDate
 
-// Failures surface as the exceptions in domain.error (NoConnection, SessionExpired, Api).
+// Failures surface as the exceptions in domain.error (NoConnection, SignedOut, SessionExpired, Api).
 
 interface AuthRepository {
     val state: StateFlow<AccountState>

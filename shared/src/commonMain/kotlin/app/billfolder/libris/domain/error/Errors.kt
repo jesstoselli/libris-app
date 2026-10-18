@@ -1,6 +1,6 @@
 package app.billfolder.libris.domain.error
 
-/** The API answered outside 2xx; [message] is its pt-BR text when it sent one. */
+/** The API answered outside 2xx; [apiMessage] is its pt-BR text when it sent one. */
 open class ApiException(val status: Int, val code: String?, val apiMessage: String?) :
     Exception("HTTP $status ${code.orEmpty()}")
 
