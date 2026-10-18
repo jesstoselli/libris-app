@@ -80,6 +80,19 @@ class BookLanguageViewModelTest {
     }
 
     @Test
+    fun editing_changesTheLanguage() = runTest(dispatcher) {
+        val fake = FakeApi(dispatcher) { req -> if (req.url.encodedPath == "/v1/genres") json("[]") else json(bookJson(language = "pt")) }
+        val vm = BookFormViewModel("b1", fake.books, fake.genres, fake.covers)
+        advanceUntilIdle()
+
+        vm.onLanguage("en")
+        vm.save()
+        advanceUntilIdle()
+
+        assertEquals("en", fake.sentLanguage())
+    }
+
+    @Test
     fun library_languageFilter_asksTheApi() = runTest(dispatcher) {
         val fake = FakeApi(dispatcher) { req -> if (req.url.encodedPath == "/v1/genres") json("[]") else json("[${bookJson()}]") }
         val vm = LibraryViewModel(fake.books, fake.genres)

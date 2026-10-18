@@ -259,6 +259,23 @@ fun BookFormScreen(
 
                     GenreChips(state, existing.map { it.name }, viewModel)
 
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Idioma", fontFamily = type.title, fontSize = 16.sp)
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            // A language from the lookup outside the usual six still shows, so it can be kept.
+                            val offered = if (LANGUAGES.any { it.first == state.language }) LANGUAGES else LANGUAGES + (state.language to languageName(state.language))
+                            offered.forEach { (code, name) -> Toggle(name, state.language == code) { viewModel.onLanguage(code) } }
+                        }
+                    }
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Formato", fontFamily = type.title, fontSize = 16.sp)
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            BookFormat.entries.forEach { f ->
+                                Toggle(f.label(), f in state.formats, multi = true) { viewModel.toggleFormat(f) }
+                            }
+                        }
+                    }
+
                     if (!state.isEdit) {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text("Destino", fontFamily = type.title, fontSize = 16.sp)
@@ -271,22 +288,6 @@ fun BookFormScreen(
                                     "Wishlist",
                                     state.ownership == BookOwnership.Wishlist
                                 ) { viewModel.onOwnership(BookOwnership.Wishlist) }
-                            }
-                        }
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text("Idioma", fontFamily = type.title, fontSize = 16.sp)
-                            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                // A language from the lookup outside the usual six still shows, so it can be kept.
-                                val offered = if (LANGUAGES.any { it.first == state.language }) LANGUAGES else LANGUAGES + (state.language to languageName(state.language))
-                                offered.forEach { (code, name) -> Toggle(name, state.language == code) { viewModel.onLanguage(code) } }
-                            }
-                        }
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text("Formato", fontFamily = type.title, fontSize = 16.sp)
-                            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                BookFormat.entries.forEach { f ->
-                                    Toggle(f.label(), f in state.formats, multi = true) { viewModel.toggleFormat(f) }
-                                }
                             }
                         }
                         if (state.ownership == BookOwnership.Owned) {
