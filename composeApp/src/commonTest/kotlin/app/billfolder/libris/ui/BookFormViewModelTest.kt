@@ -1,8 +1,8 @@
 package app.billfolder.libris.ui
 
-import app.billfolder.libris.data.remote.dto.BookOwnership
-import app.billfolder.libris.data.remote.dto.BookStatus
-import app.billfolder.libris.domain.time.todayIso
+import app.billfolder.libris.domain.model.BookOwnership
+import app.billfolder.libris.domain.model.BookStatus
+import app.billfolder.libris.domain.time.today
 import app.billfolder.libris.ui.feature.form.BookFormViewModel
 import app.billfolder.libris.ui.feature.form.FormResult
 import io.ktor.http.HttpMethod
@@ -10,6 +10,7 @@ import io.ktor.http.HttpStatusCode
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlinx.datetime.LocalDate
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
@@ -54,7 +55,7 @@ class BookFormViewModelTest {
     @Test
     fun create_sendsTodayAndDefaults() = runTest(dispatcher) {
         val fake = server()
-        val vm = BookFormViewModel(null, fake.session, fake.api)
+        val vm = BookFormViewModel(null, fake.books, fake.genres, fake.covers)
         advanceUntilIdle()
         vm.onTitle("O Nome da Rosa"); vm.onAuthor(0, "Umberto Eco"); vm.onPages("512")
 
@@ -64,14 +65,14 @@ class BookFormViewModelTest {
         val body = bodyJson(fake, "/v1/books")
         assertEquals("owned", body["ownership"]!!.jsonPrimitive.content)
         assertEquals("not_started", body["status"]!!.jsonPrimitive.content)
-        assertEquals(todayIso(), body["today"]!!.jsonPrimitive.content)
+        assertEquals(today().toString(), body["today"]!!.jsonPrimitive.content)
         assertEquals(JsonNull, body["startedAt"])
         assertIs<FormResult.Saved>(vm.results.first())
     }
 
     @Test
     fun blankTitleAndDecimalPages_explainWhy() = runTest(dispatcher) {
-        val vm = BookFormViewModel(null, server().session, server().api)
+        val vm = server().let { BookFormViewModel(null, it.books, it.genres, it.covers) }
         vm.onTitle("   "); vm.onAuthor(0, "Eco"); vm.onPages("12.5"); vm.onYear("3000")
 
         val s = vm.state.value
@@ -83,7 +84,7 @@ class BookFormViewModelTest {
 
     @Test
     fun wishlist_doesNotNeedPages_andHidesDates() = runTest(dispatcher) {
-        val vm = BookFormViewModel(null, server().session, server().api)
+        val vm = server().let { BookFormViewModel(null, it.books, it.genres, it.covers) }
         vm.onTitle("Rebecca"); vm.onAuthor(0, "Daphne du Maurier"); vm.onStatus(BookStatus.Read)
         assertTrue(vm.state.value.showFinish)
 
@@ -96,13 +97,13 @@ class BookFormViewModelTest {
     @Test
     fun readWithPastDates_areSent_andFutureRejected() = runTest(dispatcher) {
         val fake = server()
-        val vm = BookFormViewModel(null, fake.session, fake.api)
+        val vm = BookFormViewModel(null, fake.books, fake.genres, fake.covers)
         advanceUntilIdle()
         vm.onTitle("Rosa"); vm.onAuthor(0, "Eco"); vm.onPages("512"); vm.onStatus(BookStatus.Read)
-        vm.onStartedAt("2024-03-20"); vm.onFinishedAt("2024-03-01")
+        vm.onStartedAt(LocalDate.parse("2024-03-20")); vm.onFinishedAt(LocalDate.parse("2024-03-01"))
         assertEquals("O término não pode ser antes do início.", vm.state.value.datesError)
 
-        vm.onStartedAt("2024-03-01"); vm.onFinishedAt("2024-03-20")
+        vm.onStartedAt(LocalDate.parse("2024-03-01")); vm.onFinishedAt(LocalDate.parse("2024-03-20"))
         vm.save()
         advanceUntilIdle()
 
@@ -113,7 +114,7 @@ class BookFormViewModelTest {
     @Test
     fun isbnLookup_fillsOnlyEmptyFields() = runTest(dispatcher) {
         val fake = server()
-        val vm = BookFormViewModel(null, fake.session, fake.api)
+        val vm = BookFormViewModel(null, fake.books, fake.genres, fake.covers)
         advanceUntilIdle()
         vm.onTitle("Meu título")
 
@@ -130,7 +131,7 @@ class BookFormViewModelTest {
     @Test
     fun isbnLookup_addsItsGenresToTheBook_withoutDuplicates_andSavesThem() = runTest(dispatcher) {
         val fake = server()
-        val vm = BookFormViewModel(null, fake.session, fake.api)
+        val vm = BookFormViewModel(null, fake.books, fake.genres, fake.covers)
         advanceUntilIdle()
         vm.onTitle("Rosa"); vm.onPages("512")
         vm.addGenre("history")
@@ -148,7 +149,7 @@ class BookFormViewModelTest {
     @Test
     fun save_withSuggestedCover_downloadsThenCreates() = runTest(dispatcher) {
         val fake = server()
-        val vm = BookFormViewModel(null, fake.session, fake.api)
+        val vm = BookFormViewModel(null, fake.books, fake.genres, fake.covers)
         advanceUntilIdle()
         vm.onScanned("9780156001311")
         advanceUntilIdle()
@@ -164,7 +165,7 @@ class BookFormViewModelTest {
     @Test
     fun save_coverDownloadFails_savesWithoutCoverAndWarns() = runTest(dispatcher) {
         val fake = server(fromUrlFails = true)
-        val vm = BookFormViewModel(null, fake.session, fake.api)
+        val vm = BookFormViewModel(null, fake.books, fake.genres, fake.covers)
         advanceUntilIdle()
         vm.onScanned("9780156001311")
         advanceUntilIdle()
@@ -178,7 +179,7 @@ class BookFormViewModelTest {
 
     @Test
     fun genre_reusesStoredSpelling_andIgnoresDuplicates() = runTest(dispatcher) {
-        val vm = BookFormViewModel(null, server().session, server().api)
+        val vm = server().let { BookFormViewModel(null, it.books, it.genres, it.covers) }
         advanceUntilIdle()
 
         vm.addGenre("terror"); vm.addGenre("TERROR"); vm.addGenre("Gótico,")
@@ -189,7 +190,7 @@ class BookFormViewModelTest {
     @Test
     fun edit_loadsBookAndPutsFullRequest() = runTest(dispatcher) {
         val fake = server()
-        val vm = BookFormViewModel("b1", fake.session, fake.api)
+        val vm = BookFormViewModel("b1", fake.books, fake.genres, fake.covers)
         advanceUntilIdle()
         assertEquals("O Nome da Rosa", vm.state.value.title)
 

@@ -1,5 +1,7 @@
 package app.billfolder.libris.data.auth
 
+import app.billfolder.libris.domain.model.AccountState
+
 import app.billfolder.libris.data.remote.FakeServer
 import app.billfolder.libris.data.remote.authJson
 import app.billfolder.libris.data.remote.json

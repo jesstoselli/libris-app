@@ -2,15 +2,15 @@ package app.billfolder.libris.ui.feature.wishlist
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import app.billfolder.libris.data.auth.AuthSession
-import app.billfolder.libris.data.remote.LibrisApi
-import app.billfolder.libris.data.remote.dto.Book
-import app.billfolder.libris.data.remote.dto.BookListQuery
-import app.billfolder.libris.data.remote.dto.BookOwnership
-import app.billfolder.libris.data.remote.dto.Genre
+import app.billfolder.libris.domain.model.Book
+import app.billfolder.libris.domain.model.BookFilter
+import app.billfolder.libris.domain.model.BookOwnership
+import app.billfolder.libris.domain.model.Genre
+import app.billfolder.libris.domain.repository.BookRepository
+import app.billfolder.libris.domain.repository.GenreRepository
 import app.billfolder.libris.ui.common.Load
 import app.billfolder.libris.ui.common.fold
-import app.billfolder.libris.ui.common.userMessage
+import app.billfolder.libris.ui.common.loadOf
 import app.billfolder.libris.ui.common.valueOrNull
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -40,7 +40,7 @@ data class WishlistState(
         }
 }
 
-class WishlistViewModel(private val session: AuthSession, private val api: LibrisApi) : ViewModel() {
+class WishlistViewModel(private val books: BookRepository, private val genres: GenreRepository) : ViewModel() {
     private val _state = MutableStateFlow(WishlistState())
     val state: StateFlow<WishlistState> = _state.asStateFlow()
 
@@ -48,22 +48,16 @@ class WishlistViewModel(private val session: AuthSession, private val api: Libri
         refresh()
     }
 
-    fun coverSrc(book: Book) = api.coverSrc(book.coverUrl)
-
     fun setGenre(id: String?) = _state.update { it.copy(genreId = id) }
 
     fun setQuery(q: String) = _state.update { it.copy(query = q) }
 
     fun refresh(): List<Job> = listOf(
         viewModelScope.launch {
-            runCatching { session.authorized { api.listGenres(it) } }.onSuccess { g -> _state.update { it.copy(genres = g) } }
+            runCatching { genres.list() }.onSuccess { g -> _state.update { it.copy(genres = g) } }
         },
         viewModelScope.launch {
-            val load = try {
-                Load.Loaded(session.authorized { api.listBooks(it, BookListQuery(ownership = BookOwnership.Wishlist)) })
-            } catch (e: Exception) {
-                Load.Failed(e.userMessage())
-            }
+            val load = loadOf { books.list(BookFilter(ownership = BookOwnership.Wishlist)) }
             _state.update { it.copy(books = load) }
         },
     )

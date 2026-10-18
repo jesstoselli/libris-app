@@ -54,7 +54,7 @@ class PullToRefreshTest {
     @Test
     fun acervo() = runTest(dispatcher) {
         val server = FlakyServer(dispatcher) { req -> if (req.url.encodedPath == "/v1/genres") json("[]") else json("[${bookJson()}]") }
-        val vm = AcervoViewModel(server.fake.session, server.fake.api)
+        val vm = AcervoViewModel(server.fake.books, server.fake.genres)
         pullAndCheck(server, vm::pullToRefresh) { vm.state.value.refreshing }
         assertIs<Load.Loaded<*>>(vm.state.value.shown)
     }
@@ -62,7 +62,7 @@ class PullToRefreshTest {
     @Test
     fun wishlist() = runTest(dispatcher) {
         val server = FlakyServer(dispatcher) { req -> if (req.url.encodedPath == "/v1/genres") json("[]") else json("[]") }
-        val vm = WishlistViewModel(server.fake.session, server.fake.api)
+        val vm = WishlistViewModel(server.fake.books, server.fake.genres)
         pullAndCheck(server, vm::pullToRefresh) { vm.state.value.refreshing }
         assertIs<Load.Loaded<*>>(vm.state.value.books)
     }
@@ -70,7 +70,7 @@ class PullToRefreshTest {
     @Test
     fun ficha() = runTest(dispatcher) {
         val server = FlakyServer(dispatcher) { req -> if (req.url.encodedPath.endsWith("/logs")) json("[]") else json(bookJson(status = "reading")) }
-        val vm = FichaViewModel("b1", server.fake.session, server.fake.api)
+        val vm = FichaViewModel("b1", server.fake.books, server.fake.reading)
         pullAndCheck(server, vm::pullToRefresh) { vm.state.value.refreshing }
         assertIs<Load.Loaded<*>>(vm.state.value.book)
     }
@@ -78,7 +78,7 @@ class PullToRefreshTest {
     @Test
     fun numeros() = runTest(dispatcher) {
         val server = FlakyServer(dispatcher) { req -> if (req.url.encodedPath.count { it == '/' } == 4) json(month) else json(year) }
-        val vm = NumerosViewModel(server.fake.session, server.fake.api) { 2026 to 10 }
+        val vm = NumerosViewModel(server.fake.stats) { 2026 to 10 }
         pullAndCheck(server, vm::pullToRefresh) { vm.state.value.refreshing }
         assertIs<Load.Loaded<*>>(vm.state.value.stats)
         assertIs<Load.Loaded<*>>(vm.state.value.detail)
@@ -87,7 +87,7 @@ class PullToRefreshTest {
     @Test
     fun genres() = runTest(dispatcher) {
         val server = FlakyServer(dispatcher) { json("""[{"id":"g1","name":"Terror","bookCount":1}]""") }
-        val vm = GenresViewModel(server.fake.session, server.fake.api)
+        val vm = GenresViewModel(server.fake.genres)
         pullAndCheck(server, vm::pullToRefresh) { vm.state.value.refreshing }
         assertIs<Load.Loaded<*>>(vm.state.value.genres)
     }

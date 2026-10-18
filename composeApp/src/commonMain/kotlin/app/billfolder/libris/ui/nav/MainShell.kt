@@ -22,8 +22,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
-import app.billfolder.libris.data.auth.AuthSession
-import app.billfolder.libris.data.remote.dto.BookOwnership
+import app.billfolder.libris.domain.repository.AuthRepository
+import app.billfolder.libris.domain.model.BookOwnership
 import app.billfolder.libris.ui.components.LibrisIcons
 import app.billfolder.libris.ui.components.LocalSnackbar
 import app.billfolder.libris.ui.components.RibbonBar
@@ -39,11 +39,11 @@ import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 @Composable
-fun MainShell(session: AuthSession = koinInject()) {
+fun MainShell(auth: AuthRepository = koinInject()) {
     val nav = rememberNavController()
     val entry by nav.currentBackStackEntryAsState()
     val scope = rememberCoroutineScope()
-    val logout = { scope.launch { session.logout() }; Unit }
+    val logout = { scope.launch { auth.logout() }; Unit }
     fun isOn(route: KClass<*>) = entry?.destination?.hasRoute(route) == true
     val wishlistFicha = entry?.takeIf { it.destination.hasRoute(FichaRoute::class) }?.toRoute<FichaRoute>()?.fromWishlist == true
     fun go(route: Any) = nav.navigate(route) {

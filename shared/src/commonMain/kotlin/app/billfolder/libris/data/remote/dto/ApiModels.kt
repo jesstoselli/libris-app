@@ -12,25 +12,25 @@ val ApiJson = Json {
 }
 
 @Serializable
-enum class BookOwnership {
+enum class BookOwnershipDto {
     @SerialName("owned") Owned,
     @SerialName("wishlist") Wishlist,
 }
 
 @Serializable
-enum class BookStatus(val wire: String) {
+enum class BookStatusDto(val wire: String) {
     @SerialName("not_started") NotStarted("not_started"),
     @SerialName("reading") Reading("reading"),
     @SerialName("read") Read("read"),
     @SerialName("abandoned") Abandoned("abandoned"),
 }
 
-@Serializable data class GenreRef(val id: String, val name: String)
+@Serializable data class GenreRefDto(val id: String, val name: String)
 
-@Serializable data class Genre(val id: String, val name: String, val bookCount: Int)
+@Serializable data class GenreDto(val id: String, val name: String, val bookCount: Int)
 
 @Serializable
-data class Book(
+data class BookDto(
     val id: String,
     val title: String,
     val authors: List<String>,
@@ -41,9 +41,9 @@ data class Book(
     val synopsis: String? = null,
     val coverId: String? = null,
     val coverUrl: String? = null,
-    val genres: List<GenreRef> = emptyList(),
-    val ownership: BookOwnership,
-    val status: BookStatus? = null,
+    val genres: List<GenreRefDto> = emptyList(),
+    val ownership: BookOwnershipDto,
+    val status: BookStatusDto? = null,
     val startedAt: String? = null,
     val finishedAt: String? = null,
     val addedAt: String,
@@ -62,8 +62,8 @@ data class CreateBookRequest(
     val synopsis: String?,
     val coverId: String?,
     val genres: List<String>,
-    val ownership: BookOwnership,
-    val status: BookStatus?,
+    val ownership: BookOwnershipDto,
+    val status: BookStatusDto?,
     val startedAt: String?,
     val finishedAt: String?,
     val today: String,
@@ -85,20 +85,20 @@ data class UpdateBookRequest(
 )
 
 data class BookListQuery(
-    val ownership: BookOwnership? = null,
-    val status: BookStatus? = null,
+    val ownership: BookOwnershipDto? = null,
+    val status: BookStatusDto? = null,
     val genreId: String? = null,
     val q: String? = null,
 )
 
-@Serializable data class ReadingLog(val id: String, val date: String, val page: Int, val fromPage: Int, val pagesRead: Int)
+@Serializable data class ReadingLogDto(val id: String, val date: String, val page: Int, val fromPage: Int, val pagesRead: Int)
 
-@Serializable data class ReadingLogResult(val book: Book, val logs: List<ReadingLog>)
+@Serializable data class ReadingLogResultDto(val book: BookDto, val logs: List<ReadingLogDto>)
 
-@Serializable data class Cover(val coverId: String, val url: String)
+@Serializable data class CoverDto(val coverId: String, val url: String)
 
 @Serializable
-data class IsbnLookup(
+data class IsbnLookupDto(
     val isbn: String,
     val title: String,
     val authors: List<String>,
@@ -111,21 +111,21 @@ data class IsbnLookup(
     val source: String,
 )
 
-@Serializable data class MonthStats(val month: Int, val pagesRead: Int, val booksFinished: Int)
+@Serializable data class MonthStatsDto(val month: Int, val pagesRead: Int, val booksFinished: Int)
 
 @Serializable
-data class YearStats(val year: Int, val booksFinished: Int, val pagesRead: Int, val readingNow: Int, val months: List<MonthStats>)
+data class YearStatsDto(val year: Int, val booksFinished: Int, val pagesRead: Int, val readingNow: Int, val months: List<MonthStatsDto>)
 
-@Serializable data class FinishedBook(val bookId: String, val title: String, val authors: List<String>, val finishedAt: String)
+@Serializable data class FinishedBookDto(val bookId: String, val title: String, val authors: List<String>, val finishedAt: String)
 
-@Serializable data class ProgressedBook(val bookId: String, val title: String, val pagesRead: Int)
+@Serializable data class ProgressedBookDto(val bookId: String, val title: String, val pagesRead: Int)
 
 @Serializable
-data class MonthDetail(val year: Int, val month: Int, val pagesRead: Int, val finished: List<FinishedBook>, val progressed: List<ProgressedBook>)
+data class MonthDetailDto(val year: Int, val month: Int, val pagesRead: Int, val finished: List<FinishedBookDto>, val progressed: List<ProgressedBookDto>)
 
-@Serializable data class User(val id: String, val email: String, val displayName: String)
+@Serializable data class UserDto(val id: String, val email: String, val displayName: String)
 
-@Serializable internal data class AuthBody(val accessToken: String, val refreshToken: String, val user: User)
+@Serializable internal data class AuthBody(val accessToken: String, val refreshToken: String, val user: UserDto)
 
 @Serializable internal data class LoginBody(val email: String, val password: String)
 
@@ -133,7 +133,7 @@ data class MonthDetail(val year: Int, val month: Int, val pagesRead: Int, val fi
 
 @Serializable internal data class ErrorBody(val error: String? = null, val message: String? = null)
 
-@Serializable internal data class StatusBody(val status: BookStatus, val today: String)
+@Serializable internal data class StatusBody(val status: BookStatusDto, val today: String)
 
 @Serializable internal data class AcquireBody(val today: String, val totalPages: Int?)
 

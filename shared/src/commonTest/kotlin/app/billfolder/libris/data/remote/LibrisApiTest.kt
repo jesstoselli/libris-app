@@ -1,7 +1,7 @@
 package app.billfolder.libris.data.remote
 
 import app.billfolder.libris.data.remote.dto.BookListQuery
-import app.billfolder.libris.data.remote.dto.BookStatus
+import app.billfolder.libris.data.remote.dto.BookStatusDto
 import app.billfolder.libris.domain.error.ApiException
 import app.billfolder.libris.domain.error.NoConnectionException
 import io.ktor.client.request.HttpRequestData
@@ -23,7 +23,7 @@ class LibrisApiTest {
     fun listBooks_sendsOnlySetFiltersInSnakeCase() = runTest {
         val server = FakeServer { json("[]") }
 
-        server.api.listBooks("t", BookListQuery(status = BookStatus.NotStarted, q = "  "))
+        server.api.listBooks("t", BookListQuery(status = BookStatusDto.NotStarted, q = "  "))
 
         val url = server.requests.single().url
         assertEquals("not_started", url.parameters["status"])
@@ -39,7 +39,7 @@ class LibrisApiTest {
 
         val book = server.api.getBook("t", "b1")
 
-        assertEquals(BookStatus.NotStarted, book.status)
+        assertEquals(BookStatusDto.NotStarted, book.status)
         assertEquals("2026-10-16", book.addedAt)
     }
 
@@ -49,7 +49,7 @@ class LibrisApiTest {
             json("""{"id":"b1","title":"Rosa","authors":["Eco"],"ownership":"owned","status":"read","addedAt":"2026-10-16"}""")
         }
 
-        server.api.changeStatus("t", "b1", BookStatus.Read, "2026-10-16")
+        server.api.changeStatus("t", "b1", BookStatusDto.Read, "2026-10-16")
 
         assertEquals("""{"status":"read","today":"2026-10-16"}""", server.requests.single().text())
     }

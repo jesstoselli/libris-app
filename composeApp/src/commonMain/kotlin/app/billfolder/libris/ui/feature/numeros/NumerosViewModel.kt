@@ -2,12 +2,12 @@ package app.billfolder.libris.ui.feature.numeros
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import app.billfolder.libris.data.auth.AuthSession
-import app.billfolder.libris.data.remote.LibrisApi
-import app.billfolder.libris.data.remote.dto.MonthDetail
-import app.billfolder.libris.data.remote.dto.YearStats
+import app.billfolder.libris.domain.model.MonthDetail
+import app.billfolder.libris.domain.model.YearStats
+import app.billfolder.libris.domain.repository.StatsRepository
 import app.billfolder.libris.domain.time.currentYearMonth
 import app.billfolder.libris.ui.common.Load
+import app.billfolder.libris.ui.common.loadOf
 import app.billfolder.libris.ui.common.userMessage
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,8 +33,7 @@ fun defaultMonth(year: Int, now: Pair<Int, Int>): Int = when {
 }
 
 class NumerosViewModel(
-    private val session: AuthSession,
-    private val api: LibrisApi,
+    private val stats: StatsRepository,
     private val now: () -> Pair<Int, Int> = { currentYearMonth() },
 ) : ViewModel() {
 
@@ -78,11 +77,7 @@ class NumerosViewModel(
         val year = _state.value.year
         _state.update { it.copy(stats = Load.Loading) }
         yearJob = viewModelScope.launch {
-            val load = try {
-                Load.Loaded(session.authorized { api.yearStats(it, year) })
-            } catch (e: Exception) {
-                Load.Failed(e.userMessage())
-            }
+            val load = loadOf { stats.year(year) }
             _state.update { it.copy(stats = load) }
         }
         return yearJob!!
@@ -93,11 +88,7 @@ class NumerosViewModel(
         val (year, month) = _state.value.let { it.year to it.month }
         _state.update { it.copy(detail = Load.Loading) }
         monthJob = viewModelScope.launch {
-            val load = try {
-                Load.Loaded(session.authorized { api.monthStats(it, year, month) })
-            } catch (e: Exception) {
-                Load.Failed(e.userMessage())
-            }
+            val load = loadOf { stats.month(year, month) }
             _state.update { it.copy(detail = load) }
         }
         return monthJob!!

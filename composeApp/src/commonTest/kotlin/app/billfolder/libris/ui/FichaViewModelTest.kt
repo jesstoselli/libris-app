@@ -1,7 +1,7 @@
 package app.billfolder.libris.ui
 
-import app.billfolder.libris.data.remote.dto.BookStatus
-import app.billfolder.libris.domain.time.todayIso
+import app.billfolder.libris.domain.model.BookStatus
+import app.billfolder.libris.domain.time.today
 import app.billfolder.libris.ui.common.Load
 import app.billfolder.libris.ui.feature.ficha.FichaViewModel
 import app.billfolder.libris.ui.feature.ficha.datesProblem
@@ -10,6 +10,7 @@ import io.ktor.http.HttpStatusCode
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlinx.datetime.LocalDate
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -33,7 +34,7 @@ class FichaViewModelTest {
     @Test
     fun loadsBookAndLogs() = runTest(dispatcher) {
         val fake = FakeApi(dispatcher) { req -> if (req.url.encodedPath.endsWith("/logs")) json(logs) else json(bookJson(status = "reading")) }
-        val vm = FichaViewModel("b1", fake.session, fake.api)
+        val vm = FichaViewModel("b1", fake.books, fake.reading)
         advanceUntilIdle()
 
         assertEquals("O Nome da Rosa", (vm.state.value.book as Load.Loaded).value.title)
@@ -49,7 +50,7 @@ class FichaViewModelTest {
                 else -> json(bookJson())
             }
         }
-        val vm = FichaViewModel("b1", fake.session, fake.api)
+        val vm = FichaViewModel("b1", fake.books, fake.reading)
         advanceUntilIdle()
 
         vm.onPage("140")
@@ -57,7 +58,7 @@ class FichaViewModelTest {
         advanceUntilIdle()
 
         val post = fake.requests.last()
-        assertEquals("""{"date":"${todayIso()}","page":140}""", fake.bodyOf(post))
+        assertEquals("""{"date":"${today().toString()}","page":140}""", fake.bodyOf(post))
         assertEquals(140, (vm.state.value.book as Load.Loaded).value.currentPage)
         assertEquals("", vm.state.value.pageInput)
         assertEquals("Leitura anotada.", vm.messages.first())
@@ -72,7 +73,7 @@ class FichaViewModelTest {
                 else -> json(bookJson())
             }
         }
-        val vm = FichaViewModel("b1", fake.session, fake.api)
+        val vm = FichaViewModel("b1", fake.books, fake.reading)
         advanceUntilIdle()
 
         vm.onPage("600")
@@ -86,7 +87,7 @@ class FichaViewModelTest {
     @Test
     fun decimalPage_isNotSent() = runTest(dispatcher) {
         val fake = FakeApi(dispatcher) { req -> if (req.url.encodedPath.endsWith("/logs")) json("[]") else json(bookJson()) }
-        val vm = FichaViewModel("b1", fake.session, fake.api)
+        val vm = FichaViewModel("b1", fake.books, fake.reading)
         advanceUntilIdle()
         val before = fake.requests.size
 
@@ -102,25 +103,25 @@ class FichaViewModelTest {
     fun changeStatus_sendsToday() = runTest(dispatcher) {
         val fake = FakeApi(dispatcher) { req ->
             when {
-                req.method == HttpMethod.Patch -> json(bookJson(status = "read", finishedAt = todayIso()))
+                req.method == HttpMethod.Patch -> json(bookJson(status = "read", finishedAt = today().toString()))
                 req.url.encodedPath.endsWith("/logs") -> json("[]")
                 else -> json(bookJson(status = "reading"))
             }
         }
-        val vm = FichaViewModel("b1", fake.session, fake.api)
+        val vm = FichaViewModel("b1", fake.books, fake.reading)
         advanceUntilIdle()
 
         vm.changeStatus(BookStatus.Read)
         advanceUntilIdle()
 
-        assertEquals("""{"status":"read","today":"${todayIso()}"}""", fake.bodyOf(fake.requests.last()))
+        assertEquals("""{"status":"read","today":"${today().toString()}"}""", fake.bodyOf(fake.requests.last()))
         assertEquals(BookStatus.Read, (vm.state.value.book as Load.Loaded).value.status)
     }
 
     @Test
     fun notFound_isFlagged() = runTest(dispatcher) {
         val fake = FakeApi(dispatcher) { json("""{"error":"not_found","message":"Livro não encontrado."}""", HttpStatusCode.NotFound) }
-        val vm = FichaViewModel("b1", fake.session, fake.api)
+        val vm = FichaViewModel("b1", fake.books, fake.reading)
         advanceUntilIdle()
 
         assertTrue(vm.state.value.notFound)
@@ -128,8 +129,8 @@ class FichaViewModelTest {
 
     @Test
     fun datesProblem_rules() {
-        assertEquals("O término não pode ser antes do início.", datesProblem("2024-03-20", "2024-03-01", "2026-10-16"))
-        assertEquals("As datas não podem estar no futuro.", datesProblem(null, "2027-01-10", "2026-10-16"))
-        assertNull(datesProblem("2024-03-01", "2024-03-20", "2026-10-16"))
+        assertEquals("O término não pode ser antes do início.", datesProblem(LocalDate.parse("2024-03-20"), LocalDate.parse("2024-03-01"), LocalDate.parse("2026-10-16")))
+        assertEquals("As datas não podem estar no futuro.", datesProblem(null, LocalDate.parse("2027-01-10"), LocalDate.parse("2026-10-16")))
+        assertNull(datesProblem(LocalDate.parse("2024-03-01"), LocalDate.parse("2024-03-20"), LocalDate.parse("2026-10-16")))
     }
 }

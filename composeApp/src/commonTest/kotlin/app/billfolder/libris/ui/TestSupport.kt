@@ -5,7 +5,12 @@ import app.billfolder.libris.data.auth.InMemoryTokenStore
 import app.billfolder.libris.data.auth.Session
 import app.billfolder.libris.data.remote.LibrisApi
 import app.billfolder.libris.data.remote.librisHttpClient
-import app.billfolder.libris.data.remote.dto.User
+import app.billfolder.libris.data.remote.dto.UserDto
+import app.billfolder.libris.data.repository.RemoteBookRepository
+import app.billfolder.libris.data.repository.RemoteCoverRepository
+import app.billfolder.libris.data.repository.RemoteGenreRepository
+import app.billfolder.libris.data.repository.RemoteReadingRepository
+import app.billfolder.libris.data.repository.RemoteStatsRepository
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockEngineConfig
 import io.ktor.client.engine.mock.MockRequestHandleScope
@@ -51,7 +56,12 @@ class FakeApi(dispatcher: CoroutineDispatcher, handler: suspend MockRequestHandl
         },
     )
     val api = LibrisApi(librisHttpClient(engine), BASE)
-    val session = AuthSession(api, InMemoryTokenStore(Session("t", "r", User("u", "e@x.com", "Jess"))))
+    val session = AuthSession(api, InMemoryTokenStore(Session("t", "r", UserDto("u", "e@x.com", "Jess"))))
+    val books = RemoteBookRepository(api, session)
+    val reading = RemoteReadingRepository(api, session)
+    val genres = RemoteGenreRepository(api, session)
+    val covers = RemoteCoverRepository(api, session)
+    val stats = RemoteStatsRepository(api, session)
 
     fun bodyOf(request: HttpRequestData) = (request.body as? TextContent)?.text
 }

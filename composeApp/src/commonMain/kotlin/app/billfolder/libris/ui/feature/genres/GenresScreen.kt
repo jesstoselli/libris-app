@@ -24,7 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import app.billfolder.libris.data.remote.dto.Genre
+import app.billfolder.libris.domain.model.Genre
 import app.billfolder.libris.ui.common.Load
 import app.billfolder.libris.ui.components.ConfirmDialog
 import app.billfolder.libris.ui.components.Ficha

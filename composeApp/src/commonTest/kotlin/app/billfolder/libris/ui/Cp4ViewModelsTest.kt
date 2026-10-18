@@ -1,6 +1,6 @@
 package app.billfolder.libris.ui
 
-import app.billfolder.libris.data.remote.dto.Genre
+import app.billfolder.libris.domain.model.Genre
 import app.billfolder.libris.ui.common.Load
 import app.billfolder.libris.ui.feature.genres.GenresViewModel
 import app.billfolder.libris.ui.feature.numeros.NumerosViewModel
@@ -31,7 +31,7 @@ class Cp4ViewModelsTest {
     fun wishlist_loadsWishlistOnly_andFiltersWithoutAccents() = runTest(dispatcher) {
         val books = "[${bookJson("w1", "Rebecca", status = null, ownership = "wishlist")},${bookJson("w2", "Jane Eyre — Brontë", status = null, ownership = "wishlist")}]"
         val fake = FakeApi(dispatcher) { req -> if (req.url.encodedPath == "/v1/genres") json("[]") else json(books) }
-        val vm = WishlistViewModel(fake.session, fake.api)
+        val vm = WishlistViewModel(fake.books, fake.genres)
         advanceUntilIdle()
 
         assertEquals("wishlist", fake.requests.first { it.url.encodedPath == "/v1/books" }.url.parameters["ownership"])
@@ -46,7 +46,7 @@ class Cp4ViewModelsTest {
             if (req.method == HttpMethod.Put) json("""{"error":"genre_already_exists","message":"Já existe um gênero chamado \"Terror\"."}""", HttpStatusCode.Conflict)
             else json("""[{"id":"g1","name":"Terror","bookCount":2},{"id":"g2","name":"Gotico","bookCount":1}]""")
         }
-        val vm = GenresViewModel(fake.session, fake.api)
+        val vm = GenresViewModel(fake.genres)
         advanceUntilIdle()
 
         vm.rename(Genre("g2", "Gotico", 1), "Terror")
@@ -60,7 +60,7 @@ class Cp4ViewModelsTest {
         val fake = FakeApi(dispatcher) { req ->
             if (req.method == HttpMethod.Delete) json("") else json("""[{"id":"g1","name":"Terror","bookCount":2}]""")
         }
-        val vm = GenresViewModel(fake.session, fake.api)
+        val vm = GenresViewModel(fake.genres)
         advanceUntilIdle()
 
         vm.delete(Genre("g1", "Terror", 2))
@@ -82,7 +82,7 @@ class Cp4ViewModelsTest {
     @Test
     fun numeros_loadsCurrentYearAndMonth_thenNavigates() = runTest(dispatcher) {
         val fake = FakeApi(dispatcher) { req -> if (req.url.encodedPath.count { it == '/' } == 4) json(month) else json(year) }
-        val vm = NumerosViewModel(fake.session, fake.api) { 2026 to 10 }
+        val vm = NumerosViewModel(fake.stats) { 2026 to 10 }
         advanceUntilIdle()
 
         assertEquals(setOf("/v1/stats/2026", "/v1/stats/2026/10"), fake.requests.map { it.url.encodedPath }.toSet())
@@ -97,7 +97,7 @@ class Cp4ViewModelsTest {
     @Test
     fun numeros_failedMonth_showsMessage_keepsYear() = runTest(dispatcher) {
         val fake = FakeApi(dispatcher) { req -> if (req.url.encodedPath.count { it == '/' } == 4) throw IllegalStateException("offline") else json(year) }
-        val vm = NumerosViewModel(fake.session, fake.api) { 2026 to 10 }
+        val vm = NumerosViewModel(fake.stats) { 2026 to 10 }
         advanceUntilIdle()
 
         assertEquals(Load.Failed("Sem conexão com o servidor."), vm.state.value.detail)

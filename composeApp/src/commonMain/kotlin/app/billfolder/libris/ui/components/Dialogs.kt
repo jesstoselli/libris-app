@@ -7,8 +7,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
-import app.billfolder.libris.ui.format.isoFromPickerMillis
-import app.billfolder.libris.ui.format.pickerMillisFromIso
+import app.billfolder.libris.ui.format.dateFromPickerMillis
+import app.billfolder.libris.ui.format.pickerMillisFrom
+import kotlinx.datetime.LocalDate
 import app.billfolder.libris.ui.theme.Libris
 import app.billfolder.libris.ui.theme.LocalLibrisType
 
@@ -24,12 +25,12 @@ fun ConfirmDialog(message: String, confirmLabel: String, onConfirm: () -> Unit, 
     )
 }
 
-/** Picks a calendar date as "YYYY-MM-DD"; future days can be blocked (reading dates can't be in the future). */
+/** Picks a calendar date; days after [max] can be blocked (reading dates can't be in the future). */
 @Composable
-fun IsoDatePicker(initial: String?, maxIso: String?, onPicked: (String) -> Unit, onDismiss: () -> Unit) {
-    val maxMillis = maxIso?.let(::pickerMillisFromIso)
+fun LibrisDatePicker(initial: LocalDate?, max: LocalDate?, onPicked: (LocalDate) -> Unit, onDismiss: () -> Unit) {
+    val maxMillis = max?.let(::pickerMillisFrom)
     val state = rememberDatePickerState(
-        initialSelectedDateMillis = initial?.let(::pickerMillisFromIso),
+        initialSelectedDateMillis = initial?.let(::pickerMillisFrom),
         selectableDates = object : androidx.compose.material3.SelectableDates {
             override fun isSelectableDate(utcTimeMillis: Long) = maxMillis == null || utcTimeMillis <= maxMillis
         },
@@ -37,7 +38,7 @@ fun IsoDatePicker(initial: String?, maxIso: String?, onPicked: (String) -> Unit,
     DatePickerDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
-            TextButton(onClick = { state.selectedDateMillis?.let { onPicked(isoFromPickerMillis(it)) }; onDismiss() }) { Text("OK") }
+            TextButton(onClick = { state.selectedDateMillis?.let { onPicked(dateFromPickerMillis(it)) }; onDismiss() }) { Text("OK") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } },
     ) { DatePicker(state) }

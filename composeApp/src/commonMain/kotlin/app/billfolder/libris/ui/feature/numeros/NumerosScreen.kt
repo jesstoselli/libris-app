@@ -29,7 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import app.billfolder.libris.data.remote.dto.MonthStats
+import app.billfolder.libris.domain.model.MonthStats
 import app.billfolder.libris.ui.common.Load
 import app.billfolder.libris.ui.components.Ficha
 import app.billfolder.libris.ui.components.PageHeading

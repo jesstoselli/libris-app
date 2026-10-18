@@ -4,26 +4,26 @@ import app.billfolder.libris.data.auth.AuthSession
 import app.billfolder.libris.data.remote.dto.AcquireBody
 import app.billfolder.libris.data.remote.dto.ApiJson
 import app.billfolder.libris.data.remote.dto.AuthBody
-import app.billfolder.libris.data.remote.dto.Book
+import app.billfolder.libris.data.remote.dto.BookDto
 import app.billfolder.libris.data.remote.dto.BookListQuery
-import app.billfolder.libris.data.remote.dto.BookOwnership
-import app.billfolder.libris.data.remote.dto.BookStatus
-import app.billfolder.libris.data.remote.dto.Cover
+import app.billfolder.libris.data.remote.dto.BookOwnershipDto
+import app.billfolder.libris.data.remote.dto.BookStatusDto
+import app.billfolder.libris.data.remote.dto.CoverDto
 import app.billfolder.libris.data.remote.dto.CreateBookRequest
 import app.billfolder.libris.data.remote.dto.ErrorBody
-import app.billfolder.libris.data.remote.dto.Genre
-import app.billfolder.libris.data.remote.dto.IsbnLookup
+import app.billfolder.libris.data.remote.dto.GenreDto
+import app.billfolder.libris.data.remote.dto.IsbnLookupDto
 import app.billfolder.libris.data.remote.dto.LogBody
 import app.billfolder.libris.data.remote.dto.LoginBody
-import app.billfolder.libris.data.remote.dto.MonthDetail
+import app.billfolder.libris.data.remote.dto.MonthDetailDto
 import app.billfolder.libris.data.remote.dto.NameBody
-import app.billfolder.libris.data.remote.dto.ReadingLog
-import app.billfolder.libris.data.remote.dto.ReadingLogResult
+import app.billfolder.libris.data.remote.dto.ReadingLogDto
+import app.billfolder.libris.data.remote.dto.ReadingLogResultDto
 import app.billfolder.libris.data.remote.dto.RefreshBody
 import app.billfolder.libris.data.remote.dto.StatusBody
 import app.billfolder.libris.data.remote.dto.UpdateBookRequest
 import app.billfolder.libris.data.remote.dto.UrlBody
-import app.billfolder.libris.data.remote.dto.YearStats
+import app.billfolder.libris.data.remote.dto.YearStatsDto
 import app.billfolder.libris.domain.error.ApiException
 import app.billfolder.libris.domain.error.NoConnectionException
 import app.billfolder.libris.domain.error.UnauthorizedException
@@ -71,60 +71,60 @@ class LibrisApi(private val http: HttpClient, val baseUrl: String) {
         send { http.post("$baseUrl/v1/auth/logout") { json(RefreshBody(refreshToken)) } }
     }
 
-    suspend fun listBooks(token: String, query: BookListQuery = BookListQuery()): List<Book> =
+    suspend fun listBooks(token: String, query: BookListQuery = BookListQuery()): List<BookDto> =
         send {
             http.get("$baseUrl/v1/books") {
                 bearerAuth(token)
-                query.ownership?.let { parameter("ownership", if (it == BookOwnership.Owned) "owned" else "wishlist") }
+                query.ownership?.let { parameter("ownership", if (it == BookOwnershipDto.Owned) "owned" else "wishlist") }
                 query.status?.let { parameter("status", it.wire) }
                 query.genreId?.takeIf { it.isNotBlank() }?.let { parameter("genreId", it) }
                 query.q?.takeIf { it.isNotBlank() }?.let { parameter("q", it) }
             }
         }.body()
 
-    suspend fun getBook(token: String, id: String): Book = send { http.get("$baseUrl/v1/books/$id") { bearerAuth(token) } }.body()
+    suspend fun getBook(token: String, id: String): BookDto = send { http.get("$baseUrl/v1/books/$id") { bearerAuth(token) } }.body()
 
-    suspend fun createBook(token: String, request: CreateBookRequest): Book =
+    suspend fun createBook(token: String, request: CreateBookRequest): BookDto =
         send { http.post("$baseUrl/v1/books") { bearerAuth(token); json(request) } }.body()
 
-    suspend fun updateBook(token: String, id: String, request: UpdateBookRequest): Book =
+    suspend fun updateBook(token: String, id: String, request: UpdateBookRequest): BookDto =
         send { http.put("$baseUrl/v1/books/$id") { bearerAuth(token); json(request) } }.body()
 
     suspend fun deleteBook(token: String, id: String) {
         send { http.delete("$baseUrl/v1/books/$id") { bearerAuth(token) } }
     }
 
-    suspend fun changeStatus(token: String, id: String, status: BookStatus, today: String): Book =
+    suspend fun changeStatus(token: String, id: String, status: BookStatusDto, today: String): BookDto =
         send { http.patch("$baseUrl/v1/books/$id/status") { bearerAuth(token); json(StatusBody(status, today)) } }.body()
 
-    suspend fun acquire(token: String, id: String, today: String, totalPages: Int?): Book =
+    suspend fun acquire(token: String, id: String, today: String, totalPages: Int?): BookDto =
         send { http.post("$baseUrl/v1/books/$id/acquire") { bearerAuth(token); json(AcquireBody(today, totalPages)) } }.body()
 
-    suspend fun listLogs(token: String, bookId: String): List<ReadingLog> =
+    suspend fun listLogs(token: String, bookId: String): List<ReadingLogDto> =
         send { http.get("$baseUrl/v1/books/$bookId/logs") { bearerAuth(token) } }.body()
 
-    suspend fun createLog(token: String, bookId: String, date: String, page: Int): ReadingLogResult =
+    suspend fun createLog(token: String, bookId: String, date: String, page: Int): ReadingLogResultDto =
         send { http.post("$baseUrl/v1/books/$bookId/logs") { bearerAuth(token); json(LogBody(date, page)) } }.body()
 
-    suspend fun updateLog(token: String, bookId: String, logId: String, date: String, page: Int): ReadingLogResult =
+    suspend fun updateLog(token: String, bookId: String, logId: String, date: String, page: Int): ReadingLogResultDto =
         send { http.put("$baseUrl/v1/books/$bookId/logs/$logId") { bearerAuth(token); json(LogBody(date, page)) } }.body()
 
-    suspend fun deleteLog(token: String, bookId: String, logId: String): ReadingLogResult =
+    suspend fun deleteLog(token: String, bookId: String, logId: String): ReadingLogResultDto =
         send { http.delete("$baseUrl/v1/books/$bookId/logs/$logId") { bearerAuth(token) } }.body()
 
-    suspend fun listGenres(token: String): List<Genre> = send { http.get("$baseUrl/v1/genres") { bearerAuth(token) } }.body()
+    suspend fun listGenres(token: String): List<GenreDto> = send { http.get("$baseUrl/v1/genres") { bearerAuth(token) } }.body()
 
-    suspend fun renameGenre(token: String, id: String, name: String): Genre =
+    suspend fun renameGenre(token: String, id: String, name: String): GenreDto =
         send { http.put("$baseUrl/v1/genres/$id") { bearerAuth(token); json(NameBody(name)) } }.body()
 
     suspend fun deleteGenre(token: String, id: String) {
         send { http.delete("$baseUrl/v1/genres/$id") { bearerAuth(token) } }
     }
 
-    suspend fun lookupIsbn(token: String, isbn: String): IsbnLookup =
+    suspend fun lookupIsbn(token: String, isbn: String): IsbnLookupDto =
         send { http.get("$baseUrl/v1/isbn/${isbn.trim().encodeURLPathPart()}") { bearerAuth(token) } }.body()
 
-    suspend fun uploadCover(token: String, bytes: ByteArray, fileName: String, mimeType: String): Cover =
+    suspend fun uploadCover(token: String, bytes: ByteArray, fileName: String, mimeType: String): CoverDto =
         send {
             http.submitFormWithBinaryData(
                 url = "$baseUrl/v1/covers",
@@ -138,12 +138,12 @@ class LibrisApi(private val http: HttpClient, val baseUrl: String) {
         }.body()
 
     /** The API downloads the image itself, so the cover keeps working if the external link dies. */
-    suspend fun coverFromUrl(token: String, url: String): Cover =
+    suspend fun coverFromUrl(token: String, url: String): CoverDto =
         send { http.post("$baseUrl/v1/covers/from-url") { bearerAuth(token); json(UrlBody(url)) } }.body()
 
-    suspend fun yearStats(token: String, year: Int): YearStats = send { http.get("$baseUrl/v1/stats/$year") { bearerAuth(token) } }.body()
+    suspend fun yearStats(token: String, year: Int): YearStatsDto = send { http.get("$baseUrl/v1/stats/$year") { bearerAuth(token) } }.body()
 
-    suspend fun monthStats(token: String, year: Int, month: Int): MonthDetail =
+    suspend fun monthStats(token: String, year: Int, month: Int): MonthDetailDto =
         send { http.get("$baseUrl/v1/stats/$year/$month") { bearerAuth(token) } }.body()
 
     /** The API returns covers as relative paths ("/v1/covers/{id}"). */

@@ -34,13 +34,13 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import app.billfolder.libris.data.remote.dto.Book
-import app.billfolder.libris.data.remote.dto.BookOwnership
-import app.billfolder.libris.data.remote.dto.BookStatus
-import app.billfolder.libris.domain.time.todayIso
+import app.billfolder.libris.domain.model.Book
+import app.billfolder.libris.domain.model.BookOwnership
+import app.billfolder.libris.domain.model.BookStatus
+import app.billfolder.libris.domain.time.today
 import app.billfolder.libris.ui.components.BookCover
 import app.billfolder.libris.ui.components.Ficha
-import app.billfolder.libris.ui.components.IsoDatePicker
+import app.billfolder.libris.ui.components.LibrisDatePicker
 import app.billfolder.libris.ui.components.LocalSnackbar
 import app.billfolder.libris.ui.components.PageHeading
 import app.billfolder.libris.ui.components.PrimaryButton
@@ -48,11 +48,12 @@ import app.billfolder.libris.ui.components.RuledField
 import app.billfolder.libris.ui.components.STATUS_LABELS
 import app.billfolder.libris.ui.components.SessionAction
 import app.billfolder.libris.ui.components.Stamp
-import app.billfolder.libris.ui.format.formatIsoDate
+import app.billfolder.libris.ui.format.formatDate
 import app.billfolder.libris.ui.platform.IsbnScanner
 import app.billfolder.libris.ui.platform.rememberCoverPicker
 import app.billfolder.libris.ui.theme.Libris
 import app.billfolder.libris.ui.theme.LocalLibrisType
+import kotlinx.datetime.LocalDate
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -324,8 +325,8 @@ fun BookFormScreen(
         }
     }
     picking?.let { which ->
-        IsoDatePicker(
-            if (which == "start") state.startedAt else state.finishedAt, todayIso(),
+        LibrisDatePicker(
+            if (which == "start") state.startedAt else state.finishedAt, today(),
             onPicked = {
                 if (which == "start") viewModel.onStartedAt(it) else viewModel.onFinishedAt(
                     it
@@ -412,13 +413,13 @@ private fun GenreChips(state: BookFormState, existing: List<String>, viewModel: 
 }
 
 @Composable
-private fun DateField(label: String, value: String?, onPick: () -> Unit, onClear: () -> Unit) {
+private fun DateField(label: String, value: LocalDate?, onPick: () -> Unit, onClear: () -> Unit) {
     val type = LocalLibrisType.current
     Column {
         Text(label, fontFamily = type.body, fontSize = 13.sp, color = Libris.inkSoft)
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                value?.let(::formatIsoDate) ?: "escolher",
+                value?.let(::formatDate) ?: "escolher",
                 fontFamily = type.body,
                 fontSize = 17.sp,
                 modifier = Modifier.clickable(onClick = onPick).padding(vertical = 6.dp)

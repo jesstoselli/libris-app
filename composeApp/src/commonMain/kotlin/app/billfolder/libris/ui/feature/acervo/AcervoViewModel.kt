@@ -2,15 +2,15 @@ package app.billfolder.libris.ui.feature.acervo
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import app.billfolder.libris.data.auth.AuthSession
-import app.billfolder.libris.data.remote.LibrisApi
-import app.billfolder.libris.data.remote.dto.Book
-import app.billfolder.libris.data.remote.dto.BookListQuery
-import app.billfolder.libris.data.remote.dto.BookOwnership
-import app.billfolder.libris.data.remote.dto.BookStatus
-import app.billfolder.libris.data.remote.dto.Genre
+import app.billfolder.libris.domain.model.Book
+import app.billfolder.libris.domain.model.BookFilter
+import app.billfolder.libris.domain.model.BookOwnership
+import app.billfolder.libris.domain.model.BookStatus
+import app.billfolder.libris.domain.model.Genre
+import app.billfolder.libris.domain.repository.BookRepository
+import app.billfolder.libris.domain.repository.GenreRepository
 import app.billfolder.libris.ui.common.Load
-import app.billfolder.libris.ui.common.userMessage
+import app.billfolder.libris.ui.common.loadOf
 import app.billfolder.libris.ui.common.valueOrNull
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -42,7 +42,7 @@ data class AcervoState(
         }
 }
 
-class AcervoViewModel(private val session: AuthSession, private val api: LibrisApi) : ViewModel() {
+class AcervoViewModel(private val books: BookRepository, private val genres: GenreRepository) : ViewModel() {
 
     private val _state = MutableStateFlow(AcervoState())
     val state: StateFlow<AcervoState> = _state.asStateFlow()
@@ -54,19 +54,13 @@ class AcervoViewModel(private val session: AuthSession, private val api: LibrisA
         refresh()
     }
 
-    fun coverSrc(book: Book) = api.coverSrc(book.coverUrl)
-
     /** Reloads everything (also when coming back from a Ficha, where things may have changed). */
     fun refresh(): List<Job> = listOfNotNull(
         viewModelScope.launch {
-            runCatching { session.authorized { api.listGenres(it) } }.onSuccess { g -> _state.update { it.copy(genres = g) } }
+            runCatching { genres.list() }.onSuccess { g -> _state.update { it.copy(genres = g) } }
         },
         viewModelScope.launch {
-            val load = try {
-                Load.Loaded(session.authorized { api.listBooks(it, BookListQuery(ownership = BookOwnership.Owned)) })
-            } catch (e: Exception) {
-                Load.Failed(e.userMessage())
-            }
+            val load = loadOf { books.list(BookFilter(ownership = BookOwnership.Owned)) }
             _state.update { it.copy(all = load) }
         },
         if (_state.value.hasFilters) loadFiltered() else null,
@@ -111,12 +105,7 @@ class AcervoViewModel(private val session: AuthSession, private val api: LibrisA
         }
         _state.update { it.copy(filtered = Load.Loading) }
         filterJob = viewModelScope.launch {
-            val query = BookListQuery(BookOwnership.Owned, s.status, s.genreId, s.query.trim().ifBlank { null })
-            val load = try {
-                Load.Loaded(session.authorized { api.listBooks(it, query) })
-            } catch (e: Exception) {
-                Load.Failed(e.userMessage())
-            }
+            val load = loadOf { books.list(BookFilter(BookOwnership.Owned, s.status, s.genreId, s.query)) }
             _state.update { it.copy(filtered = load) }
         }
         return filterJob

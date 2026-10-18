@@ -2,16 +2,18 @@ package app.billfolder.libris.ui.feature.form
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import app.billfolder.libris.data.auth.AuthSession
-import app.billfolder.libris.data.remote.LibrisApi
-import app.billfolder.libris.data.remote.dto.Book
-import app.billfolder.libris.data.remote.dto.BookOwnership
-import app.billfolder.libris.data.remote.dto.BookStatus
-import app.billfolder.libris.data.remote.dto.CreateBookRequest
-import app.billfolder.libris.data.remote.dto.IsbnLookup
-import app.billfolder.libris.data.remote.dto.UpdateBookRequest
-import app.billfolder.libris.domain.time.todayIso
-import app.billfolder.libris.data.remote.dto.Genre
+import app.billfolder.libris.domain.model.Book
+import app.billfolder.libris.domain.model.BookOwnership
+import app.billfolder.libris.domain.model.BookStatus
+import app.billfolder.libris.domain.model.BookLookup
+import app.billfolder.libris.domain.time.today
+import app.billfolder.libris.domain.model.BookDraft
+import app.billfolder.libris.domain.model.Genre
+import app.billfolder.libris.domain.model.LookupSource
+import app.billfolder.libris.domain.repository.BookRepository
+import app.billfolder.libris.domain.repository.CoverRepository
+import app.billfolder.libris.domain.repository.GenreRepository
+import kotlinx.datetime.LocalDate
 import app.billfolder.libris.ui.common.apiCode
 import app.billfolder.libris.ui.common.userMessage
 import kotlinx.coroutines.CancellationException
@@ -40,9 +42,11 @@ data class BookFormState(
     val genres: List<String> = emptyList(),
     val ownership: BookOwnership = BookOwnership.Owned,
     val status: BookStatus = BookStatus.NotStarted,
-    val startedAt: String? = null,
-    val finishedAt: String? = null,
+    val startedAt: LocalDate? = null,
+    val finishedAt: LocalDate? = null,
     val coverId: String? = null,
+    /** Where [coverId] can be seen; set together with it. */
+    val coverUrl: String? = null,
     val pendingCoverUrl: String? = null,
     val lookingUp: Boolean = false,
     val lookupNote: String? = null,
@@ -85,7 +89,7 @@ data class BookFormState(
     val datesError: String? get() {
         val start = startedAt.takeIf { showStart }
         val end = finishedAt.takeIf { showFinish }
-        val today = todayIso()
+        val today = today()
         return when {
             start != null && end != null && end < start -> "O término não pode ser antes do início."
             (start != null && start > today) || (end != null && end > today) -> "As datas não podem estar no futuro."
@@ -103,7 +107,12 @@ sealed interface FormResult {
     data class Saved(val book: Book) : FormResult
 }
 
-class BookFormViewModel(private val bookId: String?, private val session: AuthSession, private val api: LibrisApi) : ViewModel() {
+class BookFormViewModel(
+    private val bookId: String?,
+    private val books: BookRepository,
+    private val genres: GenreRepository,
+    private val covers: CoverRepository,
+) : ViewModel() {
 
     private val _state = MutableStateFlow(BookFormState())
     val state: StateFlow<BookFormState> = _state.asStateFlow()
@@ -119,12 +128,12 @@ class BookFormViewModel(private val bookId: String?, private val session: AuthSe
 
     init {
         viewModelScope.launch {
-            runCatching { session.authorized { api.listGenres(it) } }.onSuccess { _existingGenres.value = it }
+            runCatching { genres.list() }.onSuccess { _existingGenres.value = it }
         }
         bookId?.let { id ->
             viewModelScope.launch {
                 try {
-                    load(session.authorized { api.getBook(it, id) })
+                    load(books.get(id))
                 } catch (e: Exception) {
                     _state.update { it.copy(loadError = e.userMessage()) }
                 }
@@ -132,7 +141,7 @@ class BookFormViewModel(private val bookId: String?, private val session: AuthSe
         }
     }
 
-    fun coverSrc(): String? = _state.value.coverId?.let { api.coverSrc("/v1/covers/$it") } ?: _state.value.coverPreview
+    fun coverSrc(): String? = _state.value.let { if (it.coverId != null) it.coverUrl else it.coverPreview }
 
     fun touch(field: String) = _state.update { it.copy(touched = it.touched + field) }
 
@@ -147,8 +156,8 @@ class BookFormViewModel(private val bookId: String?, private val session: AuthSe
     fun onSynopsis(v: String) = _state.update { it.copy(synopsis = v) }
     fun onOwnership(v: BookOwnership) = _state.update { it.copy(ownership = v) }
     fun onStatus(v: BookStatus) = _state.update { it.copy(status = v) }
-    fun onStartedAt(v: String?) = _state.update { it.copy(startedAt = v) }
-    fun onFinishedAt(v: String?) = _state.update { it.copy(finishedAt = v) }
+    fun onStartedAt(v: LocalDate?) = _state.update { it.copy(startedAt = v) }
+    fun onFinishedAt(v: LocalDate?) = _state.update { it.copy(finishedAt = v) }
 
     /** Adds a genre once (case-insensitively), reusing the stored spelling when it already exists. */
     fun addGenre(raw: String) = _state.update { it.copy(genres = withGenre(it.genres, raw)) }
@@ -174,7 +183,7 @@ class BookFormViewModel(private val bookId: String?, private val session: AuthSe
         _state.update { it.copy(lookingUp = true, lookupNote = null, lookupError = null) }
         viewModelScope.launch {
             try {
-                apply(session.authorized { api.lookupIsbn(it, s.isbn) })
+                apply(books.lookUp(s.isbn))
             } catch (e: Exception) {
                 val message = if (e.apiCode == "isbn_not_found") "Não achei esse ISBN. Pode preencher à mão." else e.userMessage()
                 _state.update { it.copy(lookingUp = false, lookupError = message) }
@@ -186,15 +195,15 @@ class BookFormViewModel(private val bookId: String?, private val session: AuthSe
         _state.update { it.copy(uploading = true, coverError = null) }
         viewModelScope.launch {
             try {
-                val cover = session.authorized { api.uploadCover(it, bytes, "capa.jpg", mimeType) }
-                _state.update { it.copy(coverId = cover.coverId, pendingCoverUrl = null, uploading = false) }
+                val cover = covers.upload(bytes, mimeType)
+                _state.update { it.copy(coverId = cover.id, coverUrl = cover.url, pendingCoverUrl = null, uploading = false) }
             } catch (e: Exception) {
                 _state.update { it.copy(uploading = false, coverError = e.userMessage()) }
             }
         }
     }
 
-    fun removeCover() = _state.update { it.copy(coverId = null, pendingCoverUrl = null) }
+    fun removeCover() = _state.update { it.copy(coverId = null, coverUrl = null, pendingCoverUrl = null) }
 
     fun save() {
         val s = _state.value
@@ -209,7 +218,7 @@ class BookFormViewModel(private val bookId: String?, private val session: AuthSe
                 // A cover suggested by the ISBN lookup is only downloaded when the book is actually saved.
                 val coverId = if (s.pendingCoverUrl != null && s.coverId == null) {
                     try {
-                        session.authorized { api.coverFromUrl(it, s.pendingCoverUrl) }.coverId
+                        covers.fromUrl(s.pendingCoverUrl).id
                     } catch (e: CancellationException) {
                         throw e
                     } catch (_: Exception) {
@@ -217,9 +226,8 @@ class BookFormViewModel(private val bookId: String?, private val session: AuthSe
                         null
                     }
                 } else s.coverId
-                val book = session.authorized { token ->
-                    s.editing?.let { api.updateBook(token, it.id, s.toUpdate(coverId)) } ?: api.createBook(token, s.toCreate(coverId))
-                }
+                val draft = s.toDraft(coverId)
+                val book = s.editing?.let { books.update(it.id, draft) } ?: books.create(draft)
                 _messages.send(
                     when {
                         coverFailed -> "Livro salvo, mas não consegui baixar a capa."
@@ -235,8 +243,8 @@ class BookFormViewModel(private val bookId: String?, private val session: AuthSe
     }
 
     /** Fills only what is still empty, so a lookup never overwrites what was typed; its genres are added to the chosen ones. */
-    private fun apply(lookup: IsbnLookup) = _state.update { s ->
-        val source = lookup.source.split('+').joinToString(" e ") { if (it == "google_books") "Google Books" else "Open Library" }
+    private fun apply(lookup: BookLookup) = _state.update { s ->
+        val source = lookup.sources.joinToString(" e ") { if (it == LookupSource.GoogleBooks) "Google Books" else "Open Library" }
         s.copy(
             lookingUp = false,
             lookupNote = "Dados encontrados em $source.",
@@ -246,7 +254,7 @@ class BookFormViewModel(private val bookId: String?, private val session: AuthSe
             publisher = s.publisher.ifBlank { lookup.publisher.orEmpty() },
             publishedYear = s.publishedYear.ifBlank { lookup.publishedYear?.toString().orEmpty() },
             synopsis = s.synopsis.ifBlank { lookup.synopsis.orEmpty() },
-            genres = lookup.suggestedGenres.fold(s.genres, ::withGenre),
+            genres = lookup.genres.fold(s.genres, ::withGenre),
             pendingCoverUrl = if (s.coverId == null) lookup.coverUrl ?: s.pendingCoverUrl else s.pendingCoverUrl,
         )
     }
@@ -265,13 +273,15 @@ class BookFormViewModel(private val bookId: String?, private val session: AuthSe
             startedAt = book.startedAt,
             finishedAt = book.finishedAt,
             coverId = book.coverId,
+            coverUrl = book.coverUrl,
         )
     }
 }
 
 private fun String.orNull() = trim().ifBlank { null }
 
-private fun BookFormState.toCreate(coverId: String?) = CreateBookRequest(
+/** Only what the visible fields say: dates the form hides are not sent, and a wishlist book has no status. */
+private fun BookFormState.toDraft(coverId: String?) = BookDraft(
     title = title.trim(),
     authors = authors.map { it.trim() }.filter { it.isNotEmpty() },
     isbn = isbn.orNull(),
@@ -283,21 +293,6 @@ private fun BookFormState.toCreate(coverId: String?) = CreateBookRequest(
     genres = genres,
     ownership = ownership,
     status = if (ownership == BookOwnership.Owned) status else null,
-    startedAt = startedAt.takeIf { showStart },
-    finishedAt = finishedAt.takeIf { showFinish },
-    today = todayIso(),
-)
-
-private fun BookFormState.toUpdate(coverId: String?) = UpdateBookRequest(
-    title = title.trim(),
-    authors = authors.map { it.trim() }.filter { it.isNotEmpty() },
-    isbn = isbn.orNull(),
-    totalPages = totalPages.toIntOrNull(),
-    publisher = publisher.orNull(),
-    publishedYear = publishedYear.toIntOrNull(),
-    synopsis = synopsis.orNull(),
-    coverId = coverId,
-    genres = genres,
     startedAt = startedAt.takeIf { showStart },
     finishedAt = finishedAt.takeIf { showFinish },
 )

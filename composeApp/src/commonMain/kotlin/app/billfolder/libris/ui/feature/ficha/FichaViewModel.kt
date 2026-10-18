@@ -2,16 +2,17 @@ package app.billfolder.libris.ui.feature.ficha
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import app.billfolder.libris.data.auth.AuthSession
-import app.billfolder.libris.data.remote.LibrisApi
-import app.billfolder.libris.data.remote.dto.Book
-import app.billfolder.libris.data.remote.dto.BookOwnership
-import app.billfolder.libris.data.remote.dto.BookStatus
-import app.billfolder.libris.data.remote.dto.UpdateBookRequest
+import app.billfolder.libris.domain.model.Book
+import app.billfolder.libris.domain.model.BookOwnership
+import app.billfolder.libris.domain.model.BookStatus
 import app.billfolder.libris.domain.error.ApiException
-import app.billfolder.libris.domain.time.todayIso
-import app.billfolder.libris.data.remote.dto.ReadingLog
-import app.billfolder.libris.data.remote.dto.ReadingLogResult
+import app.billfolder.libris.domain.model.toDraft
+import app.billfolder.libris.domain.repository.BookRepository
+import app.billfolder.libris.domain.repository.ReadingRepository
+import kotlinx.datetime.LocalDate
+import app.billfolder.libris.domain.time.today
+import app.billfolder.libris.domain.model.ReadingLog
+import app.billfolder.libris.domain.model.ReadingProgress
 import app.billfolder.libris.ui.common.Load
 import app.billfolder.libris.ui.common.userMessage
 import app.billfolder.libris.ui.common.valueOrNull
@@ -31,7 +32,7 @@ data class FichaState(
     val notFound: Boolean = false,
     val logs: List<ReadingLog> = emptyList(),
     val pageInput: String = "",
-    val date: String = todayIso(),
+    val date: LocalDate = today(),
     val logError: String? = null,
     val pending: Boolean = false,
     val deleted: Boolean = false,
@@ -45,18 +46,14 @@ data class FichaState(
     val canLog get() = pageInput.toIntOrNull() != null && !pending
 }
 
-fun Book.toUpdate(startedAt: String? = this.startedAt, finishedAt: String? = this.finishedAt) = UpdateBookRequest(
-    title, authors, isbn, totalPages, publisher, publishedYear, synopsis, coverId, genres.map { it.name }, startedAt, finishedAt,
-)
-
 /** Checks the "editar datas" pair the same way the book form does. */
-fun datesProblem(startedAt: String?, finishedAt: String?, today: String = todayIso()): String? = when {
+fun datesProblem(startedAt: LocalDate?, finishedAt: LocalDate?, today: LocalDate = today()): String? = when {
     startedAt != null && finishedAt != null && finishedAt < startedAt -> "O término não pode ser antes do início."
     (startedAt != null && startedAt > today) || (finishedAt != null && finishedAt > today) -> "As datas não podem estar no futuro."
     else -> null
 }
 
-class FichaViewModel(private val bookId: String, private val session: AuthSession, private val api: LibrisApi) : ViewModel() {
+class FichaViewModel(private val bookId: String, private val books: BookRepository, private val reading: ReadingRepository) : ViewModel() {
 
     private val _state = MutableStateFlow(FichaState())
     val state: StateFlow<FichaState> = _state.asStateFlow()
@@ -72,7 +69,7 @@ class FichaViewModel(private val bookId: String, private val session: AuthSessio
     fun reload(): Job =
         viewModelScope.launch {
             try {
-                val book = session.authorized { api.getBook(it, bookId) }
+                val book = books.get(bookId)
                 _state.update { it.copy(book = Load.Loaded(book)) }
                 if (book.ownership == BookOwnership.Owned) loadLogs()
             } catch (e: ApiException) {
@@ -93,37 +90,35 @@ class FichaViewModel(private val bookId: String, private val session: AuthSessio
         }
     }
 
-    fun coverSrc(book: Book) = api.coverSrc(book.coverUrl)
-
     fun onPage(value: String) = _state.update { it.copy(pageInput = value.filter { c -> c.isDigit() || c == '.' || c == ',' }, logError = null) }
 
-    fun onDate(value: String) = _state.update { it.copy(date = value) }
+    fun onDate(value: LocalDate) = _state.update { it.copy(date = value) }
 
     fun changeStatus(status: BookStatus) {
         val book = _state.value.book.valueOrNull ?: return
         if (book.status == status) return
-        run("Situação atualizada.") { token ->
-            val updated = api.changeStatus(token, book.id, status, todayIso())
+        run("Situação atualizada.") {
+            val updated = books.changeStatus(book.id, status)
             _state.update { it.copy(book = Load.Loaded(updated)) }
         }
     }
 
-    fun saveDates(startedAt: String?, finishedAt: String?) {
+    fun saveDates(startedAt: LocalDate?, finishedAt: LocalDate?) {
         val book = _state.value.book.valueOrNull ?: return
         datesProblem(startedAt, finishedAt)?.let { problem ->
             viewModelScope.launch { _messages.send(problem) }
             return
         }
-        run("Datas atualizadas.") { token ->
-            val updated = api.updateBook(token, book.id, book.toUpdate(startedAt, finishedAt))
+        run("Datas atualizadas.") {
+            val updated = books.update(book.id, book.toDraft().copy(startedAt = startedAt, finishedAt = finishedAt))
             _state.update { it.copy(book = Load.Loaded(updated)) }
         }
     }
 
     fun deleteBook() {
         val book = _state.value.book.valueOrNull ?: return
-        run("Livro apagado.") { token ->
-            api.deleteBook(token, book.id)
+        run("Livro apagado.") {
+            books.delete(book.id)
             _state.update { it.copy(deleted = true) }
         }
     }
@@ -131,8 +126,8 @@ class FichaViewModel(private val bookId: String, private val session: AuthSessio
     /** "Comprei": a wishlist book becomes owned (and gets a reading panel). */
     fun acquire(totalPages: Int?) {
         val book = _state.value.book.valueOrNull ?: return
-        run("Livro movido para o acervo.") { token ->
-            val updated = api.acquire(token, book.id, todayIso(), totalPages)
+        run("Livro movido para o acervo.") {
+            val updated = books.acquire(book.id, totalPages)
             _state.update { it.copy(book = Load.Loaded(updated)) }
             loadLogs()
         }
@@ -144,7 +139,7 @@ class FichaViewModel(private val bookId: String, private val session: AuthSessio
         _state.update { it.copy(pending = true, logError = null) }
         viewModelScope.launch {
             try {
-                apply(session.authorized { api.createLog(it, bookId, _state.value.date, page) })
+                apply(reading.add(bookId, _state.value.date, page))
                 _state.update { it.copy(pageInput = "", pending = false) }
                 _messages.send("Leitura anotada.")
             } catch (e: Exception) {
@@ -154,22 +149,22 @@ class FichaViewModel(private val bookId: String, private val session: AuthSessio
         }
     }
 
-    fun editLog(log: ReadingLog, date: String, page: Int) = run("Registro atualizado.") { token ->
-        apply(api.updateLog(token, bookId, log.id, date, page))
+    fun editLog(log: ReadingLog, date: LocalDate, page: Int) = run("Registro atualizado.") {
+        apply(reading.update(bookId, log.id, date, page))
     }
 
-    fun deleteLog(log: ReadingLog) = run("Registro apagado.") { token -> apply(api.deleteLog(token, bookId, log.id)) }
+    fun deleteLog(log: ReadingLog) = run("Registro apagado.") { apply(reading.delete(bookId, log.id)) }
 
     private suspend fun loadLogs() {
-        runCatching { session.authorized { api.listLogs(it, bookId) } }.onSuccess { logs -> _state.update { it.copy(logs = logs) } }
+        runCatching { reading.logs(bookId) }.onSuccess { logs -> _state.update { it.copy(logs = logs) } }
     }
 
-    private fun apply(result: ReadingLogResult) = _state.update { it.copy(book = Load.Loaded(result.book), logs = result.logs) }
+    private fun apply(result: ReadingProgress) = _state.update { it.copy(book = Load.Loaded(result.book), logs = result.logs) }
 
-    private fun run(success: String, block: suspend (String) -> Unit) {
+    private fun run(success: String, block: suspend () -> Unit) {
         viewModelScope.launch {
             try {
-                session.authorized { block(it) }
+                block()
                 _messages.send(success)
             } catch (e: Exception) {
                 _messages.send(e.userMessage())

@@ -2,10 +2,11 @@ package app.billfolder.libris.ui.feature.genres
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import app.billfolder.libris.data.auth.AuthSession
-import app.billfolder.libris.data.remote.LibrisApi
-import app.billfolder.libris.data.remote.dto.Genre
+import app.billfolder.libris.domain.model.Genre
+import app.billfolder.libris.domain.repository.GenreRepository
 import app.billfolder.libris.ui.common.Load
+import app.billfolder.libris.ui.common.loadOf
+import app.billfolder.libris.ui.common.map
 import app.billfolder.libris.ui.common.userMessage
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -19,7 +20,7 @@ import kotlinx.coroutines.launch
 
 data class GenresState(val genres: Load<List<Genre>> = Load.Loading, val renameError: String? = null, val refreshing: Boolean = false)
 
-class GenresViewModel(private val session: AuthSession, private val api: LibrisApi) : ViewModel() {
+class GenresViewModel(private val genres: GenreRepository) : ViewModel() {
     private val _state = MutableStateFlow(GenresState())
     val state: StateFlow<GenresState> = _state.asStateFlow()
 
@@ -35,11 +36,7 @@ class GenresViewModel(private val session: AuthSession, private val api: LibrisA
     }
 
     private fun load(): Job = viewModelScope.launch {
-        val load = try {
-            Load.Loaded(session.authorized { api.listGenres(it) })
-        } catch (e: Exception) {
-            Load.Failed(e.userMessage())
-        }
+        val load = loadOf { genres.list() }
         _state.update { it.copy(genres = load) }
     }
 
@@ -61,7 +58,7 @@ class GenresViewModel(private val session: AuthSession, private val api: LibrisA
         if (trimmed.isEmpty() || trimmed == genre.name) return
         viewModelScope.launch {
             try {
-                val renamed = session.authorized { api.renameGenre(it, genre.id, trimmed) }
+                val renamed = genres.rename(genre.id, trimmed)
                 _state.update { s -> s.copy(genres = s.genres.map { list -> list.map { if (it.id == genre.id) renamed else it } }, renameError = null) }
                 _renamed.send(Unit)
                 _messages.send("Gênero renomeado.")
@@ -74,7 +71,7 @@ class GenresViewModel(private val session: AuthSession, private val api: LibrisA
     fun delete(genre: Genre) {
         viewModelScope.launch {
             try {
-                session.authorized { api.deleteGenre(it, genre.id) }
+                genres.delete(genre.id)
                 _state.update { s -> s.copy(genres = s.genres.map { list -> list.filterNot { it.id == genre.id } }) }
                 _messages.send("Gênero apagado.")
             } catch (e: Exception) {
@@ -82,10 +79,4 @@ class GenresViewModel(private val session: AuthSession, private val api: LibrisA
             }
         }
     }
-}
-
-private fun <T, R> Load<T>.map(transform: (T) -> R): Load<R> = when (this) {
-    is Load.Loaded -> Load.Loaded(transform(value))
-    is Load.Failed -> this
-    Load.Loading -> Load.Loading
 }

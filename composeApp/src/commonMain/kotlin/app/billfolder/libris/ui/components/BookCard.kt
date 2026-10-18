@@ -16,9 +16,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import app.billfolder.libris.data.remote.dto.Book
-import app.billfolder.libris.data.remote.dto.BookOwnership
-import app.billfolder.libris.data.remote.dto.BookStatus
+import app.billfolder.libris.domain.model.Book
+import app.billfolder.libris.domain.model.BookOwnership
+import app.billfolder.libris.domain.model.BookStatus
 import app.billfolder.libris.ui.theme.Libris
 import app.billfolder.libris.ui.theme.LocalLibrisType
 
@@ -30,11 +30,11 @@ fun progressLine(book: Book): String? = when {
 }
 
 @Composable
-fun BookCard(book: Book, coverSrc: String?, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun BookCard(book: Book, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val type = LocalLibrisType.current
     Ficha(modifier.fillMaxWidth().clickable(onClick = onClick), padding = 14.dp, foldedCorner = true) {
         Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            BookCover(coverSrc, book.title, width = 62.dp, height = 94.dp, fontSize = 9.sp)
+            BookCover(book.coverUrl, book.title, width = 62.dp, height = 94.dp, fontSize = 9.sp)
             Column(Modifier.weight(1f)) {
                 Text(book.title, fontFamily = type.title, fontWeight = FontWeight.Bold, fontSize = 18.sp, lineHeight = 20.sp, color = Libris.oxblood, maxLines = 3, overflow = TextOverflow.Ellipsis)
                 Text(book.authors.joinToString(", "), fontFamily = type.body, fontSize = 14.sp, color = Libris.inkSoft)

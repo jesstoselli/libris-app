@@ -1,7 +1,11 @@
 package app.billfolder.libris.data.auth
 
 import app.billfolder.libris.data.remote.LibrisApi
-import app.billfolder.libris.data.remote.dto.User
+import app.billfolder.libris.data.remote.dto.UserDto
+import app.billfolder.libris.data.remote.toDomain
+import app.billfolder.libris.domain.model.AccountState
+import app.billfolder.libris.domain.model.User
+import app.billfolder.libris.domain.repository.AuthRepository
 import app.billfolder.libris.domain.error.ApiException
 import app.billfolder.libris.domain.error.SessionExpiredException
 import app.billfolder.libris.domain.error.SignedOutException
@@ -15,7 +19,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class Session(val accessToken: String, val refreshToken: String, val user: User)
+data class Session(val accessToken: String, val refreshToken: String, val user: UserDto)
 
 /** Where the tokens live; each platform keeps them private to the app (Android prefs, iOS Keychain). */
 interface TokenStore {
@@ -30,26 +34,22 @@ class InMemoryTokenStore(private var session: Session? = null) : TokenStore {
     }
 }
 
-sealed interface AccountState {
-    data object SignedOut : AccountState
-    data class SignedIn(val user: User) : AccountState
-}
 
-class AuthSession(private val api: LibrisApi, private val tokens: TokenStore) {
+class AuthSession(private val api: LibrisApi, private val tokens: TokenStore) : AuthRepository {
 
     private val refreshLock = Mutex()
-    private val _state = MutableStateFlow<AccountState>(tokens.load()?.let { AccountState.SignedIn(it.user) } ?: AccountState.SignedOut)
-    val state: StateFlow<AccountState> = _state.asStateFlow()
+    private val _state = MutableStateFlow<AccountState>(tokens.load()?.let { AccountState.SignedIn(it.user.toDomain()) } ?: AccountState.SignedOut)
+    override val state: StateFlow<AccountState> = _state.asStateFlow()
 
-    suspend fun login(email: String, password: String): User {
+    override suspend fun login(email: String, password: String): User {
         val auth = api.login(email.trim(), password)
         tokens.save(Session(auth.accessToken, auth.refreshToken, auth.user))
-        _state.value = AccountState.SignedIn(auth.user)
-        return auth.user
+        _state.value = AccountState.SignedIn(auth.user.toDomain())
+        return auth.user.toDomain()
     }
 
     /** Forgets the tokens first, so being offline never keeps the session alive; telling the server is best-effort. */
-    suspend fun logout() {
+    override suspend fun logout() {
         val session = tokens.load()
         tokens.save(null)
         _state.value = AccountState.SignedOut

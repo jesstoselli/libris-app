@@ -13,8 +13,8 @@ class TodayTest {
     }
 
     @Test
-    fun todayIso_usesLocalCalendarDate() {
+    fun today_usesLocalCalendarDate() {
         // 23:30 in São Paulo is already the next day in UTC.
-        assertEquals("2026-10-16", todayIso(clockAt("2026-10-17T02:30:00Z"), TimeZone.of("America/Sao_Paulo")))
+        assertEquals("2026-10-16", today(clockAt("2026-10-17T02:30:00Z"), TimeZone.of("America/Sao_Paulo")).toString())
     }
 }

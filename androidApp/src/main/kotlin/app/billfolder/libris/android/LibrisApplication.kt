@@ -2,7 +2,7 @@ package app.billfolder.libris.android
 
 import android.app.Application
 import app.billfolder.libris.data.auth.PrefsTokenStore
-import app.billfolder.libris.ui.initKoin
+import app.billfolder.libris.ui.di.initKoin
 import io.ktor.client.engine.okhttp.OkHttp
 
 class LibrisApplication : Application() {

@@ -29,16 +29,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import app.billfolder.libris.data.remote.dto.Book
-import app.billfolder.libris.data.remote.dto.BookOwnership
-import app.billfolder.libris.data.remote.dto.BookStatus
-import app.billfolder.libris.domain.time.todayIso
-import app.billfolder.libris.data.remote.dto.ReadingLog
+import app.billfolder.libris.domain.model.Book
+import app.billfolder.libris.domain.model.BookOwnership
+import app.billfolder.libris.domain.model.BookStatus
+import app.billfolder.libris.domain.time.today
+import app.billfolder.libris.domain.model.ReadingLog
 import app.billfolder.libris.ui.common.Load
 import app.billfolder.libris.ui.components.BookCover
 import app.billfolder.libris.ui.components.ConfirmDialog
 import app.billfolder.libris.ui.components.Ficha
-import app.billfolder.libris.ui.components.IsoDatePicker
+import app.billfolder.libris.ui.components.LibrisDatePicker
 import app.billfolder.libris.ui.components.LocalSnackbar
 import app.billfolder.libris.ui.components.PrimaryButton
 import app.billfolder.libris.ui.components.ProgressBar
@@ -46,10 +46,11 @@ import app.billfolder.libris.ui.components.Refreshable
 import app.billfolder.libris.ui.components.RuledField
 import app.billfolder.libris.ui.components.STATUS_LABELS
 import app.billfolder.libris.ui.components.Stamp
-import app.billfolder.libris.ui.format.formatIsoDate
+import app.billfolder.libris.ui.format.formatDate
 import app.billfolder.libris.ui.format.formatShortDate
 import app.billfolder.libris.ui.theme.Libris
 import app.billfolder.libris.ui.theme.LocalLibrisType
+import kotlinx.datetime.LocalDate
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -137,7 +138,7 @@ private fun BookSheet(book: Book, viewModel: FichaViewModel, onEdit: () -> Unit)
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 BookCover(
-                    viewModel.coverSrc(book),
+                    book.coverUrl,
                     book.title,
                     width = 104.dp,
                     height = 154.dp,
@@ -233,9 +234,9 @@ private fun BookSheet(book: Book, viewModel: FichaViewModel, onEdit: () -> Unit)
                     }
                 }
                 Text(
-                    "Início: ${book.startedAt?.let(::formatIsoDate) ?: "—"} · Término: ${
+                    "Início: ${book.startedAt?.let(::formatDate) ?: "—"} · Término: ${
                         book.finishedAt?.let(
-                            ::formatIsoDate
+                            ::formatDate
                         ) ?: "—"
                     }",
                     fontFamily = type.body, fontSize = 14.sp, color = Libris.inkSoft,
@@ -292,7 +293,7 @@ private fun publication(book: Book): String? {
 }
 
 @Composable
-private fun EditDates(book: Book, onSave: (String?, String?) -> Unit, onCancel: () -> Unit) {
+private fun EditDates(book: Book, onSave: (LocalDate?, LocalDate?) -> Unit, onCancel: () -> Unit) {
     val type = LocalLibrisType.current
     var start by remember { mutableStateOf(book.startedAt) }
     var end by remember { mutableStateOf(book.finishedAt) }
@@ -319,22 +320,22 @@ private fun EditDates(book: Book, onSave: (String?, String?) -> Unit, onCancel: 
         }
     }
     picking?.let { which ->
-        IsoDatePicker(
+        LibrisDatePicker(
             if (which == "start") start else end,
-            todayIso(),
+            today(),
             onPicked = { if (which == "start") start = it else end = it },
             onDismiss = { picking = null })
     }
 }
 
 @Composable
-private fun DateChip(label: String, value: String?, onPick: () -> Unit, onClear: () -> Unit) {
+private fun DateChip(label: String, value: LocalDate?, onPick: () -> Unit, onClear: () -> Unit) {
     val type = LocalLibrisType.current
     Column {
         Text(label, fontFamily = type.body, fontSize = 12.sp, color = Libris.inkSoft)
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                value?.let(::formatIsoDate) ?: "escolher",
+                value?.let(::formatDate) ?: "escolher",
                 fontFamily = type.body,
                 fontSize = 16.sp,
                 color = Libris.ink,
@@ -369,7 +370,7 @@ private fun ReadingSheet(book: Book, state: FichaState, viewModel: FichaViewMode
             Column {
                 Text("Data", fontFamily = type.body, fontSize = 13.sp, color = Libris.inkSoft)
                 Text(
-                    if (state.date == todayIso()) "hoje, ${formatIsoDate(state.date)}" else formatIsoDate(
+                    if (state.date == today()) "hoje, ${formatDate(state.date)}" else formatDate(
                         state.date
                     ),
                     fontFamily = type.body,
@@ -412,7 +413,7 @@ private fun ReadingSheet(book: Book, state: FichaState, viewModel: FichaViewMode
             }
         }
     }
-    if (pickingDate) IsoDatePicker(state.date, todayIso(), viewModel::onDate) {
+    if (pickingDate) LibrisDatePicker(state.date, today(), viewModel::onDate) {
         pickingDate = false
     }
     editing?.let { log ->
@@ -431,7 +432,7 @@ private fun ReadingSheet(book: Book, state: FichaState, viewModel: FichaViewMode
 }
 
 @Composable
-private fun EditLogDialog(log: ReadingLog, onSave: (String, Int) -> Unit, onDismiss: () -> Unit) {
+private fun EditLogDialog(log: ReadingLog, onSave: (LocalDate, Int) -> Unit, onDismiss: () -> Unit) {
     var page by remember { mutableStateOf(log.page.toString()) }
     var date by remember { mutableStateOf(log.date) }
     var picking by remember { mutableStateOf(false) }
@@ -449,7 +450,7 @@ private fun EditLogDialog(log: ReadingLog, onSave: (String, Int) -> Unit, onDism
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
                 Text(
-                    "Data: ${formatIsoDate(date)}",
+                    "Data: ${formatDate(date)}",
                     fontFamily = type.body,
                     modifier = Modifier.clickable { picking = true })
             }
@@ -470,7 +471,7 @@ private fun EditLogDialog(log: ReadingLog, onSave: (String, Int) -> Unit, onDism
             }
         },
     )
-    if (picking) IsoDatePicker(date, todayIso(), { date = it }) { picking = false }
+    if (picking) LibrisDatePicker(date, today(), { date = it }) { picking = false }
 }
 
 @Composable

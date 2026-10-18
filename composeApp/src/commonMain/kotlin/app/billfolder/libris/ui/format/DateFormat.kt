@@ -1,33 +1,29 @@
 package app.billfolder.libris.ui.format
 
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.toLocalDateTime
-
-// Calendar dates are shown as typed ("2026-10-16" → "16/10/2026"); nothing goes through an instant.
 
 private val MONTHS = listOf(
     "janeiro", "fevereiro", "março", "abril", "maio", "junho",
     "julho", "agosto", "setembro", "outubro", "novembro", "dezembro",
 )
 
-fun formatIsoDate(iso: String): String {
-    val (year, month, day) = iso.split("-")
-    return "$day/$month/$year"
-}
+private fun Int.twoDigits() = toString().padStart(2, '0')
 
-fun formatShortDate(iso: String): String {
-    val (_, month, day) = iso.split("-")
-    return "$day/$month"
-}
+/** 16/10/2026 */
+fun formatDate(date: LocalDate): String = "${date.day.twoDigits()}/${(date.month.ordinal + 1).twoDigits()}/${date.year}"
+
+/** 16/10 */
+fun formatShortDate(date: LocalDate): String = "${date.day.twoDigits()}/${(date.month.ordinal + 1).twoDigits()}"
 
 fun monthName(month: Int): String = MONTHS[month - 1]
 
 fun monthShort(month: Int): String = MONTHS[month - 1].take(3)
 
 // Material's DatePicker works in UTC-midnight millis; converting through UTC (never the device zone) keeps the day.
-fun isoFromPickerMillis(millis: Long): String =
-    kotlin.time.Instant.fromEpochMilliseconds(millis).toLocalDateTime(TimeZone.UTC).date.toString()
+fun dateFromPickerMillis(millis: Long): LocalDate =
+    kotlin.time.Instant.fromEpochMilliseconds(millis).toLocalDateTime(TimeZone.UTC).date
 
-fun pickerMillisFromIso(iso: String): Long =
-    kotlinx.datetime.LocalDate.parse(iso).atStartOfDayIn(TimeZone.UTC).toEpochMilliseconds()
+fun pickerMillisFrom(date: LocalDate): Long = date.atStartOfDayIn(TimeZone.UTC).toEpochMilliseconds()

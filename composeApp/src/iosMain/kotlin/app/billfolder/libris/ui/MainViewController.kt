@@ -2,6 +2,7 @@ package app.billfolder.libris.ui
 
 import androidx.compose.ui.window.ComposeUIViewController
 import app.billfolder.libris.data.auth.KeychainTokenStore
+import app.billfolder.libris.ui.di.initKoin
 import io.ktor.client.engine.darwin.Darwin
 import platform.UIKit.UIViewController
 

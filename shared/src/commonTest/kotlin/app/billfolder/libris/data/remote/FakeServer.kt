@@ -1,6 +1,6 @@
 package app.billfolder.libris.data.remote
 
-import app.billfolder.libris.data.remote.dto.User
+import app.billfolder.libris.data.remote.dto.UserDto
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockRequestHandleScope
 import io.ktor.client.engine.mock.respond
@@ -12,7 +12,7 @@ import io.ktor.http.headersOf
 
 const val BASE = "http://api.test"
 
-fun user() = User("u1", "jess@example.com", "Jess")
+fun user() = UserDto("u1", "jess@example.com", "Jess")
 
 fun authJson(suffix: String) =
     """{"accessToken":"access-$suffix","refreshToken":"refresh-$suffix","accessTokenExpiresAt":"x","refreshTokenExpiresAt":"x","user":{"id":"u1","email":"jess@example.com","displayName":"Jess"}}"""

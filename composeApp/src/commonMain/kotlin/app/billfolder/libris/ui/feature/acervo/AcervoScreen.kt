@@ -33,7 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import app.billfolder.libris.data.remote.dto.BookStatus
+import app.billfolder.libris.domain.model.BookStatus
 import app.billfolder.libris.ui.common.Load
 import app.billfolder.libris.ui.components.BookCard
 import app.billfolder.libris.ui.components.DeskSearchField
@@ -106,7 +106,7 @@ fun AcervoScreen(
                     }
                 } else {
                     items(shown.value, key = { it.id }) { book ->
-                        BookCard(book, viewModel.coverSrc(book), onClick = { onOpenBook(book.id) })
+                        BookCard(book, onClick = { onOpenBook(book.id) })
                     }
                 }
             }

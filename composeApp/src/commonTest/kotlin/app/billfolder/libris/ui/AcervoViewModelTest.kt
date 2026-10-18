@@ -1,6 +1,6 @@
 package app.billfolder.libris.ui
 
-import app.billfolder.libris.data.remote.dto.BookStatus
+import app.billfolder.libris.domain.model.BookStatus
 import app.billfolder.libris.ui.common.Load
 import app.billfolder.libris.ui.feature.acervo.AcervoViewModel
 import io.ktor.http.HttpStatusCode
@@ -31,7 +31,7 @@ class AcervoViewModelTest {
     @Test
     fun loadsOwnedBooksAndCounts() = runTest(dispatcher) {
         val fake = server()
-        val vm = AcervoViewModel(fake.session, fake.api)
+        val vm = AcervoViewModel(fake.books, fake.genres)
         advanceUntilIdle()
 
         assertEquals(3, (vm.state.value.shown as Load.Loaded).value.size)
@@ -42,7 +42,7 @@ class AcervoViewModelTest {
     @Test
     fun statusFilter_requestsSnakeCaseStatus() = runTest(dispatcher) {
         val fake = server()
-        val vm = AcervoViewModel(fake.session, fake.api)
+        val vm = AcervoViewModel(fake.books, fake.genres)
         advanceUntilIdle()
 
         vm.setStatus(BookStatus.NotStarted)
@@ -54,7 +54,7 @@ class AcervoViewModelTest {
     @Test
     fun search_isDebounced() = runTest(dispatcher) {
         val fake = server()
-        val vm = AcervoViewModel(fake.session, fake.api)
+        val vm = AcervoViewModel(fake.books, fake.genres)
         advanceUntilIdle()
         val before = fake.requests.size
 
@@ -71,7 +71,7 @@ class AcervoViewModelTest {
     @Test
     fun offline_showsNoConnection() = runTest(dispatcher) {
         val fake = FakeApi(dispatcher) { throw IllegalStateException("offline") }
-        val vm = AcervoViewModel(fake.session, fake.api)
+        val vm = AcervoViewModel(fake.books, fake.genres)
         advanceUntilIdle()
 
         assertEquals(Load.Failed("Sem conexão com o servidor."), vm.state.value.shown)
@@ -80,7 +80,7 @@ class AcervoViewModelTest {
     @Test
     fun clearingFilters_showsAllAgainWithoutRequest() = runTest(dispatcher) {
         val fake = server()
-        val vm = AcervoViewModel(fake.session, fake.api)
+        val vm = AcervoViewModel(fake.books, fake.genres)
         advanceUntilIdle()
         vm.setStatus(BookStatus.Read)
         advanceUntilIdle()

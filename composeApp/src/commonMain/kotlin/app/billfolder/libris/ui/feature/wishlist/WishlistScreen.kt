@@ -68,7 +68,7 @@ fun WishlistScreen(
                         }
                     }
                     state.visible.isEmpty() -> item { Ficha(Modifier.fillMaxWidth(), foldedCorner = true) { Text("Nenhum livro com esses filtros.", fontFamily = type.body) } }
-                    else -> items(state.visible, key = { it.id }) { book -> BookCard(book, viewModel.coverSrc(book), onClick = { onOpenBook(book.id) }) }
+                    else -> items(state.visible, key = { it.id }) { book -> BookCard(book, onClick = { onOpenBook(book.id) }) }
                 }
             }
         }
