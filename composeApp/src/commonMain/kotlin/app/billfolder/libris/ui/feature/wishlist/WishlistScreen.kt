@@ -33,6 +33,7 @@ import app.billfolder.libris.ui.components.PageHeading
 import app.billfolder.libris.ui.components.PaperCard
 import app.billfolder.libris.ui.components.Refreshable
 import app.billfolder.libris.ui.components.SessionAction
+import app.billfolder.libris.ui.format.LANGUAGES
 import app.billfolder.libris.ui.theme.Libris
 import app.billfolder.libris.ui.theme.LocalLibrisType
 import org.koin.compose.viewmodel.koinViewModel
@@ -60,7 +61,7 @@ fun WishlistScreen(
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                     DeskSearchField(state.query, viewModel::setQuery, "Buscar por título ou autor", Modifier.weight(1f))
-                    FiltersButton(listOfNotNull(state.genreId, state.format).size, { showFilters = true })
+                    FiltersButton(listOfNotNull(state.genreId, state.format, state.language).size, { showFilters = true })
                 }
             }
             when (val load = state.books) {
@@ -82,8 +83,9 @@ fun WishlistScreen(
         }
     }
     if (showFilters) {
-        FiltersSheet(onDismiss = { showFilters = false }, onClear = { viewModel.setGenre(null); viewModel.setFormat(null) }) {
+        FiltersSheet(onDismiss = { showFilters = false }, onClear = { viewModel.setGenre(null); viewModel.setFormat(null); viewModel.setLanguage(null) }) {
             FilterSection("Formato", listOf(BookFormat.Physical to "Físico", BookFormat.Digital to "Digital"), state.format, viewModel::setFormat)
+            FilterSection("Idioma", LANGUAGES, state.language, viewModel::setLanguage)
             FilterSection("Gênero", state.genres.map { it.id to it.name }, state.genreId, viewModel::setGenre)
         }
     }

@@ -58,6 +58,7 @@ import app.billfolder.libris.ui.components.Stamp
 import app.billfolder.libris.ui.format.formatDate
 import app.billfolder.libris.ui.format.formatName
 import app.billfolder.libris.ui.format.formatShortDate
+import app.billfolder.libris.ui.format.languageName
 import app.billfolder.libris.ui.theme.Libris
 import app.billfolder.libris.ui.theme.LocalLibrisType
 import kotlinx.datetime.LocalDate
@@ -171,6 +172,12 @@ private fun BookSheet(book: Book, viewModel: BookDetailViewModel) {
                 )
                 Text(
                     "de ${book.authors.joinToString(", ")}",
+                    fontFamily = type.body,
+                    fontSize = 14.sp,
+                    color = Libris.inkSoft
+                )
+                Text(
+                    "Idioma: ${languageName(book.language).lowercase()}",
                     fontFamily = type.body,
                     fontSize = 14.sp,
                     color = Libris.inkSoft

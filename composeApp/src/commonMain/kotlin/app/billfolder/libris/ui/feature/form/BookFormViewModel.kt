@@ -44,6 +44,9 @@ data class BookFormState(
     val synopsis: String = "",
     val genres: List<String> = emptyList(),
     val formats: Set<BookFormat> = setOf(BookFormat.Physical),
+    val language: String = "pt",
+    /** Once chosen by hand (or loaded from the book), an ISBN lookup no longer changes it. */
+    val languageChosen: Boolean = false,
     val ownership: BookOwnership = BookOwnership.Owned,
     val status: BookStatus = BookStatus.NotStarted,
     val startedAt: LocalDate? = null,
@@ -159,6 +162,7 @@ class BookFormViewModel(
     fun onYear(v: String) = _state.update { it.copy(publishedYear = v.trim(), touched = it.touched + "year") }
     fun onPublisher(v: String) = _state.update { it.copy(publisher = v) }
     fun onSynopsis(v: String) = _state.update { it.copy(synopsis = v) }
+    fun onLanguage(code: String) = _state.update { it.copy(language = code, languageChosen = true) }
     fun onOwnership(v: BookOwnership) = _state.update { it.copy(ownership = v) }
 
     /** A book always has at least one format, so the last one can't be unticked. */
@@ -260,6 +264,7 @@ class BookFormViewModel(
             publishedYear = s.publishedYear.ifBlank { lookup.publishedYear?.toString().orEmpty() },
             synopsis = s.synopsis.ifBlank { lookup.synopsis.orEmpty() },
             genres = lookup.genres.fold(s.genres) { acc, g -> acc.withGenre(g, knownGenres()) },
+            language = lookup.language?.takeIf { !s.languageChosen } ?: s.language,
             pendingCoverUrl = if (s.coverId == null) lookup.coverUrl ?: s.pendingCoverUrl else s.pendingCoverUrl,
         )
     }
@@ -276,6 +281,8 @@ class BookFormViewModel(
             synopsis = book.synopsis.orEmpty(),
             genres = book.genres.map { g -> g.name },
             formats = book.formats.toSet(),
+            language = book.language,
+            languageChosen = true,
             startedAt = book.startedAt,
             finishedAt = book.finishedAt,
             coverId = book.coverId,
@@ -298,6 +305,7 @@ private fun BookFormState.toDraft(coverId: String?) = BookDraft(
     coverId = coverId,
     genres = genres,
     formats = formats,
+    language = language,
     ownership = ownership,
     status = if (ownership == BookOwnership.Owned) status else null,
     startedAt = startedAt.takeIf { showStart },

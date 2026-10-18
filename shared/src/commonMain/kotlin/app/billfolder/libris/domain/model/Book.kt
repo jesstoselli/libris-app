@@ -33,6 +33,8 @@ data class Book(
     val currentPage: Int = 0,
     val percent: Int = 0,
     val formats: List<BookFormat> = listOf(BookFormat.Physical),
+    /** ISO 639-1: "pt", "en", "fr"… */
+    val language: String = "pt",
 )
 
 /** What the user fills in to create or edit a book. [ownership] and [status] only count when creating. */
@@ -53,11 +55,12 @@ data class BookDraft(
     val formats: Set<BookFormat> = setOf(BookFormat.Physical),
     /** Only when creating a book that is being read or was abandoned: the page already reached. */
     val currentPage: Int? = null,
+    val language: String = "pt",
 )
 
 fun Book.toDraft() = BookDraft(
     title, authors, isbn, totalPages, publisher, publishedYear, synopsis, coverId,
-    genres.map { it.name }, ownership, status, startedAt, finishedAt, formats.toSet(),
+    genres.map { it.name }, ownership, status, startedAt, finishedAt, formats.toSet(), language = language,
 )
 
 data class BookFilter(
@@ -66,6 +69,7 @@ data class BookFilter(
     val genreId: String? = null,
     val query: String? = null,
     val format: BookFormat? = null,
+    val language: String? = null,
 )
 
 data class Cover(val id: String, val url: String)
@@ -84,4 +88,6 @@ data class BookLookup(
     val coverUrl: String? = null,
     val genres: List<String> = emptyList(),
     val sources: List<LookupSource> = emptyList(),
+    /** When the catalogue says; null otherwise. */
+    val language: String? = null,
 )

@@ -51,6 +51,7 @@ import app.billfolder.libris.ui.components.Refreshable
 import app.billfolder.libris.ui.components.STATUS_LABELS
 import app.billfolder.libris.ui.components.SessionAction
 import app.billfolder.libris.ui.components.Stamp
+import app.billfolder.libris.ui.format.LANGUAGES
 import app.billfolder.libris.ui.theme.Libris
 import app.billfolder.libris.ui.theme.LocalLibrisType
 import org.koin.compose.viewmodel.koinViewModel
@@ -80,7 +81,7 @@ fun LibraryScreen(
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                     DeskSearchField(state.query, viewModel::setQuery, "Buscar por título ou autor", Modifier.weight(1f))
-                    FiltersButton(listOfNotNull(state.status, state.genreId, state.format).size, { showFilters = true })
+                    FiltersButton(listOfNotNull(state.status, state.genreId, state.format, state.language).size, { showFilters = true })
                 }
             }
             when (val shown = state.shown) {
@@ -108,10 +109,11 @@ fun LibraryScreen(
     if (showFilters) {
         FiltersSheet(
             onDismiss = { showFilters = false },
-            onClear = { viewModel.setStatus(null); viewModel.setGenre(null); viewModel.setFormat(null) },
+            onClear = { viewModel.setStatus(null); viewModel.setGenre(null); viewModel.setFormat(null); viewModel.setLanguage(null) },
         ) {
             FilterSection("Situação", BookStatus.entries.map { it to STATUS_LABELS.getValue(it) }, state.status, viewModel::setStatus, allLabel = "Todas")
             FilterSection("Formato", listOf(BookFormat.Physical to "Físico", BookFormat.Digital to "Digital"), state.format, viewModel::setFormat)
+            FilterSection("Idioma", LANGUAGES, state.language, viewModel::setLanguage)
             FilterSection("Gênero", state.genres.map { it.id to it.name }, state.genreId, viewModel::setGenre)
             LibrisButton("Gerenciar gêneros", { showFilters = false; onManageGenres() }, variant = ButtonVariant.Quiet)
         }

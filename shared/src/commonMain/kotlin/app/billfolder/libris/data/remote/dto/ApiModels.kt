@@ -57,6 +57,8 @@ data class BookDto(
     val percent: Int = 0,
     /** Absent from APIs older than formats; every book was physical then. */
     val formats: List<BookFormatDto> = listOf(BookFormatDto.Physical),
+    /** ISO 639-1; absent from APIs older than languages, when every book was Portuguese. */
+    val language: String = "pt",
 )
 
 @Serializable
@@ -78,6 +80,7 @@ data class CreateBookRequest(
     val formats: List<BookFormatDto>,
     /** A book registered mid-read: the API turns it into the first reading log. */
     val currentPage: Int? = null,
+    val language: String = "pt",
 )
 
 @Serializable
@@ -94,6 +97,7 @@ data class UpdateBookRequest(
     val startedAt: String?,
     val finishedAt: String?,
     val formats: List<BookFormatDto>,
+    val language: String = "pt",
 )
 
 data class BookListQuery(
@@ -102,6 +106,7 @@ data class BookListQuery(
     val genreId: String? = null,
     val q: String? = null,
     val format: BookFormatDto? = null,
+    val language: String? = null,
 )
 
 @Serializable data class ReadingLogDto(val id: String, val date: String, val page: Int, val fromPage: Int, val pagesRead: Int)
@@ -122,6 +127,7 @@ data class IsbnLookupDto(
     val coverUrl: String? = null,
     val suggestedGenres: List<String> = emptyList(),
     val source: String,
+    val language: String? = null,
 )
 
 @Serializable data class MonthStatsDto(val month: Int, val pagesRead: Int, val booksFinished: Int)

@@ -20,4 +20,18 @@ class FormatLabelTest {
         assertEquals("Digital", formatName(listOf(Digital)))
         assertEquals("Físico e digital", formatName(listOf(Physical, Digital)))
     }
+
+    @Test
+    fun bookTag_mentionsWhatIsNotTheDefault() {
+        assertNull(bookTag(listOf(Physical), "pt"))
+        assertEquals("inglês", bookTag(listOf(Physical), "en"))
+        assertEquals("francês · digital", bookTag(listOf(Digital), "fr"))
+        assertEquals("digital", bookTag(listOf(Digital), "pt"))
+    }
+
+    @Test
+    fun languageName_fallsBackToTheCode() {
+        assertEquals("Português", languageName("pt"))
+        assertEquals("NL", languageName("nl"))
+    }
 }

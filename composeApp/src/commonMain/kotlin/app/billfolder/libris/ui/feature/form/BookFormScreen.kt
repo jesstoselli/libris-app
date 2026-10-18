@@ -59,8 +59,10 @@ import app.billfolder.libris.ui.components.RuledField
 import app.billfolder.libris.ui.components.STATUS_LABELS
 import app.billfolder.libris.ui.components.SessionAction
 import app.billfolder.libris.ui.components.Stamp
+import app.billfolder.libris.ui.format.LANGUAGES
 import app.billfolder.libris.ui.format.formatDate
 import app.billfolder.libris.ui.format.label
+import app.billfolder.libris.ui.format.languageName
 import app.billfolder.libris.ui.platform.IsbnScanner
 import app.billfolder.libris.ui.platform.rememberCoverPicker
 import app.billfolder.libris.ui.theme.Libris
@@ -269,6 +271,14 @@ fun BookFormScreen(
                                     "Wishlist",
                                     state.ownership == BookOwnership.Wishlist
                                 ) { viewModel.onOwnership(BookOwnership.Wishlist) }
+                            }
+                        }
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text("Idioma", fontFamily = type.title, fontSize = 16.sp)
+                            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                // A language from the lookup outside the usual six still shows, so it can be kept.
+                                val offered = if (LANGUAGES.any { it.first == state.language }) LANGUAGES else LANGUAGES + (state.language to languageName(state.language))
+                                offered.forEach { (code, name) -> Toggle(name, state.language == code) { viewModel.onLanguage(code) } }
                             }
                         }
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {

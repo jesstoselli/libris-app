@@ -81,6 +81,7 @@ class LibrisApi(private val http: HttpClient, val baseUrl: String) {
                 query.genreId?.takeIf { it.isNotBlank() }?.let { parameter("genreId", it) }
                 query.q?.takeIf { it.isNotBlank() }?.let { parameter("q", it) }
                 query.format?.let { parameter("format", if (it == BookFormatDto.Physical) "physical" else "digital") }
+                query.language?.let { parameter("language", it) }
             }
         }.body()
 

@@ -97,4 +97,18 @@ class RemoteRepositoriesTest {
         val body = (server.requests.last().body as TextContent).text
         assertEquals(true, body.contains(""""formats":["physical","digital"]"""), body)
     }
+
+    @Test
+    fun language_defaultsToPortuguese_andTravelsBothWays() = runTest {
+        val english = book.replace("\"percent\":100", "\"percent\":100,\"language\":\"en\"")
+        val server = FakeServer { req -> if (req.method == HttpMethod.Get && req.url.encodedPath == "/v1/books") json("[$english]") else json(english) }
+        val repo = books(server)
+
+        assertEquals("pt", books(FakeServer { json(book) }).get("b1").language)
+        assertEquals("en", repo.get("b1").language)
+        repo.list(BookFilter(language = "en"))
+        assertEquals("en", server.requests.last().url.parameters["language"])
+        repo.create(BookDraft("T", listOf("A"), language = "it"))
+        assertEquals(true, (server.requests.last().body as TextContent).text.contains(""""language":"it""""))
+    }
 }

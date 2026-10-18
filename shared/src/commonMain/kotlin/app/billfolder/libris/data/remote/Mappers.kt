@@ -95,15 +95,16 @@ internal fun BookDto.toDomain(coverSrc: (String?) -> String?) = Book(
     currentPage = currentPage,
     percent = percent,
     formats = formats.map { it.toDomain() }.distinct().sortedBy { it.ordinal },
+    language = language,
 )
 
 internal fun BookDraft.toCreate(today: LocalDate) = CreateBookRequest(
     title, authors, isbn, totalPages, publisher, publishedYear, synopsis, coverId, genres,
-    ownership.toDto(), status?.toDto(), startedAt?.toString(), finishedAt?.toString(), today.toString(), formats.toWire(), currentPage,
+    ownership.toDto(), status?.toDto(), startedAt?.toString(), finishedAt?.toString(), today.toString(), formats.toWire(), currentPage, language,
 )
 
 internal fun BookDraft.toUpdate() = UpdateBookRequest(
-    title, authors, isbn, totalPages, publisher, publishedYear, synopsis, coverId, genres, startedAt?.toString(), finishedAt?.toString(), formats.toWire(),
+    title, authors, isbn, totalPages, publisher, publishedYear, synopsis, coverId, genres, startedAt?.toString(), finishedAt?.toString(), formats.toWire(), language,
 )
 
 internal fun ReadingLogDto.toDomain() = ReadingLog(id, date.toDate(), page, fromPage, pagesRead)
@@ -121,6 +122,7 @@ internal fun IsbnLookupDto.toDomain() = BookLookup(
             else -> null
         }
     },
+    language = language,
 )
 
 internal fun YearStatsDto.toDomain() = YearStats(year, booksFinished, pagesRead, readingNow, months.map { MonthStats(it.month, it.pagesRead, it.booksFinished) })
