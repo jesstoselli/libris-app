@@ -83,8 +83,8 @@ fun WishlistScreen(
     }
     if (showFilters) {
         FiltersSheet(onDismiss = { showFilters = false }, onClear = { viewModel.setGenre(null); viewModel.setFormat(null) }) {
-            FilterSection("Gênero", state.genres.map { it.id to it.name }, state.genreId, viewModel::setGenre)
             FilterSection("Formato", listOf(BookFormat.Physical to "Físico", BookFormat.Digital to "Digital"), state.format, viewModel::setFormat)
+            FilterSection("Gênero", state.genres.map { it.id to it.name }, state.genreId, viewModel::setGenre)
         }
     }
 }

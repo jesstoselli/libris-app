@@ -1,5 +1,6 @@
 package app.billfolder.libris.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -41,19 +43,25 @@ fun FiltersSheet(onDismiss: () -> Unit, onClear: () -> Unit, content: @Composabl
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        // Never under the status bar, even when the options fill the screen.
+        modifier = Modifier.statusBarsPadding(),
         containerColor = Libris.paper,
         contentColor = Libris.ink,
     ) {
+        // Only the options scroll; Limpar and Ver livros stay in reach at the bottom however long the list of genres is.
         Column(
-            Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).navigationBarsPadding(),
+            Modifier.weight(1f, fill = false).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(18.dp),
         ) {
             Text("Filtros", fontFamily = type.title, fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Libris.oxblood)
             content()
-            Row(Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 12.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                LibrisButton("Limpar", onClear, variant = ButtonVariant.Secondary)
-                LibrisButton("Ver livros", onDismiss, Modifier.weight(1f))
-            }
+        }
+        Row(
+            Modifier.fillMaxWidth().background(Libris.paper).padding(horizontal = 20.dp, vertical = 12.dp).navigationBarsPadding(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            LibrisButton("Limpar", onClear, variant = ButtonVariant.Secondary)
+            LibrisButton("Ver livros", onDismiss, Modifier.weight(1f))
         }
     }
 }

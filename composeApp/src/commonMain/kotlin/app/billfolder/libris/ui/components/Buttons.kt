@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -93,7 +94,11 @@ fun LibrisButton(
 ) {
     val interaction = remember { MutableInteractionSource() }
     Box(
-        modifier.buttonSurface(variant, onDesk, enabled, interaction, onClick).padding(horizontal = if (variant == ButtonVariant.Quiet) 10.dp else 18.dp),
+        // Quiet buttons sit in the text flow, so their label lines up with the labels around them.
+        modifier
+            .widthIn(min = ControlHeight)
+            .buttonSurface(variant, onDesk, enabled, interaction, onClick)
+            .padding(horizontal = if (variant == ButtonVariant.Quiet) 0.dp else 18.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(label, fontFamily = LocalLibrisType.current.body, fontWeight = FontWeight.Medium, fontSize = 15.sp, color = look(variant, onDesk).content, maxLines = 1)
