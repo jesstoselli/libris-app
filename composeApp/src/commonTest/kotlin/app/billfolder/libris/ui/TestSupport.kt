@@ -40,11 +40,12 @@ fun bookJson(
     finishedAt: String? = null,
     formats: List<String>? = null,
     language: String? = null,
+    authors: List<String> = listOf("Umberto Eco"),
 ): String {
     fun q(v: String?) = v?.let { "\"$it\"" } ?: "null"
     val formatsField = formats?.let { f -> ""","formats":[${f.joinToString(",") { "\"$it\"" }}]""" }.orEmpty()
     val languageField = language?.let { ""","language":"$it"""" }.orEmpty()
-    return """{"id":"$id","title":"$title","authors":["Umberto Eco"],"ownership":"$ownership","status":${q(status)},"totalPages":${totalPages ?: "null"},"addedAt":"2026-10-01","genres":[],"currentPage":$currentPage,"percent":$percent,"startedAt":${q(startedAt)},"finishedAt":${q(finishedAt)}$formatsField$languageField}"""
+    return """{"id":"$id","title":"$title","authors":[${authors.joinToString(",") { "\"$it\"" }}],"ownership":"$ownership","status":${q(status)},"totalPages":${totalPages ?: "null"},"addedAt":"2026-10-01","genres":[],"currentPage":$currentPage,"percent":$percent,"startedAt":${q(startedAt)},"finishedAt":${q(finishedAt)}$formatsField$languageField}"""
 }
 
 /** [dispatcher] must be the test's, so advanceUntilIdle() also waits for the fake HTTP calls. */

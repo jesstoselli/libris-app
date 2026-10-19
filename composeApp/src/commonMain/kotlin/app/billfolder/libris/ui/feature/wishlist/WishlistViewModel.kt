@@ -9,6 +9,7 @@ import app.billfolder.libris.domain.model.BookOwnership
 import app.billfolder.libris.domain.model.Genre
 import app.billfolder.libris.domain.repository.BookRepository
 import app.billfolder.libris.domain.repository.GenreRepository
+import app.billfolder.libris.ui.common.AuthorRequests
 import app.billfolder.libris.ui.common.Load
 import app.billfolder.libris.ui.common.fold
 import app.billfolder.libris.ui.common.loadOf
@@ -17,6 +18,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
@@ -29,6 +32,7 @@ data class WishlistState(
     val format: BookFormat? = null,
     val language: String? = null,
     val query: String = "",
+    val author: String? = null,
 ) {
     val subtitle get() = books.valueOrNull?.let { "${it.size} ${if (it.size == 1) "livro" else "livros"} pra procurar" }
 
@@ -40,18 +44,32 @@ data class WishlistState(
                 (genreId == null || b.genres.any { it.id == genreId }) &&
                     (format == null || format in b.formats) &&
                     (language == null || b.language == language) &&
+                    (author == null || author in b.authors) &&
                     (term.isEmpty() || fold(b.title).contains(term) || b.authors.any { fold(it).contains(term) })
             }
         }
 }
 
-class WishlistViewModel(private val books: BookRepository, private val genres: GenreRepository) : ViewModel() {
+class WishlistViewModel(
+    private val books: BookRepository,
+    private val genres: GenreRepository,
+    private val authorRequests: AuthorRequests = AuthorRequests(),
+) : ViewModel() {
     private val _state = MutableStateFlow(WishlistState())
     val state: StateFlow<WishlistState> = _state.asStateFlow()
 
     init {
         refresh()
+        viewModelScope.launch {
+            authorRequests.pending.filterNotNull().filter { it.wishlist }.collect { request ->
+                // From a book page: that author's books alone, whatever was filtered before.
+                _state.update { it.copy(genreId = null, format = null, language = null, query = "", author = request.author) }
+                authorRequests.take(request)
+            }
+        }
     }
+
+    fun setAuthor(author: String?) = _state.update { it.copy(author = author) }
 
     fun setGenre(id: String?) = _state.update { it.copy(genreId = id) }
 

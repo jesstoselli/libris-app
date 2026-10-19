@@ -10,6 +10,7 @@ import app.billfolder.libris.domain.model.BookStatus
 import app.billfolder.libris.domain.model.Genre
 import app.billfolder.libris.domain.repository.BookRepository
 import app.billfolder.libris.domain.repository.GenreRepository
+import app.billfolder.libris.ui.common.AuthorRequests
 import app.billfolder.libris.ui.common.Load
 import app.billfolder.libris.ui.common.loadOf
 import app.billfolder.libris.ui.common.valueOrNull
@@ -18,6 +19,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
@@ -32,8 +35,9 @@ data class LibraryState(
     val language: String? = null,
     val query: String = "",
     val genres: List<Genre> = emptyList(),
+    val author: String? = null,
 ) {
-    val hasFilters get() = status != null || genreId != null || format != null || language != null || query.isNotBlank()
+    val hasFilters get() = status != null || genreId != null || format != null || language != null || author != null || query.isNotBlank()
 
     /** What the list shows: the unfiltered load doubles as the "Todos" view, so no filter means one request. */
     val shown: Load<List<Book>> get() = if (hasFilters) filtered ?: Load.Loading else all
@@ -53,7 +57,11 @@ data class LibraryState(
         }
 }
 
-class LibraryViewModel(private val books: BookRepository, private val genres: GenreRepository) : ViewModel() {
+class LibraryViewModel(
+    private val books: BookRepository,
+    private val genres: GenreRepository,
+    private val authorRequests: AuthorRequests = AuthorRequests(),
+) : ViewModel() {
 
     private val _state = MutableStateFlow(LibraryState())
     val state: StateFlow<LibraryState> = _state.asStateFlow()
@@ -63,6 +71,19 @@ class LibraryViewModel(private val books: BookRepository, private val genres: Ge
 
     init {
         refresh()
+        viewModelScope.launch {
+            authorRequests.pending.filterNotNull().filter { !it.wishlist }.collect { request ->
+                showOnlyAuthor(request.author)
+                authorRequests.take(request)
+            }
+        }
+    }
+
+    /** From a book page: that author's books alone, whatever was filtered before. */
+    private fun showOnlyAuthor(author: String) {
+        searchJob?.cancel()
+        _state.update { it.copy(status = null, genreId = null, format = null, language = null, query = "", author = author) }
+        loadFiltered()
     }
 
     /** Reloads everything (also when coming back from a book detail, where things may have changed). */
@@ -86,6 +107,11 @@ class LibraryViewModel(private val books: BookRepository, private val genres: Ge
             jobs.joinAll()
             _state.update { it.copy(refreshing = false) }
         }
+    }
+
+    fun setAuthor(author: String?) {
+        _state.update { it.copy(author = author) }
+        loadFiltered()
     }
 
     fun setStatus(status: BookStatus?) {
@@ -126,7 +152,7 @@ class LibraryViewModel(private val books: BookRepository, private val genres: Ge
         }
         _state.update { it.copy(filtered = Load.Loading) }
         filterJob = viewModelScope.launch {
-            val load = loadOf { books.list(BookFilter(BookOwnership.Owned, s.status, s.genreId, s.query, s.format, s.language)) }
+            val load = loadOf { books.list(BookFilter(BookOwnership.Owned, s.status, s.genreId, s.query, s.format, s.language, s.author)) }
             _state.update { it.copy(filtered = load) }
         }
         return filterJob

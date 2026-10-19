@@ -25,6 +25,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.billfolder.libris.domain.model.BookFormat
 import app.billfolder.libris.ui.common.Load
 import app.billfolder.libris.ui.components.BookCard
+import app.billfolder.libris.ui.components.AuthorChip
 import app.billfolder.libris.ui.components.DeskSearchField
 import app.billfolder.libris.ui.components.FilterSection
 import app.billfolder.libris.ui.components.FiltersButton
@@ -61,9 +62,10 @@ fun WishlistScreen(
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                     DeskSearchField(state.query, viewModel::setQuery, "Buscar por título ou autor", Modifier.weight(1f))
-                    FiltersButton(listOfNotNull(state.genreId, state.format, state.language).size, { showFilters = true })
+                    FiltersButton(listOfNotNull(state.genreId, state.format, state.language, state.author).size, { showFilters = true })
                 }
             }
+            state.author?.let { author -> item { AuthorChip(author, { viewModel.setAuthor(null) }) } }
             when (val load = state.books) {
                 Load.Loading -> item { Text("Carregando…", fontFamily = type.body, color = Libris.deskTextSoft) }
                 is Load.Failed -> item { Text(load.message, fontFamily = type.body, color = Libris.deskText) }
@@ -83,7 +85,7 @@ fun WishlistScreen(
         }
     }
     if (showFilters) {
-        FiltersSheet(onDismiss = { showFilters = false }, onClear = { viewModel.setGenre(null); viewModel.setFormat(null); viewModel.setLanguage(null) }) {
+        FiltersSheet(onDismiss = { showFilters = false }, onClear = { viewModel.setGenre(null); viewModel.setFormat(null); viewModel.setLanguage(null); viewModel.setAuthor(null) }) {
             FilterSection("Formato", listOf(BookFormat.Physical to "Físico", BookFormat.Digital to "Digital"), state.format, viewModel::setFormat)
             FilterSection("Idioma", LANGUAGES, state.language, viewModel::setLanguage)
             FilterSection("Gênero", state.genres.map { it.id to it.name }, state.genreId, viewModel::setGenre)

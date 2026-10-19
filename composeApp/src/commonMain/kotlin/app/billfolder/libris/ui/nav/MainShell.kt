@@ -32,6 +32,7 @@ import app.billfolder.libris.ui.components.LibrisIcons
 import app.billfolder.libris.ui.components.LocalSnackbar
 import app.billfolder.libris.ui.components.RibbonBar
 import app.billfolder.libris.ui.components.RibbonItem
+import app.billfolder.libris.ui.common.AuthorRequests
 import app.billfolder.libris.ui.feature.bookdetail.BookDetailScreen
 import app.billfolder.libris.ui.feature.form.BookFormScreen
 import app.billfolder.libris.ui.feature.genres.GenresScreen
@@ -44,7 +45,7 @@ import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 @Composable
-fun MainShell(auth: AuthRepository = koinInject()) {
+fun MainShell(auth: AuthRepository = koinInject(), authorRequests: AuthorRequests = koinInject()) {
     val nav = rememberNavController()
     val entry by nav.currentBackStackEntryAsState()
     val scope = rememberCoroutineScope()
@@ -72,7 +73,15 @@ fun MainShell(auth: AuthRepository = koinInject()) {
                     }
                     composable<BookDetailRoute> { entry ->
                         val id = entry.toRoute<BookDetailRoute>().id
-                        BookDetailScreen(id, onBack = { nav.popBackStack() }, onEdit = { nav.navigate(EditRoute(id)) })
+                        BookDetailScreen(
+                            id,
+                            onBack = { nav.popBackStack() },
+                            onEdit = { nav.navigate(EditRoute(id)) },
+                            onAuthor = { author, wishlist ->
+                                authorRequests.show(author, wishlist)
+                                go(if (wishlist) WishlistRoute else LibraryRoute)
+                            },
+                        )
                     }
                     composable<EditRoute> { entry ->
                         BookFormScreen(entry.toRoute<EditRoute>().id, onSaved = { nav.popBackStack() }, onBack = { nav.popBackStack() })

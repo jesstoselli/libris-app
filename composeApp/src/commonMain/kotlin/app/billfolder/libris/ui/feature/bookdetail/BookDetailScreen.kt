@@ -27,7 +27,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -77,6 +79,7 @@ fun BookDetailScreen(
     bookId: String,
     onBack: () -> Unit,
     onEdit: () -> Unit,
+    onAuthor: (author: String, wishlist: Boolean) -> Unit = { _, _ -> },
     viewModel: BookDetailViewModel = koinViewModel(key = bookId) { parametersOf(bookId) }
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -126,7 +129,7 @@ fun BookDetailScreen(
                         // One continuous sheet: the book, then reading (or "Comprei"), then the destructive action last.
                         is Load.Loaded -> PaperCard(Modifier.fillMaxWidth(), padding = 20.dp) {
                             Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
-                                BookSheet(load.value, viewModel)
+                                BookSheet(load.value, viewModel, onAuthor)
                                 SheetDivider()
                                 if (load.value.ownership == BookOwnership.Owned) ReadingSheet(state, viewModel) else AcquireSheet(load.value, viewModel)
                                 SheetDivider()
@@ -141,7 +144,7 @@ fun BookDetailScreen(
 }
 
 @Composable
-private fun BookSheet(book: Book, viewModel: BookDetailViewModel) {
+private fun BookSheet(book: Book, viewModel: BookDetailViewModel, onAuthor: (author: String, wishlist: Boolean) -> Unit) {
     val type = LocalLibrisType.current
     var editingDates by remember { mutableStateOf(false) }
 
@@ -170,12 +173,26 @@ private fun BookSheet(book: Book, viewModel: BookDetailViewModel) {
                     lineHeight = 26.sp,
                     color = Libris.oxblood
                 )
-                Text(
-                    "de ${book.authors.joinToString(", ")}",
-                    fontFamily = type.body,
-                    fontSize = 14.sp,
-                    color = Libris.inkSoft
-                )
+                // Each author opens the list this book lives in, showing only their books.
+                FlowRow(verticalArrangement = Arrangement.Center) {
+                    Text("de ", fontFamily = type.body, fontSize = 14.sp, color = Libris.inkSoft, modifier = Modifier.align(Alignment.CenterVertically))
+                    book.authors.forEachIndexed { i, author ->
+                        Text(
+                            author,
+                            fontFamily = type.body,
+                            fontSize = 14.sp,
+                            color = Libris.oxblood,
+                            textDecoration = TextDecoration.Underline,
+                            modifier = Modifier
+                                .align(Alignment.CenterVertically)
+                                .clickable(role = Role.Button) { onAuthor(author, book.ownership == BookOwnership.Wishlist) }
+                                .minimumInteractiveComponentSize(),
+                        )
+                        if (i < book.authors.lastIndex) {
+                            Text(", ", fontFamily = type.body, fontSize = 14.sp, color = Libris.inkSoft, modifier = Modifier.align(Alignment.CenterVertically))
+                        }
+                    }
+                }
                 Text(
                     "Idioma: ${languageName(book.language).lowercase()}",
                     fontFamily = type.body,

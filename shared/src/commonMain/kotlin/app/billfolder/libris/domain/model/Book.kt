@@ -70,6 +70,7 @@ data class BookFilter(
     val query: String? = null,
     val format: BookFormat? = null,
     val language: String? = null,
+    val author: String? = null,
 )
 
 data class Cover(val id: String, val url: String)

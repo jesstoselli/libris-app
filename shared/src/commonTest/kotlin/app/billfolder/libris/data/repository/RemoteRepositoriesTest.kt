@@ -111,4 +111,13 @@ class RemoteRepositoriesTest {
         repo.create(BookDraft("T", listOf("A"), language = "it"))
         assertEquals(true, (server.requests.last().body as TextContent).text.contains(""""language":"it""""))
     }
+
+    @Test
+    fun authorFilter_travelsAsItIsWritten() = runTest {
+        val server = FakeServer { json("[$book]") }
+
+        books(server).list(BookFilter(author = "H. P. Lovecraft"))
+
+        assertEquals("H. P. Lovecraft", server.requests.last().url.parameters["author"])
+    }
 }

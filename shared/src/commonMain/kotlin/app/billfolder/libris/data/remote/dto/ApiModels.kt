@@ -107,6 +107,7 @@ data class BookListQuery(
     val q: String? = null,
     val format: BookFormatDto? = null,
     val language: String? = null,
+    val author: String? = null,
 )
 
 @Serializable data class ReadingLogDto(val id: String, val date: String, val page: Int, val fromPage: Int, val pagesRead: Int)

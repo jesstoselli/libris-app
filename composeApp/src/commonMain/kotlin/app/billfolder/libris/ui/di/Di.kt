@@ -12,12 +12,14 @@ import app.billfolder.libris.ui.feature.wishlist.WishlistViewModel
 import io.ktor.client.engine.HttpClientEngine
 import org.koin.core.context.startKoin
 import org.koin.core.module.Module
+import app.billfolder.libris.ui.common.AuthorRequests
 import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 
 /** The screens' ViewModels; they only see the domain repositories. */
 val presentationModule: Module = module {
+    single { AuthorRequests() }
     viewModelOf(::LoginViewModel)
     viewModelOf(::LibraryViewModel)
     viewModelOf(::WishlistViewModel)

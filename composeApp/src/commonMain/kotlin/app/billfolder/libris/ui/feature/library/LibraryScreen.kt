@@ -40,6 +40,7 @@ import app.billfolder.libris.domain.model.BookStatus
 import app.billfolder.libris.ui.common.Load
 import app.billfolder.libris.ui.components.BookCard
 import app.billfolder.libris.ui.components.ButtonVariant
+import app.billfolder.libris.ui.components.AuthorChip
 import app.billfolder.libris.ui.components.DeskSearchField
 import app.billfolder.libris.ui.components.FilterSection
 import app.billfolder.libris.ui.components.FiltersButton
@@ -81,9 +82,10 @@ fun LibraryScreen(
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                     DeskSearchField(state.query, viewModel::setQuery, "Buscar por título ou autor", Modifier.weight(1f))
-                    FiltersButton(listOfNotNull(state.status, state.genreId, state.format, state.language).size, { showFilters = true })
+                    FiltersButton(listOfNotNull(state.status, state.genreId, state.format, state.language, state.author).size, { showFilters = true })
                 }
             }
+            state.author?.let { author -> item { AuthorChip(author, { viewModel.setAuthor(null) }) } }
             when (val shown = state.shown) {
                 Load.Loading -> item { Text("Carregando…", fontFamily = type.body, color = Libris.deskTextSoft) }
                 is Load.Failed -> item { Text(shown.message, fontFamily = type.body, color = Libris.deskText) }
@@ -109,7 +111,7 @@ fun LibraryScreen(
     if (showFilters) {
         FiltersSheet(
             onDismiss = { showFilters = false },
-            onClear = { viewModel.setStatus(null); viewModel.setGenre(null); viewModel.setFormat(null); viewModel.setLanguage(null) },
+            onClear = { viewModel.setStatus(null); viewModel.setGenre(null); viewModel.setFormat(null); viewModel.setLanguage(null); viewModel.setAuthor(null) },
         ) {
             FilterSection("Situação", BookStatus.entries.map { it to STATUS_LABELS.getValue(it) }, state.status, viewModel::setStatus, allLabel = "Todas")
             FilterSection("Formato", listOf(BookFormat.Physical to "Físico", BookFormat.Digital to "Digital"), state.format, viewModel::setFormat)
