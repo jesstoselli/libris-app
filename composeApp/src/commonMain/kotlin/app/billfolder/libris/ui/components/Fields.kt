@@ -26,6 +26,8 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
@@ -109,6 +111,23 @@ fun DeskSearchField(
                 cursorBrush = SolidColor(Libris.brass),
                 modifier = Modifier.fillMaxWidth(),
             )
+        }
+        if (value.isNotEmpty()) {
+            // The touch target is the full control height; the cross stays small.
+            Box(
+                Modifier
+                    .size(ControlHeight)
+                    .clickable(role = Role.Button) { onValueChange("") }
+                    .semantics { contentDescription = "Limpar busca" },
+                contentAlignment = Alignment.Center,
+            ) {
+                Image(
+                    rememberVectorPainter(LibrisIcons.Clear),
+                    contentDescription = null,
+                    colorFilter = ColorFilter.tint(Libris.deskTextSoft),
+                    modifier = Modifier.size(18.dp),
+                )
+            }
         }
     }
 }

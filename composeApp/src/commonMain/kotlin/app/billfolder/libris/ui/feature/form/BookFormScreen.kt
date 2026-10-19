@@ -168,7 +168,8 @@ fun BookFormScreen(
                             ),
                             keyboardActions = KeyboardActions(onSearch = { viewModel.lookUp() }),
                             trailing = {
-                                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                // Lifted off the ruled line, so the buttons read as actions and not as part of the field.
+                                Row(Modifier.padding(start = 8.dp, bottom = 10.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                                     SmallButton("Escanear") { scanning = true }
                                     SmallButton(
                                         if (state.lookingUp) "Buscando…" else "Buscar",
