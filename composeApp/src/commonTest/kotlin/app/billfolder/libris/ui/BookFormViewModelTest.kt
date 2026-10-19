@@ -202,4 +202,19 @@ class BookFormViewModelTest {
         assertEquals("Il nome della rosa", body["title"]!!.jsonPrimitive.content)
         assertEquals("2026-10-02", body["startedAt"]!!.jsonPrimitive.content)
     }
+
+    @Test
+    fun knownAuthors_loadForTheSuggestions() = runTest(dispatcher) {
+        val fake = FakeApi(dispatcher) { req ->
+            when (req.url.encodedPath) {
+                "/v1/genres" -> json("[]")
+                "/v1/authors" -> json("""["Umberto Eco"]""")
+                else -> json(bookJson())
+            }
+        }
+        val vm = BookFormViewModel(null, fake.books, fake.genres, fake.covers)
+        advanceUntilIdle()
+
+        assertEquals(listOf("Umberto Eco"), vm.knownAuthors.value)
+    }
 }

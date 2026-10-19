@@ -34,6 +34,8 @@ interface BookRepository {
     /** "Comprei": a wishlist book becomes owned. */
     suspend fun acquire(id: String, totalPages: Int?): Book
     suspend fun lookUp(isbn: String): BookLookup
+    /** Every author on the user's books, for the form's suggestions. */
+    suspend fun authors(): List<String>
 }
 
 interface ReadingRepository {

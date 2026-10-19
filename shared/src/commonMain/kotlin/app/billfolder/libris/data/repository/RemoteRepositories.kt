@@ -41,6 +41,8 @@ class RemoteBookRepository(
 
     override suspend fun get(id: String): Book = session.authorized { api.getBook(it, id) }.toDomain(api::coverSrc)
 
+    override suspend fun authors(): List<String> = session.authorized { api.listAuthors(it) }
+
     override suspend fun create(draft: BookDraft): Book =
         session.authorized { api.createBook(it, draft.toCreate(today())) }.toDomain(api::coverSrc)
 

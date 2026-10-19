@@ -132,10 +132,16 @@ class BookFormViewModel(
 
     private val _existingGenres = MutableStateFlow<List<Genre>>(emptyList())
     val existingGenres: StateFlow<List<Genre>> = _existingGenres.asStateFlow()
+    private val _knownAuthors = MutableStateFlow<List<String>>(emptyList())
+    val knownAuthors: StateFlow<List<String>> = _knownAuthors.asStateFlow()
 
     init {
         viewModelScope.launch {
             runCatching { genres.list() }.onSuccess { _existingGenres.value = it }
+        }
+        viewModelScope.launch {
+            // Suggestions only: without them the field still takes any name.
+            runCatching { books.authors() }.onSuccess { _knownAuthors.value = it }
         }
         bookId?.let { id ->
             viewModelScope.launch {

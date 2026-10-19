@@ -116,6 +116,8 @@ class LibrisApi(private val http: HttpClient, val baseUrl: String) {
     suspend fun deleteLog(token: String, bookId: String, logId: String): ReadingLogResultDto =
         send { http.delete("$baseUrl/v1/books/$bookId/logs/$logId") { bearerAuth(token) } }.body()
 
+    suspend fun listAuthors(token: String): List<String> = send { http.get("$baseUrl/v1/authors") { bearerAuth(token) } }.body()
+
     suspend fun listGenres(token: String): List<GenreDto> = send { http.get("$baseUrl/v1/genres") { bearerAuth(token) } }.body()
 
     suspend fun renameGenre(token: String, id: String, name: String): GenreDto =

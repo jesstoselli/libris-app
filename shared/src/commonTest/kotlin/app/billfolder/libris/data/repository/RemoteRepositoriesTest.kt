@@ -120,4 +120,14 @@ class RemoteRepositoriesTest {
 
         assertEquals("H. P. Lovecraft", server.requests.last().url.parameters["author"])
     }
+
+    @Test
+    fun authors_comeFromTheirOwnRoute() = runTest {
+        val server = FakeServer { json("""["Brian Christian","Umberto Eco"]""") }
+
+        val authors = books(server).authors()
+
+        assertEquals(listOf("Brian Christian", "Umberto Eco"), authors)
+        assertEquals("/v1/authors", server.requests.last().url.encodedPath)
+    }
 }

@@ -46,6 +46,7 @@ import app.billfolder.libris.domain.model.BookFormat
 import app.billfolder.libris.domain.model.BookOwnership
 import app.billfolder.libris.domain.model.BookStatus
 import app.billfolder.libris.domain.time.today
+import app.billfolder.libris.ui.common.authorSuggestions
 import app.billfolder.libris.ui.components.BookCover
 import app.billfolder.libris.ui.components.ButtonVariant
 import app.billfolder.libris.ui.components.ControlHeight
@@ -85,6 +86,7 @@ fun BookFormScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val existing by viewModel.existingGenres.collectAsStateWithLifecycle()
+    val knownAuthors by viewModel.knownAuthors.collectAsStateWithLifecycle()
     val type = LocalLibrisType.current
     val snackbar = LocalSnackbar.current
     var scanning by remember { mutableStateOf(false) }
@@ -225,6 +227,9 @@ fun BookFormScreen(
                                     )
                                 }) else null,
                             )
+                            SuggestionChips(authorSuggestions(knownAuthors, author, state.authors.filterIndexed { j, _ -> j != i })) {
+                                viewModel.onAuthor(i, it)
+                            }
                         }
                         state.shows("authors", state.authorsError)?.let {
                             Text(
@@ -423,33 +428,36 @@ private fun GenreChips(state: BookFormState, existing: List<String>, viewModel: 
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
             keyboardActions = KeyboardActions(onDone = { viewModel.addGenre(draft); draft = "" }),
         )
-        if (matches.isNotEmpty()) {
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                matches.forEach { m ->
-                    Text(
-                        m,
-                        fontFamily = type.body,
-                        fontSize = 13.sp,
-                        color = Libris.oxblood,
-                        modifier = Modifier
-                            .drawBehind {
-                                drawLine(
-                                    color = Libris.brass,
-                                    start = androidx.compose.ui.geometry.Offset(0f, size.height),
-                                    end = androidx.compose.ui.geometry.Offset(
-                                        size.width,
-                                        size.height
-                                    ),
-                                    strokeWidth = 1.dp.toPx(),
-                                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(5f, 4f)),
-                                )
-                            }
-                            .clickable { viewModel.addGenre(m); draft = "" }
-                            .minimumInteractiveComponentSize()
-                            .padding(horizontal = 4.dp),
-                    )
-                }
-            }
+        SuggestionChips(matches) { viewModel.addGenre(it); draft = "" }
+    }
+}
+
+/** Names already in the catalogue that match what is being typed; a tap fills it in. */
+@Composable
+private fun SuggestionChips(options: List<String>, onPick: (String) -> Unit) {
+    if (options.isEmpty()) return
+    val type = LocalLibrisType.current
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        options.forEach { m ->
+            Text(
+                m,
+                fontFamily = type.body,
+                fontSize = 13.sp,
+                color = Libris.oxblood,
+                modifier = Modifier
+                    .drawBehind {
+                        drawLine(
+                            color = Libris.brass,
+                            start = androidx.compose.ui.geometry.Offset(0f, size.height),
+                            end = androidx.compose.ui.geometry.Offset(size.width, size.height),
+                            strokeWidth = 1.dp.toPx(),
+                            pathEffect = PathEffect.dashPathEffect(floatArrayOf(5f, 4f)),
+                        )
+                    }
+                    .clickable { onPick(m) }
+                    .minimumInteractiveComponentSize()
+                    .padding(horizontal = 4.dp),
+            )
         }
     }
 }
