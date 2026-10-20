@@ -1,7 +1,7 @@
 package app.billfolder.libris.ui
 
 import app.billfolder.libris.domain.model.BookStatus
-import app.billfolder.libris.ui.common.AuthorRequests
+import app.billfolder.libris.ui.common.FilterRequests
 import app.billfolder.libris.ui.feature.library.LibraryViewModel
 import app.billfolder.libris.ui.feature.wishlist.WishlistViewModel
 import kotlinx.coroutines.Dispatchers
@@ -16,7 +16,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
-class AuthorFilterViewModelTest {
+class BookPageFilterViewModelTest {
     private val dispatcher = StandardTestDispatcher()
 
     @BeforeTest fun setUp() = Dispatchers.setMain(dispatcher)
@@ -28,14 +28,14 @@ class AuthorFilterViewModelTest {
     @Test
     fun library_authorRequest_showsOnlyThatAuthor_clearingTheOtherFilters() = runTest(dispatcher) {
         val fake = FakeApi(dispatcher) { req -> if (req.url.encodedPath == "/v1/genres") json("[]") else json("[${bookJson()}]") }
-        val requests = AuthorRequests()
+        val requests = FilterRequests()
         val vm = LibraryViewModel(fake.books, fake.genres, requests)
         advanceUntilIdle()
         vm.setStatus(BookStatus.Reading)
         vm.setQuery("rosa")
         advanceUntilIdle()
 
-        requests.show("Umberto Eco", wishlist = false)
+        requests.showAuthor("Umberto Eco", wishlist = false)
         advanceUntilIdle()
 
         val s = vm.state.value
@@ -49,10 +49,10 @@ class AuthorFilterViewModelTest {
     @Test
     fun library_clearAuthor_goesBackToTheWholeAcervo() = runTest(dispatcher) {
         val fake = FakeApi(dispatcher) { req -> if (req.url.encodedPath == "/v1/genres") json("[]") else json("[${bookJson()}]") }
-        val requests = AuthorRequests()
+        val requests = FilterRequests()
         val vm = LibraryViewModel(fake.books, fake.genres, requests)
         advanceUntilIdle()
-        requests.show("Umberto Eco", wishlist = false)
+        requests.showAuthor("Umberto Eco", wishlist = false)
         advanceUntilIdle()
 
         vm.setAuthor(null)
@@ -65,11 +65,11 @@ class AuthorFilterViewModelTest {
     @Test
     fun library_ignoresARequestForTheWishlist() = runTest(dispatcher) {
         val fake = FakeApi(dispatcher) { req -> if (req.url.encodedPath == "/v1/genres") json("[]") else json("[${bookJson()}]") }
-        val requests = AuthorRequests()
+        val requests = FilterRequests()
         val vm = LibraryViewModel(fake.books, fake.genres, requests)
         advanceUntilIdle()
 
-        requests.show("Umberto Eco", wishlist = true)
+        requests.showAuthor("Umberto Eco", wishlist = true)
         advanceUntilIdle()
 
         assertNull(vm.state.value.author)
@@ -79,15 +79,52 @@ class AuthorFilterViewModelTest {
     fun wishlist_authorRequest_filtersInMemory_clearingTheOtherFilters() = runTest(dispatcher) {
         val shelf = "[${bookJson("a", ownership = "wishlist", status = null)},${bookJson("b", ownership = "wishlist", status = null, authors = listOf("Mary Shelley"))}]"
         val fake = FakeApi(dispatcher) { req -> if (req.url.encodedPath == "/v1/genres") json("[]") else json(shelf) }
-        val requests = AuthorRequests()
+        val requests = FilterRequests()
         val vm = WishlistViewModel(fake.books, fake.genres, requests)
         advanceUntilIdle()
         vm.setQuery("rosa")
 
-        requests.show("Mary Shelley", wishlist = true)
+        requests.showAuthor("Mary Shelley", wishlist = true)
         advanceUntilIdle()
 
         assertEquals("", vm.state.value.query)
         assertEquals(listOf("b"), vm.state.value.visible.map { it.id })
+    }
+
+    @Test
+    fun library_genreRequest_showsOnlyThatGenre_clearingTheOtherFilters() = runTest(dispatcher) {
+        val fake = FakeApi(dispatcher) { req -> if (req.url.encodedPath == "/v1/genres") json("[]") else json("[${bookJson()}]") }
+        val requests = FilterRequests()
+        val vm = LibraryViewModel(fake.books, fake.genres, requests)
+        advanceUntilIdle()
+        vm.setStatus(BookStatus.Reading)
+        requests.showAuthor("Umberto Eco", wishlist = false)
+        advanceUntilIdle()
+
+        requests.showGenre("g1", wishlist = false)
+        advanceUntilIdle()
+
+        val s = vm.state.value
+        assertEquals("g1", s.genreId)
+        assertNull(s.author)
+        assertNull(s.status)
+        assertEquals("g1", fake.lastList()["genreId"])
+        assertNull(fake.lastList()["author"])
+    }
+
+    @Test
+    fun wishlist_genreRequest_filtersInMemory() = runTest(dispatcher) {
+        val shelf = "[${bookJson("a", ownership = "wishlist", status = null, genres = listOf("g1" to "Terror"))},${bookJson("b", ownership = "wishlist", status = null)}]"
+        val fake = FakeApi(dispatcher) { req -> if (req.url.encodedPath == "/v1/genres") json("[]") else json(shelf) }
+        val requests = FilterRequests()
+        val vm = WishlistViewModel(fake.books, fake.genres, requests)
+        advanceUntilIdle()
+        vm.setQuery("rosa")
+
+        requests.showGenre("g1", wishlist = true)
+        advanceUntilIdle()
+
+        assertEquals("", vm.state.value.query)
+        assertEquals(listOf("a"), vm.state.value.visible.map { it.id })
     }
 }

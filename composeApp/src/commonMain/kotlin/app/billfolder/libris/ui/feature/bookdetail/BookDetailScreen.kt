@@ -80,6 +80,7 @@ fun BookDetailScreen(
     onBack: () -> Unit,
     onEdit: () -> Unit,
     onAuthor: (author: String, wishlist: Boolean) -> Unit = { _, _ -> },
+    onGenre: (genreId: String, wishlist: Boolean) -> Unit = { _, _ -> },
     viewModel: BookDetailViewModel = koinViewModel(key = bookId) { parametersOf(bookId) }
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -129,7 +130,7 @@ fun BookDetailScreen(
                         // One continuous sheet: the book, then reading (or "Comprei"), then the destructive action last.
                         is Load.Loaded -> PaperCard(Modifier.fillMaxWidth(), padding = 20.dp) {
                             Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
-                                BookSheet(load.value, viewModel, onAuthor)
+                                BookSheet(load.value, viewModel, onAuthor, onGenre)
                                 SheetDivider()
                                 if (load.value.ownership == BookOwnership.Owned) ReadingSheet(state, viewModel) else AcquireSheet(load.value, viewModel)
                                 SheetDivider()
@@ -144,7 +145,12 @@ fun BookDetailScreen(
 }
 
 @Composable
-private fun BookSheet(book: Book, viewModel: BookDetailViewModel, onAuthor: (author: String, wishlist: Boolean) -> Unit) {
+private fun BookSheet(
+    book: Book,
+    viewModel: BookDetailViewModel,
+    onAuthor: (author: String, wishlist: Boolean) -> Unit,
+    onGenre: (genreId: String, wishlist: Boolean) -> Unit,
+) {
     val type = LocalLibrisType.current
     var editingDates by remember { mutableStateOf(false) }
 
@@ -220,13 +226,16 @@ private fun BookSheet(book: Book, viewModel: BookDetailViewModel, onAuthor: (aut
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                book.genres.forEach {
+                // Like the authors, each genre opens the list this book lives in, showing only that genre.
+                book.genres.forEach { genre ->
                     Text(
-                        it.name,
+                        genre.name,
                         fontFamily = type.body,
                         fontSize = 12.sp,
                         color = Libris.inkSoft,
                         modifier = Modifier
+                            .clickable(role = Role.Button) { onGenre(genre.id, book.ownership == BookOwnership.Wishlist) }
+                            .minimumInteractiveComponentSize()
                             .drawBehind {
                                 drawLine(
                                     Libris.brass,

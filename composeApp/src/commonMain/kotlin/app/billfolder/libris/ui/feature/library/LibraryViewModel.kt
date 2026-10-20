@@ -10,7 +10,8 @@ import app.billfolder.libris.domain.model.BookStatus
 import app.billfolder.libris.domain.model.Genre
 import app.billfolder.libris.domain.repository.BookRepository
 import app.billfolder.libris.domain.repository.GenreRepository
-import app.billfolder.libris.ui.common.AuthorRequests
+import app.billfolder.libris.ui.common.FilterRequest
+import app.billfolder.libris.ui.common.FilterRequests
 import app.billfolder.libris.ui.common.Load
 import app.billfolder.libris.ui.common.loadOf
 import app.billfolder.libris.ui.common.valueOrNull
@@ -60,7 +61,7 @@ data class LibraryState(
 class LibraryViewModel(
     private val books: BookRepository,
     private val genres: GenreRepository,
-    private val authorRequests: AuthorRequests = AuthorRequests(),
+    private val filterRequests: FilterRequests = FilterRequests(),
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(LibraryState())
@@ -72,17 +73,17 @@ class LibraryViewModel(
     init {
         refresh()
         viewModelScope.launch {
-            authorRequests.pending.filterNotNull().filter { !it.wishlist }.collect { request ->
-                showOnlyAuthor(request.author)
-                authorRequests.take(request)
+            filterRequests.pending.filterNotNull().filter { !it.wishlist }.collect { request ->
+                showOnly(request)
+                filterRequests.take(request)
             }
         }
     }
 
-    /** From a book page: that author's books alone, whatever was filtered before. */
-    private fun showOnlyAuthor(author: String) {
+    /** From a book page: that author's (or that genre's) books alone, whatever was filtered before. */
+    private fun showOnly(request: FilterRequest) {
         searchJob?.cancel()
-        _state.update { it.copy(status = null, genreId = null, format = null, language = null, query = "", author = author) }
+        _state.update { it.copy(status = null, genreId = request.genreId, format = null, language = null, query = "", author = request.author) }
         loadFiltered()
     }
 

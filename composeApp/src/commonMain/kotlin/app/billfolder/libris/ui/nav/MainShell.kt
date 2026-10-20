@@ -32,7 +32,7 @@ import app.billfolder.libris.ui.components.LibrisIcons
 import app.billfolder.libris.ui.components.LocalSnackbar
 import app.billfolder.libris.ui.components.RibbonBar
 import app.billfolder.libris.ui.components.RibbonItem
-import app.billfolder.libris.ui.common.AuthorRequests
+import app.billfolder.libris.ui.common.FilterRequests
 import app.billfolder.libris.ui.feature.bookdetail.BookDetailScreen
 import app.billfolder.libris.ui.feature.form.BookFormScreen
 import app.billfolder.libris.ui.feature.genres.GenresScreen
@@ -45,7 +45,7 @@ import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 @Composable
-fun MainShell(auth: AuthRepository = koinInject(), authorRequests: AuthorRequests = koinInject()) {
+fun MainShell(auth: AuthRepository = koinInject(), filterRequests: FilterRequests = koinInject()) {
     val nav = rememberNavController()
     val entry by nav.currentBackStackEntryAsState()
     val scope = rememberCoroutineScope()
@@ -56,6 +56,11 @@ fun MainShell(auth: AuthRepository = koinInject(), authorRequests: AuthorRequest
         popUpTo(nav.graph.findStartDestination().id) { saveState = true }
         launchSingleTop = true
         restoreState = true
+    }
+    // Not go(): its saved state would restore the book page on top of the list it was left for.
+    fun backToList(wishlist: Boolean) = nav.navigate(if (wishlist) WishlistRoute else LibraryRoute) {
+        popUpTo(nav.graph.findStartDestination().id)
+        launchSingleTop = true
     }
 
     val snackbar = remember { SnackbarHostState() }
@@ -78,12 +83,12 @@ fun MainShell(auth: AuthRepository = koinInject(), authorRequests: AuthorRequest
                             onBack = { nav.popBackStack() },
                             onEdit = { nav.navigate(EditRoute(id)) },
                             onAuthor = { author, wishlist ->
-                                authorRequests.show(author, wishlist)
-                                // Not go(): its saved state would restore this very book page on top of the list.
-                                nav.navigate(if (wishlist) WishlistRoute else LibraryRoute) {
-                                    popUpTo(nav.graph.findStartDestination().id)
-                                    launchSingleTop = true
-                                }
+                                filterRequests.showAuthor(author, wishlist)
+                                backToList(wishlist)
+                            },
+                            onGenre = { genreId, wishlist ->
+                                filterRequests.showGenre(genreId, wishlist)
+                                backToList(wishlist)
                             },
                         )
                     }

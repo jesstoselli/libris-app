@@ -9,7 +9,7 @@ import app.billfolder.libris.domain.model.BookOwnership
 import app.billfolder.libris.domain.model.Genre
 import app.billfolder.libris.domain.repository.BookRepository
 import app.billfolder.libris.domain.repository.GenreRepository
-import app.billfolder.libris.ui.common.AuthorRequests
+import app.billfolder.libris.ui.common.FilterRequests
 import app.billfolder.libris.ui.common.Load
 import app.billfolder.libris.ui.common.fold
 import app.billfolder.libris.ui.common.loadOf
@@ -53,7 +53,7 @@ data class WishlistState(
 class WishlistViewModel(
     private val books: BookRepository,
     private val genres: GenreRepository,
-    private val authorRequests: AuthorRequests = AuthorRequests(),
+    private val filterRequests: FilterRequests = FilterRequests(),
 ) : ViewModel() {
     private val _state = MutableStateFlow(WishlistState())
     val state: StateFlow<WishlistState> = _state.asStateFlow()
@@ -61,10 +61,10 @@ class WishlistViewModel(
     init {
         refresh()
         viewModelScope.launch {
-            authorRequests.pending.filterNotNull().filter { it.wishlist }.collect { request ->
-                // From a book page: that author's books alone, whatever was filtered before.
-                _state.update { it.copy(genreId = null, format = null, language = null, query = "", author = request.author) }
-                authorRequests.take(request)
+            filterRequests.pending.filterNotNull().filter { it.wishlist }.collect { request ->
+                // From a book page: that author's (or that genre's) books alone, whatever was filtered before.
+                _state.update { it.copy(genreId = request.genreId, format = null, language = null, query = "", author = request.author) }
+                filterRequests.take(request)
             }
         }
     }
