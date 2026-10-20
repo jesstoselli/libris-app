@@ -118,6 +118,8 @@ class LibrisApi(private val http: HttpClient, val baseUrl: String) {
 
     suspend fun listAuthors(token: String): List<String> = send { http.get("$baseUrl/v1/authors") { bearerAuth(token) } }.body()
 
+    suspend fun listPublishers(token: String): List<String> = send { http.get("$baseUrl/v1/publishers") { bearerAuth(token) } }.body()
+
     suspend fun listGenres(token: String): List<GenreDto> = send { http.get("$baseUrl/v1/genres") { bearerAuth(token) } }.body()
 
     suspend fun renameGenre(token: String, id: String, name: String): GenreDto =

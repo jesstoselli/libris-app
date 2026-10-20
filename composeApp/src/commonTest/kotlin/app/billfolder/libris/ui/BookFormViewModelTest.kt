@@ -217,4 +217,19 @@ class BookFormViewModelTest {
 
         assertEquals(listOf("Umberto Eco"), vm.knownAuthors.value)
     }
+
+    @Test
+    fun knownPublishers_loadForTheSuggestions() = runTest(dispatcher) {
+        val fake = FakeApi(dispatcher) { req ->
+            when (req.url.encodedPath) {
+                "/v1/genres" -> json("[]")
+                "/v1/publishers" -> json("""["Rocco"]""")
+                else -> json(bookJson())
+            }
+        }
+        val vm = BookFormViewModel(null, fake.books, fake.genres, fake.covers)
+        advanceUntilIdle()
+
+        assertEquals(listOf("Rocco"), vm.knownPublishers.value)
+    }
 }

@@ -47,6 +47,7 @@ import app.billfolder.libris.domain.model.BookOwnership
 import app.billfolder.libris.domain.model.BookStatus
 import app.billfolder.libris.domain.time.today
 import app.billfolder.libris.ui.common.authorSuggestions
+import app.billfolder.libris.ui.common.publisherSuggestions
 import app.billfolder.libris.ui.components.BookCover
 import app.billfolder.libris.ui.components.ButtonVariant
 import app.billfolder.libris.ui.components.ControlHeight
@@ -87,6 +88,7 @@ fun BookFormScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val existing by viewModel.existingGenres.collectAsStateWithLifecycle()
     val knownAuthors by viewModel.knownAuthors.collectAsStateWithLifecycle()
+    val knownPublishers by viewModel.knownPublishers.collectAsStateWithLifecycle()
     val type = LocalLibrisType.current
     val snackbar = LocalSnackbar.current
     var scanning by remember { mutableStateOf(false) }
@@ -261,6 +263,7 @@ fun BookFormScreen(
                         )
                     }
                     RuledField("Editora", state.publisher, viewModel::onPublisher)
+                    SuggestionChips(publisherSuggestions(knownPublishers, state.publisher), viewModel::onPublisher)
                     RuledField("Sinopse", state.synopsis, viewModel::onSynopsis, singleLine = false)
 
                     GenreChips(state, existing.map { it.name }, viewModel)

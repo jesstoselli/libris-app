@@ -36,6 +36,8 @@ interface BookRepository {
     suspend fun lookUp(isbn: String): BookLookup
     /** Every author on the user's books, for the form's suggestions. */
     suspend fun authors(): List<String>
+    /** Every publisher on the user's books, for the form's suggestions. */
+    suspend fun publishers(): List<String>
 }
 
 interface ReadingRepository {
