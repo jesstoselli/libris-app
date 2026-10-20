@@ -79,7 +79,11 @@ fun MainShell(auth: AuthRepository = koinInject(), authorRequests: AuthorRequest
                             onEdit = { nav.navigate(EditRoute(id)) },
                             onAuthor = { author, wishlist ->
                                 authorRequests.show(author, wishlist)
-                                go(if (wishlist) WishlistRoute else LibraryRoute)
+                                // Not go(): its saved state would restore this very book page on top of the list.
+                                nav.navigate(if (wishlist) WishlistRoute else LibraryRoute) {
+                                    popUpTo(nav.graph.findStartDestination().id)
+                                    launchSingleTop = true
+                                }
                             },
                         )
                     }
