@@ -90,6 +90,8 @@ fun BookFormScreen(
     val knownAuthors by viewModel.knownAuthors.collectAsStateWithLifecycle()
     val knownPublishers by viewModel.knownPublishers.collectAsStateWithLifecycle()
     val type = LocalLibrisType.current
+    // The keyboard's action key walks the form field by field instead of closing it.
+    val next = KeyboardOptions(imeAction = ImeAction.Next)
     val snackbar = LocalSnackbar.current
     var scanning by remember { mutableStateOf(false) }
     var picking by remember { mutableStateOf<String?>(null) }
@@ -204,6 +206,7 @@ fun BookFormScreen(
                         "Título",
                         state.title,
                         viewModel::onTitle,
+                        keyboardOptions = next,
                         error = state.shows("title", state.titleError)
                     )
 
@@ -220,6 +223,7 @@ fun BookFormScreen(
                                 if (state.authors.size > 1) "Autor ${i + 1}" else "Autor(es)",
                                 author,
                                 { viewModel.onAuthor(i, it) },
+                                keyboardOptions = next,
                                 trailing = if (state.authors.size > 1) ({
                                     Text(
                                         "×",
@@ -250,7 +254,7 @@ fun BookFormScreen(
                             state.totalPages,
                             viewModel::onPages,
                             Modifier.weight(1f),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
                             error = state.shows("pages", state.pagesError)
                         )
                         RuledField(
@@ -258,11 +262,11 @@ fun BookFormScreen(
                             state.publishedYear,
                             viewModel::onYear,
                             Modifier.weight(1f),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
                             error = state.shows("year", state.yearError)
                         )
                     }
-                    RuledField("Editora", state.publisher, viewModel::onPublisher)
+                    RuledField("Editora", state.publisher, viewModel::onPublisher, keyboardOptions = next)
                     SuggestionChips(publisherSuggestions(knownPublishers, state.publisher), viewModel::onPublisher)
                     RuledField("Sinopse", state.synopsis, viewModel::onSynopsis, singleLine = false)
 
@@ -322,7 +326,7 @@ fun BookFormScreen(
                             "Já li até a página",
                             state.currentPage,
                             viewModel::onCurrentPage,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
                             error = state.currentPageError,
                         )
                     }
