@@ -11,6 +11,7 @@ import app.billfolder.libris.domain.model.ReadingProgress
 import app.billfolder.libris.domain.model.toDraft
 import app.billfolder.libris.domain.repository.BookRepository
 import app.billfolder.libris.domain.repository.ReadingRepository
+import app.billfolder.libris.domain.rules.keptStart
 import app.billfolder.libris.domain.rules.readingDatesProblem
 import app.billfolder.libris.domain.time.today
 import app.billfolder.libris.ui.common.Load
@@ -107,23 +108,30 @@ class BookDetailViewModel(private val bookId: String, private val books: BookRep
         sendStatus(book, BookStatus.Read, withoutDate)
     }
 
+    /** "Sei a data": "Lido" on the day picked. */
+    fun finishOn(day: LocalDate) {
+        val book = _state.value.book.valueOrNull ?: return
+        _state.update { it.copy(askingFinish = false) }
+        sendStatus(book, BookStatus.Read, withoutDate = false, finishedAt = day)
+    }
+
     fun cancelFinish() = _state.update { it.copy(askingFinish = false) }
 
-    private fun sendStatus(book: Book, status: BookStatus, withoutDate: Boolean) {
+    private fun sendStatus(book: Book, status: BookStatus, withoutDate: Boolean, finishedAt: LocalDate? = null) {
         run("Situação atualizada.") {
-            val updated = books.changeStatus(book.id, status, withoutDate)
+            val updated = books.changeStatus(book.id, status, withoutDate, finishedAt)
             _state.update { it.copy(book = Load.Loaded(updated)) }
         }
     }
 
-    fun saveDates(startedAt: LocalDate?, finishedAt: LocalDate?) {
+    fun saveFinish(finishedAt: LocalDate?) {
         val book = _state.value.book.valueOrNull ?: return
-        readingDatesProblem(startedAt, finishedAt, today())?.message()?.let { problem ->
+        readingDatesProblem(null, finishedAt, today())?.message()?.let { problem ->
             viewModelScope.launch { _messages.send(problem) }
             return
         }
-        run("Datas atualizadas.") {
-            val updated = books.update(book.id, book.toDraft().copy(startedAt = startedAt, finishedAt = finishedAt))
+        run("Data atualizada.") {
+            val updated = books.update(book.id, book.toDraft().copy(startedAt = keptStart(book.startedAt, finishedAt), finishedAt = finishedAt))
             _state.update { it.copy(book = Load.Loaded(updated)) }
         }
     }

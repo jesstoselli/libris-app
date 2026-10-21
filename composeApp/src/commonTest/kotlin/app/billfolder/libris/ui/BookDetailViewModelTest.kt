@@ -143,6 +143,47 @@ class BookDetailViewModelTest {
     }
 
     @Test
+    fun read_onAKnownDate_sendsThatDay() = runTest(dispatcher) {
+        val fake = FakeApi(dispatcher) { req ->
+            when {
+                req.method == HttpMethod.Patch -> json(bookJson(status = "read", finishedAt = "2019-07-02"))
+                req.url.encodedPath.endsWith("/logs") -> json("[]")
+                else -> json(bookJson(status = "reading"))
+            }
+        }
+        val vm = BookDetailViewModel("b1", fake.books, fake.reading)
+        advanceUntilIdle()
+
+        vm.changeStatus(BookStatus.Read)
+        vm.finishOn(LocalDate.parse("2019-07-02"))
+        advanceUntilIdle()
+
+        assertEquals("""{"status":"read","today":"${today()}","finishedAt":"2019-07-02"}""", fake.bodyOf(fake.requests.last()))
+        assertEquals(false, vm.state.value.askingFinish)
+    }
+
+    @Test
+    fun saveFinish_keepsTheHiddenStart_unlessTheFinishComesBeforeIt() = runTest(dispatcher) {
+        val fake = FakeApi(dispatcher) { req ->
+            when {
+                req.method == HttpMethod.Put -> json(bookJson(status = "read"))
+                req.url.encodedPath.endsWith("/logs") -> json("[]")
+                else -> json(bookJson(status = "read", startedAt = "2009-01-10", finishedAt = "2009-01-29"))
+            }
+        }
+        val vm = BookDetailViewModel("b1", fake.books, fake.reading)
+        advanceUntilIdle()
+
+        vm.saveFinish(LocalDate.parse("2009-01-20"))
+        advanceUntilIdle()
+        assertTrue(fake.bodyOf(fake.requests.last())!!.contains(""""startedAt":"2009-01-10""""))
+
+        vm.saveFinish(LocalDate.parse("2008-12-31"))
+        advanceUntilIdle()
+        assertTrue(fake.bodyOf(fake.requests.last())!!.contains(""""startedAt":null"""))
+    }
+
+    @Test
     fun read_onABookThatAlreadyHasAFinish_asksNothing() = runTest(dispatcher) {
         val fake = FakeApi(dispatcher) { req ->
             when {

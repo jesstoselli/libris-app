@@ -1,5 +1,6 @@
 package app.billfolder.libris.domain.repository
 
+import app.billfolder.libris.domain.model.Publisher
 import app.billfolder.libris.domain.model.AccountState
 import app.billfolder.libris.domain.model.Book
 import app.billfolder.libris.domain.model.BookDraft
@@ -30,8 +31,8 @@ interface BookRepository {
     suspend fun create(draft: BookDraft): Book
     suspend fun update(id: String, draft: BookDraft): Book
     suspend fun delete(id: String)
-    /** [withoutDate]: "Lido" for a book whose finish nobody remembers; otherwise the API fills today. */
-    suspend fun changeStatus(id: String, status: BookStatus, withoutDate: Boolean = false): Book
+    /** For "Lido": [finishedAt] is a remembered day, [withoutDate] a finish nobody remembers; with neither, the API fills today. */
+    suspend fun changeStatus(id: String, status: BookStatus, withoutDate: Boolean = false, finishedAt: LocalDate? = null): Book
     /** "Comprei": a wishlist book becomes owned. */
     suspend fun acquire(id: String, totalPages: Int?): Book
     suspend fun lookUp(isbn: String): BookLookup
@@ -39,6 +40,12 @@ interface BookRepository {
     suspend fun authors(): List<String>
     /** Every publisher on the user's books, for the form's suggestions. */
     suspend fun publishers(): List<String>
+
+    /** Each spelling apart with its counts, so the publishers screen shows which variants to merge. */
+    suspend fun publisherSummary(): List<Publisher>
+
+    /** Renames [from] to [to] on every book; returns how many books changed. */
+    suspend fun renamePublisher(from: String, to: String): Int
 }
 
 interface ReadingRepository {

@@ -110,7 +110,14 @@ data class BookListQuery(
     val format: BookFormatDto? = null,
     val language: String? = null,
     val author: String? = null,
+    val publisher: String? = null,
 )
+
+@Serializable data class PublisherDto(val name: String, val bookCount: Int, val wishlistCount: Int)
+
+@Serializable internal data class RenamePublisherBody(val from: String, val to: String)
+
+@Serializable data class RenamePublisherResultDto(val updated: Int)
 
 @Serializable data class ReadingLogDto(val id: String, val date: String, val page: Int, val fromPage: Int, val pagesRead: Int)
 
@@ -169,6 +176,8 @@ data class MonthDetailDto(val year: Int, val month: Int, val pagesRead: Int, val
     val status: BookStatusDto,
     val today: String,
     @EncodeDefault(EncodeDefault.Mode.NEVER) val withoutDate: Boolean? = null,
+    // "Lido" on a remembered day.
+    @EncodeDefault(EncodeDefault.Mode.NEVER) val finishedAt: String? = null,
 )
 
 @Serializable internal data class AcquireBody(val today: String, val totalPages: Int?)

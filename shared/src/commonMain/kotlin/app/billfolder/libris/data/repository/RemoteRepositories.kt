@@ -8,6 +8,7 @@ import app.billfolder.libris.data.remote.toDomain
 import app.billfolder.libris.data.remote.toDto
 import app.billfolder.libris.data.remote.toUpdate
 import app.billfolder.libris.data.remote.dto.ReadingLogResultDto
+import app.billfolder.libris.domain.model.Publisher
 import app.billfolder.libris.domain.model.Book
 import app.billfolder.libris.domain.model.BookDraft
 import app.billfolder.libris.domain.model.BookFilter
@@ -35,7 +36,7 @@ class RemoteBookRepository(
     private val today: () -> LocalDate = { localToday() },
 ) : BookRepository {
     override suspend fun list(filter: BookFilter): List<Book> {
-        val query = BookListQuery(filter.ownership?.toDto(), filter.status?.toDto(), filter.genreId, filter.query?.trim()?.ifBlank { null }, filter.format?.toDto(), filter.language, filter.author)
+        val query = BookListQuery(filter.ownership?.toDto(), filter.status?.toDto(), filter.genreId, filter.query?.trim()?.ifBlank { null }, filter.format?.toDto(), filter.language, filter.author, filter.publisher)
         return session.authorized { api.listBooks(it, query) }.map { it.toDomain(api::coverSrc) }
     }
 
@@ -45,6 +46,11 @@ class RemoteBookRepository(
 
     override suspend fun publishers(): List<String> = session.authorized { api.listPublishers(it) }
 
+    override suspend fun publisherSummary(): List<Publisher> =
+        session.authorized { api.publisherSummary(it) }.map { Publisher(it.name, it.bookCount, it.wishlistCount) }
+
+    override suspend fun renamePublisher(from: String, to: String): Int = session.authorized { api.renamePublisher(it, from, to) }.updated
+
     override suspend fun create(draft: BookDraft): Book =
         session.authorized { api.createBook(it, draft.toCreate(today())) }.toDomain(api::coverSrc)
 
@@ -53,8 +59,8 @@ class RemoteBookRepository(
 
     override suspend fun delete(id: String) = session.authorized { api.deleteBook(it, id) }
 
-    override suspend fun changeStatus(id: String, status: BookStatus, withoutDate: Boolean): Book =
-        session.authorized { api.changeStatus(it, id, status.toDto(), today().toString(), withoutDate) }.toDomain(api::coverSrc)
+    override suspend fun changeStatus(id: String, status: BookStatus, withoutDate: Boolean, finishedAt: LocalDate?): Book =
+        session.authorized { api.changeStatus(it, id, status.toDto(), today().toString(), withoutDate, finishedAt?.toString()) }.toDomain(api::coverSrc)
 
     override suspend fun acquire(id: String, totalPages: Int?): Book =
         session.authorized { api.acquire(it, id, today().toString(), totalPages) }.toDomain(api::coverSrc)

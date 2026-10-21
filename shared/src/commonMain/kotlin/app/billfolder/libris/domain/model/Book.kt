@@ -71,7 +71,12 @@ data class BookFilter(
     val format: BookFormat? = null,
     val language: String? = null,
     val author: String? = null,
+    /** One spelling exactly as on the book. */
+    val publisher: String? = null,
 )
+
+/** One spelling of a publisher and its books in the Acervo and the Wishlist. */
+data class Publisher(val name: String, val bookCount: Int, val wishlistCount: Int)
 
 data class Cover(val id: String, val url: String)
 

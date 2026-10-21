@@ -37,8 +37,9 @@ data class LibraryState(
     val query: String = "",
     val genres: List<Genre> = emptyList(),
     val author: String? = null,
+    val publisher: String? = null,
 ) {
-    val hasFilters get() = status != null || genreId != null || format != null || language != null || author != null || query.isNotBlank()
+    val hasFilters get() = status != null || genreId != null || format != null || language != null || author != null || publisher != null || query.isNotBlank()
 
     /** What the list shows: the unfiltered load doubles as the "Todos" view, so no filter means one request. */
     val shown: Load<List<Book>> get() = if (hasFilters) filtered ?: Load.Loading else all
@@ -83,7 +84,7 @@ class LibraryViewModel(
     /** From a book page: that author's (or that genre's) books alone, whatever was filtered before. */
     private fun showOnly(request: FilterRequest) {
         searchJob?.cancel()
-        _state.update { it.copy(status = null, genreId = request.genreId, format = null, language = null, query = "", author = request.author) }
+        _state.update { it.copy(status = null, genreId = request.genreId, format = null, language = null, query = "", author = request.author, publisher = request.publisher) }
         loadFiltered()
     }
 
@@ -108,6 +109,11 @@ class LibraryViewModel(
             jobs.joinAll()
             _state.update { it.copy(refreshing = false) }
         }
+    }
+
+    fun setPublisher(publisher: String?) {
+        _state.update { it.copy(publisher = publisher) }
+        loadFiltered()
     }
 
     fun setAuthor(author: String?) {
@@ -153,7 +159,7 @@ class LibraryViewModel(
         }
         _state.update { it.copy(filtered = Load.Loading) }
         filterJob = viewModelScope.launch {
-            val load = loadOf { books.list(BookFilter(BookOwnership.Owned, s.status, s.genreId, s.query, s.format, s.language, s.author)) }
+            val load = loadOf { books.list(BookFilter(BookOwnership.Owned, s.status, s.genreId, s.query, s.format, s.language, s.author, s.publisher)) }
             _state.update { it.copy(filtered = load) }
         }
         return filterJob

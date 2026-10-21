@@ -20,7 +20,10 @@ import app.billfolder.libris.data.remote.dto.MonthDetailDto
 import app.billfolder.libris.data.remote.dto.NameBody
 import app.billfolder.libris.data.remote.dto.ReadingLogDto
 import app.billfolder.libris.data.remote.dto.ReadingLogResultDto
+import app.billfolder.libris.data.remote.dto.PublisherDto
 import app.billfolder.libris.data.remote.dto.RefreshBody
+import app.billfolder.libris.data.remote.dto.RenamePublisherBody
+import app.billfolder.libris.data.remote.dto.RenamePublisherResultDto
 import app.billfolder.libris.data.remote.dto.StatusBody
 import app.billfolder.libris.data.remote.dto.UpdateBookRequest
 import app.billfolder.libris.data.remote.dto.UrlBody
@@ -83,8 +86,16 @@ class LibrisApi(private val http: HttpClient, val baseUrl: String) {
                 query.format?.let { parameter("format", if (it == BookFormatDto.Physical) "physical" else "digital") }
                 query.language?.let { parameter("language", it) }
                 query.author?.takeIf { it.isNotBlank() }?.let { parameter("author", it) }
+                query.publisher?.takeIf { it.isNotBlank() }?.let { parameter("publisher", it) }
             }
         }.body()
+
+    suspend fun publisherSummary(token: String): List<PublisherDto> =
+        send { http.get("$baseUrl/v1/publishers/summary") { bearerAuth(token) } }.body()
+
+    /** Every book written with [from] gets [to]; an existing [to] absorbs them. */
+    suspend fun renamePublisher(token: String, from: String, to: String): RenamePublisherResultDto =
+        send { http.put("$baseUrl/v1/publishers") { bearerAuth(token); json(RenamePublisherBody(from, to)) } }.body()
 
     suspend fun getBook(token: String, id: String): BookDto = send { http.get("$baseUrl/v1/books/$id") { bearerAuth(token) } }.body()
 
@@ -98,8 +109,8 @@ class LibrisApi(private val http: HttpClient, val baseUrl: String) {
         send { http.delete("$baseUrl/v1/books/$id") { bearerAuth(token) } }
     }
 
-    suspend fun changeStatus(token: String, id: String, status: BookStatusDto, today: String, withoutDate: Boolean = false): BookDto =
-        send { http.patch("$baseUrl/v1/books/$id/status") { bearerAuth(token); json(StatusBody(status, today, withoutDate.takeIf { it })) } }.body()
+    suspend fun changeStatus(token: String, id: String, status: BookStatusDto, today: String, withoutDate: Boolean = false, finishedAt: String? = null): BookDto =
+        send { http.patch("$baseUrl/v1/books/$id/status") { bearerAuth(token); json(StatusBody(status, today, withoutDate.takeIf { it }, finishedAt)) } }.body()
 
     suspend fun acquire(token: String, id: String, today: String, totalPages: Int?): BookDto =
         send { http.post("$baseUrl/v1/books/$id/acquire") { bearerAuth(token); json(AcquireBody(today, totalPages)) } }.body()

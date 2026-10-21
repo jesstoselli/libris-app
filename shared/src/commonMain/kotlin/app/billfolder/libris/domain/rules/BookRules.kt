@@ -22,6 +22,12 @@ fun readingDatesProblem(startedAt: LocalDate?, finishedAt: LocalDate?, today: Lo
 }
 
 /**
+ * The start the app no longer shows still lives on older books; it rides along on saves so it is not wiped, unless a
+ * new finish would come before it, which the API would refuse for a reason nobody can see.
+ */
+fun keptStart(start: LocalDate?, finish: LocalDate?): LocalDate? = if (start != null && finish != null && finish < start) null else start
+
+/**
  * Adds a genre once, ignoring case and stray commas, up to [BookRules.MAX_GENRES]. An existing genre keeps the
  * spelling it is stored with, so "terror" typed today joins the "Terror" created last year.
  */

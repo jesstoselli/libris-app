@@ -25,7 +25,7 @@ import app.billfolder.libris.ui.theme.LocalLibrisType
 
 /** The list is showing one author's books, picked on a book page; the cross shows everything again. */
 @Composable
-fun AuthorChip(author: String, onClear: () -> Unit, modifier: Modifier = Modifier) {
+fun AuthorChip(author: String, onClear: () -> Unit, modifier: Modifier = Modifier, label: String = "Autor") {
     val type = LocalLibrisType.current
     Row(
         modifier
@@ -34,12 +34,12 @@ fun AuthorChip(author: String, onClear: () -> Unit, modifier: Modifier = Modifie
             .padding(start = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text("Autor: $author", fontFamily = type.body, fontSize = 15.sp, color = Libris.deskText)
+        Text("$label: $author", fontFamily = type.body, fontSize = 15.sp, color = Libris.deskText)
         Box(
             Modifier
                 .size(ControlHeight)
                 .clickable(role = Role.Button, onClick = onClear)
-                .semantics { contentDescription = "Tirar o filtro de autor" },
+                .semantics { contentDescription = "Tirar o filtro de ${label.lowercase()}" },
             contentAlignment = Alignment.Center,
         ) {
             Image(

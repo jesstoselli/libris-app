@@ -91,24 +91,29 @@ class BookFormViewModelTest {
         vm.onOwnership(BookOwnership.Wishlist)
 
         assertTrue(vm.state.value.canSubmit)
-        assertFalse(vm.state.value.showStart)
+        assertFalse(vm.state.value.showFinish)
     }
 
     @Test
-    fun readWithPastDates_areSent_andFutureRejected() = runTest(dispatcher) {
+    fun readWithAPastFinish_isSentWithoutAStart_andAFutureOneRejected() = runTest(dispatcher) {
         val fake = server()
         val vm = BookFormViewModel(null, fake.books, fake.genres, fake.covers)
         advanceUntilIdle()
-        vm.onTitle("Rosa"); vm.onAuthor(0, "Eco"); vm.onPages("512"); vm.onStatus(BookStatus.Read)
-        vm.onStartedAt(LocalDate.parse("2024-03-20")); vm.onFinishedAt(LocalDate.parse("2024-03-01"))
-        assertEquals("O término não pode ser antes do início.", vm.state.value.datesError)
+        vm.onTitle("Rosa"); vm.onAuthor(0, "Eco"); vm.onPages("512")
+        vm.onStatus(BookStatus.Reading)
+        assertFalse(vm.state.value.showFinish)
+        vm.onStatus(BookStatus.Read)
+        assertTrue(vm.state.value.showFinish)
+        vm.onFinishedAt(LocalDate.parse("2999-03-01"))
+        assertEquals("As datas não podem estar no futuro.", vm.state.value.datesError)
 
-        vm.onStartedAt(LocalDate.parse("2024-03-01")); vm.onFinishedAt(LocalDate.parse("2024-03-20"))
+        vm.onFinishedAt(LocalDate.parse("2024-03-20"))
         vm.save()
         advanceUntilIdle()
 
         val body = bodyJson(fake, "/v1/books")
         assertEquals("2024-03-20", body["finishedAt"]!!.jsonPrimitive.content)
+        assertEquals(JsonNull, body["startedAt"])
     }
 
     @Test

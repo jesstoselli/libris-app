@@ -62,6 +62,7 @@ fun LibraryScreen(
     onOpenBook: (String) -> Unit,
     onRegister: () -> Unit,
     onManageGenres: () -> Unit,
+    onManagePublishers: () -> Unit = {},
     onLogout: () -> Unit,
     viewModel: LibraryViewModel = koinViewModel(),
 ) {
@@ -82,10 +83,11 @@ fun LibraryScreen(
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                     DeskSearchField(state.query, viewModel::setQuery, "Buscar por título ou autor", Modifier.weight(1f))
-                    FiltersButton(listOfNotNull(state.status, state.genreId, state.format, state.language, state.author).size, { showFilters = true })
+                    FiltersButton(listOfNotNull(state.status, state.genreId, state.format, state.language, state.author, state.publisher).size, { showFilters = true })
                 }
             }
             state.author?.let { author -> item { AuthorChip(author, { viewModel.setAuthor(null) }) } }
+            state.publisher?.let { publisher -> item { AuthorChip(publisher, { viewModel.setPublisher(null) }, label = "Editora") } }
             when (val shown = state.shown) {
                 Load.Loading -> item { Text("Carregando…", fontFamily = type.body, color = Libris.deskTextSoft) }
                 is Load.Failed -> item { Text(shown.message, fontFamily = type.body, color = Libris.deskText) }
@@ -111,13 +113,14 @@ fun LibraryScreen(
     if (showFilters) {
         FiltersSheet(
             onDismiss = { showFilters = false },
-            onClear = { viewModel.setStatus(null); viewModel.setGenre(null); viewModel.setFormat(null); viewModel.setLanguage(null); viewModel.setAuthor(null) },
+            onClear = { viewModel.setStatus(null); viewModel.setGenre(null); viewModel.setFormat(null); viewModel.setLanguage(null); viewModel.setAuthor(null); viewModel.setPublisher(null) },
         ) {
             FilterSection("Situação", BookStatus.entries.map { it to STATUS_LABELS.getValue(it) }, state.status, viewModel::setStatus, allLabel = "Todas")
             FilterSection("Formato", listOf(BookFormat.Physical to "Físico", BookFormat.Digital to "Digital"), state.format, viewModel::setFormat)
             FilterSection("Idioma", LANGUAGES, state.language, viewModel::setLanguage)
             FilterSection("Gênero", state.genres.map { it.id to it.name }, state.genreId, viewModel::setGenre)
             LibrisButton("Gerenciar gêneros", { showFilters = false; onManageGenres() }, variant = ButtonVariant.Quiet)
+            LibrisButton("Gerenciar editoras", { showFilters = false; onManagePublishers() }, variant = ButtonVariant.Quiet)
         }
     }
 }

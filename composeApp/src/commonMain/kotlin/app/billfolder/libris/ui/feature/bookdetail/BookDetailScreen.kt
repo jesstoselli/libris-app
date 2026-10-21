@@ -153,6 +153,7 @@ private fun BookSheet(
 ) {
     val type = LocalLibrisType.current
     var editingDates by remember { mutableStateOf(false) }
+    var pickingFinish by remember { mutableStateOf(false) }
 
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -287,25 +288,32 @@ private fun BookSheet(
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         LibrisButton("Terminei hoje", { viewModel.finish(withoutDate = false) }, variant = ButtonVariant.Secondary)
                         LibrisButton("Não lembro a data", { viewModel.finish(withoutDate = true) }, variant = ButtonVariant.Secondary)
-                        LibrisButton("Cancelar", viewModel::cancelFinish, variant = ButtonVariant.Quiet)
+                        LibrisButton("Sei a data", { pickingFinish = true }, variant = ButtonVariant.Secondary)
+                        LibrisButton("Cancelar", { pickingFinish = false; viewModel.cancelFinish() }, variant = ButtonVariant.Quiet)
+                    }
+                    if (pickingFinish) {
+                        EditFinish(
+                            null,
+                            required = true,
+                            onSave = { day -> pickingFinish = false; day?.let(viewModel::finishOn) },
+                            onCancel = { pickingFinish = false })
                     }
                 }
             }
-            Text(
-                "Início: ${book.startedAt?.let(::formatDate) ?: "—"} · Término: ${
-                    book.finishedAt?.let(
-                        ::formatDate
-                    ) ?: "—"
-                }",
-                fontFamily = type.body, fontSize = 14.sp, color = Libris.inkSoft,
-            )
-            if (editingDates) {
-                EditDates(
-                    book,
-                    onSave = { s, f -> viewModel.saveDates(s, f); editingDates = false },
-                    onCancel = { editingDates = false })
-            } else {
-                LibrisButton("✎ Editar datas", { editingDates = true }, variant = ButtonVariant.Quiet)
+            // Não iniciado has no dates and Lendo no finish yet; with the start gone, only these keep the line.
+            if (book.status == BookStatus.Read || book.status == BookStatus.Abandoned) {
+                Text(
+                    "Término: ${book.finishedAt?.let(::formatDate) ?: "—"}",
+                    fontFamily = type.body, fontSize = 14.sp, color = Libris.inkSoft,
+                )
+                if (editingDates) {
+                    EditFinish(
+                        book.finishedAt,
+                        onSave = { f -> viewModel.saveFinish(f); editingDates = false },
+                        onCancel = { editingDates = false })
+                } else {
+                    LibrisButton("✎ Editar data", { editingDates = true }, variant = ButtonVariant.Quiet)
+                }
             }
         }
     }
@@ -334,29 +342,22 @@ private fun publication(book: Book): String? {
 }
 
 @Composable
-private fun EditDates(book: Book, onSave: (LocalDate?, LocalDate?) -> Unit, onCancel: () -> Unit) {
+private fun EditFinish(initial: LocalDate?, onSave: (LocalDate?) -> Unit, onCancel: () -> Unit, required: Boolean = false) {
     val type = LocalLibrisType.current
-    var start by remember { mutableStateOf(book.startedAt) }
-    var end by remember { mutableStateOf(book.finishedAt) }
-    var picking by remember { mutableStateOf<String?>(null) }
-    val problem = readingDatesProblem(start, end, today())?.message()
+    var end by remember { mutableStateOf(initial) }
+    var picking by remember { mutableStateOf(false) }
+    val problem = readingDatesProblem(null, end, today())?.message()
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            DateChip("Início", start, { picking = "start" }, { start = null })
-            DateChip("Término", end, { picking = "end" }, { end = null })
-        }
+        DateChip("Término", end, { picking = true }, { end = null })
         problem?.let { Text(it, fontFamily = type.body, fontSize = 13.sp, color = Libris.oxblood) }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             LibrisButton("Cancelar", onCancel, variant = ButtonVariant.Secondary)
-            LibrisButton("Salvar datas", { onSave(start, end) }, variant = ButtonVariant.Primary, enabled = problem == null)
+            // "Sei a data": a date is the point, so saving none is not offered.
+            LibrisButton("Salvar data", { onSave(end) }, variant = ButtonVariant.Primary, enabled = problem == null && (!required || end != null))
         }
     }
-    picking?.let { which ->
-        LibrisDatePicker(
-            if (which == "start") start else end,
-            today(),
-            onPicked = { if (which == "start") start = it else end = it },
-            onDismiss = { picking = null })
+    if (picking) {
+        LibrisDatePicker(end, today(), onPicked = { end = it }, onDismiss = { picking = false })
     }
 }
 

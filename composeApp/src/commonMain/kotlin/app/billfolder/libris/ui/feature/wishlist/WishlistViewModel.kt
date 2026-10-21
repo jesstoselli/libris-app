@@ -33,6 +33,7 @@ data class WishlistState(
     val language: String? = null,
     val query: String = "",
     val author: String? = null,
+    val publisher: String? = null,
 ) {
     val subtitle get() = books.valueOrNull?.let { "${it.size} ${if (it.size == 1) "livro" else "livros"} pra procurar" }
 
@@ -45,6 +46,7 @@ data class WishlistState(
                     (format == null || format in b.formats) &&
                     (language == null || b.language == language) &&
                     (author == null || author in b.authors) &&
+                    (publisher == null || b.publisher == publisher) &&
                     (term.isEmpty() || fold(b.title).contains(term) || b.authors.any { fold(it).contains(term) })
             }
         }
@@ -63,13 +65,15 @@ class WishlistViewModel(
         viewModelScope.launch {
             filterRequests.pending.filterNotNull().filter { it.wishlist }.collect { request ->
                 // From a book page: that author's (or that genre's) books alone, whatever was filtered before.
-                _state.update { it.copy(genreId = request.genreId, format = null, language = null, query = "", author = request.author) }
+                _state.update { it.copy(genreId = request.genreId, format = null, language = null, query = "", author = request.author, publisher = request.publisher) }
                 filterRequests.take(request)
             }
         }
     }
 
     fun setAuthor(author: String?) = _state.update { it.copy(author = author) }
+
+    fun setPublisher(publisher: String?) = _state.update { it.copy(publisher = publisher) }
 
     fun setGenre(id: String?) = _state.update { it.copy(genreId = id) }
 

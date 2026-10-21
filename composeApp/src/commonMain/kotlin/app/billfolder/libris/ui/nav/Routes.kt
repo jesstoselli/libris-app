@@ -15,4 +15,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable data object GenresRoute
 
+@Serializable data object PublishersRoute
+
 @Serializable data class EditRoute(val id: String)

@@ -66,6 +66,17 @@ class LibrisApiTest {
     }
 
     @Test
+    fun changeStatus_onAKnownDate_sendsIt() = runTest {
+        val server = FakeServer {
+            json("""{"id":"b1","title":"Rosa","authors":["Eco"],"ownership":"owned","status":"read","addedAt":"2026-10-16"}""")
+        }
+
+        server.api.changeStatus("t", "b1", BookStatusDto.Read, "2026-10-16", finishedAt = "2019-07-02")
+
+        assertEquals("""{"status":"read","today":"2026-10-16","finishedAt":"2019-07-02"}""", server.requests.single().text())
+    }
+
+    @Test
     fun yearStats_readWithoutDate_defaultsToZeroFromAnOlderApi() = runTest {
         val months = (1..12).joinToString(",") { """{"month":$it,"pagesRead":0,"booksFinished":0}""" }
         val server = FakeServer { req ->
@@ -75,6 +86,23 @@ class LibrisApiTest {
 
         assertEquals(37, server.api.yearStats("t", 2026).readWithoutDate)
         assertEquals(0, server.api.yearStats("t", 2025).readWithoutDate)
+    }
+
+    @Test
+    fun publishers_summaryAndRename_goToTheirRoutes() = runTest {
+        val server = FakeServer { req ->
+            if (req.method.value == "PUT") json("""{"updated":3}""")
+            else json("""[{"name":"Rocco","bookCount":3,"wishlistCount":1}]""")
+        }
+
+        val summary = server.api.publisherSummary("t")
+        val result = server.api.renamePublisher("t", "Editora Rocco", "Rocco")
+
+        assertEquals("/v1/publishers/summary", server.requests[0].url.encodedPath)
+        assertEquals(3, summary.single().bookCount)
+        assertEquals("/v1/publishers", server.requests[1].url.encodedPath)
+        assertEquals("""{"from":"Editora Rocco","to":"Rocco"}""", server.requests[1].text())
+        assertEquals(3, result.updated)
     }
 
     @Test

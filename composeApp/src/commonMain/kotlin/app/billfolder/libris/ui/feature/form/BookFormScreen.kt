@@ -331,19 +331,8 @@ fun BookFormScreen(
                         )
                     }
 
-                    if (state.showStart || state.showFinish) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
-                            if (state.showStart) DateField(
-                                "Início",
-                                state.startedAt,
-                                { picking = "start" },
-                                { viewModel.onStartedAt(null) })
-                            if (state.showFinish) DateField(
-                                "Término",
-                                state.finishedAt,
-                                { picking = "end" },
-                                { viewModel.onFinishedAt(null) })
-                        }
+                    if (state.showFinish) {
+                        DateField("Término", state.finishedAt, { picking = "end" }, { viewModel.onFinishedAt(null) })
                     }
                     state.datesError?.let {
                         Text(
@@ -378,12 +367,8 @@ fun BookFormScreen(
     }
     picking?.let { which ->
         LibrisDatePicker(
-            if (which == "start") state.startedAt else state.finishedAt, today(),
-            onPicked = {
-                if (which == "start") viewModel.onStartedAt(it) else viewModel.onFinishedAt(
-                    it
-                )
-            },
+            state.finishedAt, today(),
+            onPicked = viewModel::onFinishedAt,
             onDismiss = { picking = null },
         )
     }

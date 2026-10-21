@@ -15,6 +15,7 @@ import app.billfolder.libris.domain.repository.CoverRepository
 import app.billfolder.libris.domain.repository.GenreRepository
 import app.billfolder.libris.domain.rules.BookRules
 import app.billfolder.libris.domain.rules.isSearchableIsbn
+import app.billfolder.libris.domain.rules.keptStart
 import app.billfolder.libris.domain.rules.readingDatesProblem
 import app.billfolder.libris.domain.rules.withGenre
 import app.billfolder.libris.domain.time.today
@@ -49,7 +50,6 @@ data class BookFormState(
     val languageChosen: Boolean = false,
     val ownership: BookOwnership = BookOwnership.Owned,
     val status: BookStatus = BookStatus.NotStarted,
-    val startedAt: LocalDate? = null,
     val finishedAt: LocalDate? = null,
     val coverId: String? = null,
     /** Where [coverId] can be seen; set together with it. */
@@ -67,9 +67,6 @@ data class BookFormState(
     val isEdit get() = editing != null
     private val owned get() = (editing?.ownership ?: ownership) == BookOwnership.Owned
 
-    val showStart: Boolean
-        get() = editing?.let { it.ownership == BookOwnership.Owned && it.status != BookStatus.NotStarted }
-            ?: (ownership == BookOwnership.Owned && status != BookStatus.NotStarted)
     /** Only when registering a book mid-read: "não iniciado" has no progress and "lido" is the whole book. */
     val showCurrentPage: Boolean
         get() = editing == null && ownership == BookOwnership.Owned && status in setOf(BookStatus.Reading, BookStatus.Abandoned)
@@ -79,7 +76,10 @@ data class BookFormState(
         val total = totalPages.toIntOrNull() ?: return null
         return if (n !in 1..total) "Use de 1 a $total." else null
     }
-    val showFinish: Boolean get() = if (editing != null) showStart else showStart && status == BookStatus.Read
+    /** Only a book read (or given up on) has a finish; the start is no longer asked for. */
+    val showFinish: Boolean
+        get() = editing?.let { it.ownership == BookOwnership.Owned && it.status in setOf(BookStatus.Read, BookStatus.Abandoned) }
+            ?: (ownership == BookOwnership.Owned && status == BookStatus.Read)
 
     // Field messages mirror the API validators, so a disabled button always says why.
     val titleError get() = when {
@@ -102,7 +102,9 @@ data class BookFormState(
         val n = publishedYear.toIntOrNull() ?: return "Use um número inteiro."
         return if (n !in BookRules.YEARS) "Use um ano entre ${BookRules.YEARS.first} e ${BookRules.YEARS.last}." else null
     }
-    val datesError: String? get() = readingDatesProblem(startedAt.takeIf { showStart }, finishedAt.takeIf { showFinish }, today())?.message()
+    /** A hidden finish (say, on a Lendo book) is kept as it was rather than wiped. */
+    val finishToSend: LocalDate? get() = if (showFinish) finishedAt else editing?.finishedAt
+    val datesError: String? get() = readingDatesProblem(null, finishedAt.takeIf { showFinish }, today())?.message()
     val canSubmit get() = listOf(titleError, authorsError, pagesError, yearError, datesError, currentPageError).all { it == null } && !uploading && !saving
     val canLookUp get() = isSearchableIsbn(isbn) && !lookingUp
     val coverPreview get() = pendingCoverUrl.takeIf { coverId == null }
@@ -182,7 +184,6 @@ class BookFormViewModel(
         if (next.isEmpty()) s else s.copy(formats = next)
     }
     fun onStatus(v: BookStatus) = _state.update { it.copy(status = v) }
-    fun onStartedAt(v: LocalDate?) = _state.update { it.copy(startedAt = v) }
     fun onFinishedAt(v: LocalDate?) = _state.update { it.copy(finishedAt = v) }
 
     fun addGenre(raw: String) = _state.update { it.copy(genres = it.genres.withGenre(raw, knownGenres())) }
@@ -294,7 +295,6 @@ class BookFormViewModel(
             formats = book.formats.toSet(),
             language = book.language,
             languageChosen = true,
-            startedAt = book.startedAt,
             finishedAt = book.finishedAt,
             coverId = book.coverId,
             coverUrl = book.coverUrl,
@@ -319,7 +319,7 @@ private fun BookFormState.toDraft(coverId: String?) = BookDraft(
     language = language,
     ownership = ownership,
     status = if (ownership == BookOwnership.Owned) status else null,
-    startedAt = startedAt.takeIf { showStart },
-    finishedAt = finishedAt.takeIf { showFinish },
+    startedAt = keptStart(editing?.startedAt, finishToSend),
+    finishedAt = finishToSend,
     currentPage = currentPage.toIntOrNull().takeIf { showCurrentPage },
 )
