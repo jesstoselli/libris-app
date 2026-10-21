@@ -302,16 +302,17 @@ private fun BookSheet(
             }
             // Não iniciado has no dates and Lendo no finish yet; with the start gone, only these keep the line.
             if (book.status == BookStatus.Read || book.status == BookStatus.Abandoned) {
-                Text(
-                    "Término: ${book.finishedAt?.let(::formatDate) ?: "—"}",
-                    fontFamily = type.body, fontSize = 14.sp, color = Libris.inkSoft,
-                )
+                // The editor carries its own Término label, so the line gives way to it instead of repeating the date.
                 if (editingDates) {
                     EditFinish(
                         book.finishedAt,
                         onSave = { f -> viewModel.saveFinish(f); editingDates = false },
                         onCancel = { editingDates = false })
                 } else {
+                    Text(
+                        "Término: ${book.finishedAt?.let(::formatDate) ?: "—"}",
+                        fontFamily = type.body, fontSize = 14.sp, color = Libris.inkSoft,
+                    )
                     LibrisButton("✎ Editar data", { editingDates = true }, variant = ButtonVariant.Quiet)
                 }
             }
