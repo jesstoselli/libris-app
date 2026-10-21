@@ -53,8 +53,8 @@ class RemoteBookRepository(
 
     override suspend fun delete(id: String) = session.authorized { api.deleteBook(it, id) }
 
-    override suspend fun changeStatus(id: String, status: BookStatus): Book =
-        session.authorized { api.changeStatus(it, id, status.toDto(), today().toString()) }.toDomain(api::coverSrc)
+    override suspend fun changeStatus(id: String, status: BookStatus, withoutDate: Boolean): Book =
+        session.authorized { api.changeStatus(it, id, status.toDto(), today().toString(), withoutDate) }.toDomain(api::coverSrc)
 
     override suspend fun acquire(id: String, totalPages: Int?): Book =
         session.authorized { api.acquire(it, id, today().toString(), totalPages) }.toDomain(api::coverSrc)

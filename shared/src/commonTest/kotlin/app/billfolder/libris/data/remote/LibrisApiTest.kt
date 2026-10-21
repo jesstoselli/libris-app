@@ -55,6 +55,29 @@ class LibrisApiTest {
     }
 
     @Test
+    fun changeStatus_withoutDate_saysSo() = runTest {
+        val server = FakeServer {
+            json("""{"id":"b1","title":"Rosa","authors":["Eco"],"ownership":"owned","status":"read","addedAt":"2026-10-16"}""")
+        }
+
+        server.api.changeStatus("t", "b1", BookStatusDto.Read, "2026-10-16", withoutDate = true)
+
+        assertEquals("""{"status":"read","today":"2026-10-16","withoutDate":true}""", server.requests.single().text())
+    }
+
+    @Test
+    fun yearStats_readWithoutDate_defaultsToZeroFromAnOlderApi() = runTest {
+        val months = (1..12).joinToString(",") { """{"month":$it,"pagesRead":0,"booksFinished":0}""" }
+        val server = FakeServer { req ->
+            if (req.url.encodedPath.endsWith("2026")) json("""{"year":2026,"booksFinished":1,"pagesRead":10,"readingNow":0,"months":[$months],"readWithoutDate":37}""")
+            else json("""{"year":2025,"booksFinished":1,"pagesRead":10,"readingNow":0,"months":[$months]}""")
+        }
+
+        assertEquals(37, server.api.yearStats("t", 2026).readWithoutDate)
+        assertEquals(0, server.api.yearStats("t", 2025).readWithoutDate)
+    }
+
+    @Test
     fun apiError_carriesPortugueseMessage() = runTest {
         val server = FakeServer {
             json("""{"error":"page_out_of_range","message":"A página precisa estar entre 1 e 512."}""", HttpStatusCode.BadRequest)

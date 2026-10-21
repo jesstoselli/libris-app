@@ -98,8 +98,8 @@ class LibrisApi(private val http: HttpClient, val baseUrl: String) {
         send { http.delete("$baseUrl/v1/books/$id") { bearerAuth(token) } }
     }
 
-    suspend fun changeStatus(token: String, id: String, status: BookStatusDto, today: String): BookDto =
-        send { http.patch("$baseUrl/v1/books/$id/status") { bearerAuth(token); json(StatusBody(status, today)) } }.body()
+    suspend fun changeStatus(token: String, id: String, status: BookStatusDto, today: String, withoutDate: Boolean = false): BookDto =
+        send { http.patch("$baseUrl/v1/books/$id/status") { bearerAuth(token); json(StatusBody(status, today, withoutDate.takeIf { it })) } }.body()
 
     suspend fun acquire(token: String, id: String, today: String, totalPages: Int?): BookDto =
         send { http.post("$baseUrl/v1/books/$id/acquire") { bearerAuth(token); json(AcquireBody(today, totalPages)) } }.body()

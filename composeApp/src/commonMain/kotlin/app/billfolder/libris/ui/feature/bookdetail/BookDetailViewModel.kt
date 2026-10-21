@@ -38,6 +38,8 @@ data class BookDetailState(
     val logError: String? = null,
     val pending: Boolean = false,
     val deleted: Boolean = false,
+    /** "Lido" on a book with no finish yet: today, or no date at all (an old read stays out of Números). */
+    val askingFinish: Boolean = false,
 ) {
     val pageProblem: String?
         get() = when {
@@ -92,8 +94,24 @@ class BookDetailViewModel(private val bookId: String, private val books: BookRep
     fun changeStatus(status: BookStatus) {
         val book = _state.value.book.valueOrNull ?: return
         if (book.status == status) return
+        if (status == BookStatus.Read && book.finishedAt == null) {
+            _state.update { it.copy(askingFinish = true) }
+            return
+        }
+        sendStatus(book, status, withoutDate = false)
+    }
+
+    fun finish(withoutDate: Boolean) {
+        val book = _state.value.book.valueOrNull ?: return
+        _state.update { it.copy(askingFinish = false) }
+        sendStatus(book, BookStatus.Read, withoutDate)
+    }
+
+    fun cancelFinish() = _state.update { it.copy(askingFinish = false) }
+
+    private fun sendStatus(book: Book, status: BookStatus, withoutDate: Boolean) {
         run("Situação atualizada.") {
-            val updated = books.changeStatus(book.id, status)
+            val updated = books.changeStatus(book.id, status, withoutDate)
             _state.update { it.copy(book = Load.Loaded(updated)) }
         }
     }

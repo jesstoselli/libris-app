@@ -1,5 +1,7 @@
 package app.billfolder.libris.data.remote.dto
 
+import kotlinx.serialization.EncodeDefault
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -134,7 +136,15 @@ data class IsbnLookupDto(
 @Serializable data class MonthStatsDto(val month: Int, val pagesRead: Int, val booksFinished: Int)
 
 @Serializable
-data class YearStatsDto(val year: Int, val booksFinished: Int, val pagesRead: Int, val readingNow: Int, val months: List<MonthStatsDto>)
+data class YearStatsDto(
+    val year: Int,
+    val booksFinished: Int,
+    val pagesRead: Int,
+    val readingNow: Int,
+    val months: List<MonthStatsDto>,
+    // Absent from an older API.
+    val readWithoutDate: Int = 0,
+)
 
 @Serializable data class FinishedBookDto(val bookId: String, val title: String, val authors: List<String>, val finishedAt: String)
 
@@ -153,7 +163,13 @@ data class MonthDetailDto(val year: Int, val month: Int, val pagesRead: Int, val
 
 @Serializable internal data class ErrorBody(val error: String? = null, val message: String? = null)
 
-@Serializable internal data class StatusBody(val status: BookStatusDto, val today: String)
+// withoutDate only travels when set: absent, the API finishes the book today.
+@OptIn(ExperimentalSerializationApi::class)
+@Serializable internal data class StatusBody(
+    val status: BookStatusDto,
+    val today: String,
+    @EncodeDefault(EncodeDefault.Mode.NEVER) val withoutDate: Boolean? = null,
+)
 
 @Serializable internal data class AcquireBody(val today: String, val totalPages: Int?)
 

@@ -125,7 +125,7 @@ internal fun IsbnLookupDto.toDomain() = BookLookup(
     language = language,
 )
 
-internal fun YearStatsDto.toDomain() = YearStats(year, booksFinished, pagesRead, readingNow, months.map { MonthStats(it.month, it.pagesRead, it.booksFinished) })
+internal fun YearStatsDto.toDomain() = YearStats(year, booksFinished, pagesRead, readingNow, months.map { MonthStats(it.month, it.pagesRead, it.booksFinished) }, readWithoutDate)
 
 internal fun MonthDetailDto.toDomain() = MonthDetail(
     year, month, pagesRead,

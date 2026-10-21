@@ -280,6 +280,17 @@ private fun BookSheet(
                     )
                 }
             }
+            val askingFinish = viewModel.state.collectAsStateWithLifecycle().value.askingFinish
+            if (askingFinish) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Quando você terminou?", fontFamily = type.body, fontSize = 14.sp, color = Libris.inkSoft)
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        LibrisButton("Terminei hoje", { viewModel.finish(withoutDate = false) }, variant = ButtonVariant.Secondary)
+                        LibrisButton("Não lembro a data", { viewModel.finish(withoutDate = true) }, variant = ButtonVariant.Secondary)
+                        LibrisButton("Cancelar", viewModel::cancelFinish, variant = ButtonVariant.Quiet)
+                    }
+                }
+            }
             Text(
                 "Início: ${book.startedAt?.let(::formatDate) ?: "—"} · Término: ${
                     book.finishedAt?.let(

@@ -88,6 +88,12 @@ fun StatsScreen(
                             Kpi(thousands(s.pagesRead), "páginas no ano", Modifier.weight(1f))
                             Kpi(thousands(s.readingNow), "em leitura agora", Modifier.weight(1f))
                         }
+                        if (s.readWithoutDate > 0) {
+                            Text(
+                                "Lidos sem data: ${thousands(s.readWithoutDate)} · fora das contas dos meses",
+                                fontFamily = type.body, fontSize = 13.sp, color = Libris.inkSoft,
+                            )
+                        }
                         SheetDivider()
                         Column {
                             Text("Páginas lidas por mês · toque num mês", fontFamily = type.body, fontSize = 13.sp, color = Libris.inkSoft)

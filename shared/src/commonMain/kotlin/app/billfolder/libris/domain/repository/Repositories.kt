@@ -30,7 +30,8 @@ interface BookRepository {
     suspend fun create(draft: BookDraft): Book
     suspend fun update(id: String, draft: BookDraft): Book
     suspend fun delete(id: String)
-    suspend fun changeStatus(id: String, status: BookStatus): Book
+    /** [withoutDate]: "Lido" for a book whose finish nobody remembers; otherwise the API fills today. */
+    suspend fun changeStatus(id: String, status: BookStatus, withoutDate: Boolean = false): Book
     /** "Comprei": a wishlist book becomes owned. */
     suspend fun acquire(id: String, totalPages: Int?): Book
     suspend fun lookUp(isbn: String): BookLookup

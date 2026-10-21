@@ -112,9 +112,53 @@ class BookDetailViewModelTest {
 
         vm.changeStatus(BookStatus.Read)
         advanceUntilIdle()
+        assertEquals(true, vm.state.value.askingFinish)
+        assertEquals(0, fake.requests.count { it.method == HttpMethod.Patch })
 
+        vm.finish(withoutDate = false)
+        advanceUntilIdle()
+
+        assertEquals(false, vm.state.value.askingFinish)
         assertEquals("""{"status":"read","today":"${today().toString()}"}""", fake.bodyOf(fake.requests.last()))
         assertEquals(BookStatus.Read, (vm.state.value.book as Load.Loaded).value.status)
+    }
+
+    @Test
+    fun read_withoutRememberingTheDate_sendsWithoutDate() = runTest(dispatcher) {
+        val fake = FakeApi(dispatcher) { req ->
+            when {
+                req.method == HttpMethod.Patch -> json(bookJson(status = "read"))
+                req.url.encodedPath.endsWith("/logs") -> json("[]")
+                else -> json(bookJson(status = "not_started"))
+            }
+        }
+        val vm = BookDetailViewModel("b1", fake.books, fake.reading)
+        advanceUntilIdle()
+
+        vm.changeStatus(BookStatus.Read)
+        vm.finish(withoutDate = true)
+        advanceUntilIdle()
+
+        assertEquals("""{"status":"read","today":"${today().toString()}","withoutDate":true}""", fake.bodyOf(fake.requests.last()))
+    }
+
+    @Test
+    fun read_onABookThatAlreadyHasAFinish_asksNothing() = runTest(dispatcher) {
+        val fake = FakeApi(dispatcher) { req ->
+            when {
+                req.method == HttpMethod.Patch -> json(bookJson(status = "read", finishedAt = "2020-05-01"))
+                req.url.encodedPath.endsWith("/logs") -> json("[]")
+                else -> json(bookJson(status = "abandoned", finishedAt = "2020-05-01"))
+            }
+        }
+        val vm = BookDetailViewModel("b1", fake.books, fake.reading)
+        advanceUntilIdle()
+
+        vm.changeStatus(BookStatus.Read)
+        advanceUntilIdle()
+
+        assertEquals(false, vm.state.value.askingFinish)
+        assertEquals(1, fake.requests.count { it.method == HttpMethod.Patch })
     }
 
     @Test
