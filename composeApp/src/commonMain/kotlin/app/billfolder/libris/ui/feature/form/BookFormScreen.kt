@@ -48,6 +48,9 @@ import app.billfolder.libris.domain.model.BookStatus
 import app.billfolder.libris.domain.time.today
 import app.billfolder.libris.ui.common.authorSuggestions
 import app.billfolder.libris.ui.common.publisherSuggestions
+import app.billfolder.libris.ui.components.LibrisCompactButton
+import app.billfolder.libris.ui.components.LibrisIcons
+import app.billfolder.libris.ui.components.LibrisIconAction
 import app.billfolder.libris.ui.components.BookCover
 import app.billfolder.libris.ui.components.ButtonVariant
 import app.billfolder.libris.ui.components.ControlHeight
@@ -123,11 +126,8 @@ fun BookFormScreen(
 
             PaperCard(Modifier.fillMaxWidth(), padding = 20.dp) {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    // Cover
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(14.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    // Cover, with its two sources as compact buttons right under it.
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         val src = viewModel.coverSrc()
                         if (src != null) {
                             BookCover(
@@ -143,24 +143,24 @@ fun BookFormScreen(
                                 contentAlignment = Alignment.Center,
                             ) { Text("Capa", fontFamily = type.title, color = Libris.inkSoft) }
                         }
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            LinkText("Escolher da galeria") { picker.fromGallery() }
-                            if (picker.cameraAvailable) LinkText("Fotografar a capa") { picker.fromCamera() }
-                            if (src != null) LinkText("Remover capa") { viewModel.removeCover() }
-                            if (state.uploading) Text(
-                                "Enviando capa…",
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                            LibrisCompactButton(LibrisIcons.Gallery, "Galeria", { picker.fromGallery() })
+                            if (picker.cameraAvailable) LibrisCompactButton(LibrisIcons.Camera, "Câmera", { picker.fromCamera() })
+                            if (src != null) LinkText("Remover") { viewModel.removeCover() }
+                        }
+                        if (state.uploading) Text(
+                            "Enviando capa…",
+                            fontFamily = type.body,
+                            fontSize = 13.sp,
+                            color = Libris.inkSoft
+                        )
+                        state.coverError?.let {
+                            Text(
+                                it,
                                 fontFamily = type.body,
                                 fontSize = 13.sp,
-                                color = Libris.inkSoft
+                                color = Libris.oxblood
                             )
-                            state.coverError?.let {
-                                Text(
-                                    it,
-                                    fontFamily = type.body,
-                                    fontSize = 13.sp,
-                                    color = Libris.oxblood
-                                )
-                            }
                         }
                     }
 
@@ -174,9 +174,9 @@ fun BookFormScreen(
                             ),
                             keyboardActions = KeyboardActions(onSearch = { viewModel.lookUp() }),
                             trailing = {
-                                // Lifted off the ruled line, so the buttons read as actions and not as part of the field.
-                                Row(Modifier.padding(start = 8.dp, bottom = 10.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                    SmallButton("Escanear") { scanning = true }
+                                // The scanner is an icon inside the field; Buscar stays the one worded action.
+                                Row(Modifier.padding(start = 4.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    LibrisIconAction(LibrisIcons.Barcode, "Escanear o código de barras", { scanning = true })
                                     SmallButton(
                                         if (state.lookingUp) "Buscando…" else "Buscar",
                                         enabled = state.canLookUp

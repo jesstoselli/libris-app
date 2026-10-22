@@ -33,7 +33,7 @@ fun progressLine(book: Book): String? = when {
 @Composable
 fun BookCard(book: Book, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val type = LocalLibrisType.current
-    PaperCard(modifier.fillMaxWidth().clickable(onClick = onClick), padding = 14.dp, foldedCorner = true) {
+    PaperCard(modifier.fillMaxWidth().clickable(onClick = onClick), padding = 14.dp) {
         Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             BookCover(book.coverUrl, book.title, width = 62.dp, height = 94.dp, fontSize = 9.sp)
             Column(Modifier.weight(1f)) {

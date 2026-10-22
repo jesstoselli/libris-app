@@ -50,7 +50,7 @@ fun LoginScreen(viewModel: LoginViewModel = koinViewModel()) {
     val type = LocalLibrisType.current
 
     Box(Modifier.fillMaxSize().imePadding().padding(24.dp), contentAlignment = Alignment.Center) {
-        PaperCard(Modifier.widthIn(max = 420.dp).fillMaxWidth(), padding = 26.dp, foldedCorner = true) {
+        PaperCard(Modifier.widthIn(max = 420.dp).fillMaxWidth(), padding = 26.dp) {
             Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
                 Column {
                     Text("Libris", fontFamily = type.title, fontWeight = FontWeight.Bold, fontSize = 40.sp, letterSpacing = (-0.5).sp, color = Libris.oxblood)

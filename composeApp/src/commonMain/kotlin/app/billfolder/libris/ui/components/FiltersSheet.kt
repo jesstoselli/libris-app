@@ -27,13 +27,7 @@ import app.billfolder.libris.ui.theme.LocalLibrisType
 /** "Filtros" next to the search; the count says how many are on, so a filtered list never looks like the whole one. */
 @Composable
 fun FiltersButton(activeCount: Int, onClick: () -> Unit, modifier: Modifier = Modifier) =
-    LibrisButton(
-        if (activeCount == 0) "Filtros" else "Filtros · $activeCount",
-        onClick,
-        modifier,
-        variant = if (activeCount == 0) ButtonVariant.Secondary else ButtonVariant.Primary,
-        onDesk = true,
-    )
+    LibrisCountButton("Filtros", activeCount, onClick, modifier, onDesk = true)
 
 /** The filters live in a sheet on the phone: every option fits, nothing is cut at the screen edge. */
 @OptIn(ExperimentalMaterial3Api::class)

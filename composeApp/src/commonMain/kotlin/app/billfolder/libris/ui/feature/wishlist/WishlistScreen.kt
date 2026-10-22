@@ -72,14 +72,14 @@ fun WishlistScreen(
                 is Load.Failed -> item { Text(load.message, fontFamily = type.body, color = Libris.deskText) }
                 is Load.Loaded -> when {
                     load.value.isEmpty() -> item {
-                        PaperCard(Modifier.fillMaxWidth(), foldedCorner = true) {
+                        PaperCard(Modifier.fillMaxWidth()) {
                             Column {
                                 Text("Nenhum livro na wishlist.", fontFamily = type.body)
                                 Text("Registrar um livro que você quer", fontFamily = type.body, color = Libris.oxblood, modifier = Modifier.clickable(onClick = onRegister).minimumInteractiveComponentSize())
                             }
                         }
                     }
-                    state.visible.isEmpty() -> item { PaperCard(Modifier.fillMaxWidth(), foldedCorner = true) { Text("Nenhum livro com esses filtros.", fontFamily = type.body) } }
+                    state.visible.isEmpty() -> item { PaperCard(Modifier.fillMaxWidth()) { Text("Nenhum livro com esses filtros.", fontFamily = type.body) } }
                     else -> items(state.visible, key = { it.id }) { book -> BookCard(book, onClick = { onOpenBook(book.id) }) }
                 }
             }

@@ -13,6 +13,10 @@ object LibrisIcons {
     val Chart = icon("Stats", "M4 20V10h3v10zm6.5 0V4h3v16zM17 20v-7h3v7z")
     val Plus = icon("Add", "M11 4h2v7h7v2h-7v7h-2v-7H4v-2h7z")
     val Exit = icon("Exit", "M10 3h9v18h-9v-2h7V5h-7zm-1.5 5 1.4 1.4L8.3 11H15v2H8.3l1.6 1.6L8.5 16 4.5 12z")
+    val Gallery = outline("Galeria", "M4 5h16v14H4z M4 16l5-5 4 4 2-2 5 5 M15 9.5a1.5 1.5 0 1 0 0.01 0")
+    val Camera = outline("Câmera", "M4 8h3.5l1.5-2h6l1.5 2H20v11H4z M12 10.5a3 3 0 1 0 0.01 0")
+    /** Scan frame with barcode bars, for the ISBN scanner. */
+    val Barcode = outline("Escanear", "M3 8V4h4 M17 4h4v4 M21 16v4h-4 M7 20H3v-4 M7 8v8 M10.5 8v8 M14 8v8 M17 8v8")
     val Search = outline("Buscar", "M10.5 4a6.5 6.5 0 1 0 0 13a6.5 6.5 0 1 0 0 -13 M15.5 15.5L21 21")
     val Clear = outline("Limpar", "M6 6l12 12 M18 6L6 18")
     val Eye = outline("Mostrar", "M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12z M9 12a3 3 0 1 0 6 0a3 3 0 1 0 -6 0")

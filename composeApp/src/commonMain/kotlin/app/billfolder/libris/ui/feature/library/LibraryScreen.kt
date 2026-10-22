@@ -93,7 +93,7 @@ fun LibraryScreen(
                 is Load.Failed -> item { Text(shown.message, fontFamily = type.body, color = Libris.deskText) }
                 is Load.Loaded -> if (shown.value.isEmpty()) {
                     item {
-                        PaperCard(Modifier.fillMaxWidth(), foldedCorner = true) {
+                        PaperCard(Modifier.fillMaxWidth()) {
                             Column {
                                 Text(if (state.hasFilters) "Nenhum livro com esses filtros." else "Nenhum livro por aqui ainda.", fontFamily = type.body)
                                 if (!state.hasFilters) {

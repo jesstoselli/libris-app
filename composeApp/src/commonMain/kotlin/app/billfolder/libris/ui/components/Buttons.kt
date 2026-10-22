@@ -1,5 +1,11 @@
 package app.billfolder.libris.ui.components
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -34,7 +40,7 @@ enum class ButtonVariant {
     /** The one action a screen is about: Cadastrar obra, Anotar, Comprei, Entrar. */
     Primary,
 
-    /** Alternatives next to it: Cancelar, Buscar, Escanear. */
+    /** Alternatives next to it: Cancelar, Buscar. A shade of the paper rather than an outline, so it stays quieter. */
     Secondary,
 
     /** Inline actions that shouldn't draw the eye: editar datas, + autor, ✎, ×. */
@@ -55,9 +61,9 @@ private fun look(variant: ButtonVariant, onDesk: Boolean) = when (variant) {
     ButtonVariant.Primary -> Look(Libris.oxblood, Color(0xFF4C100F), Libris.paper, null)
     ButtonVariant.Secondary ->
         if (onDesk) {
-            Look(Color.Transparent, Libris.deskText.copy(alpha = 0.12f), Libris.deskText, Libris.deskTextSoft.copy(alpha = 0.5f))
+            Look(Libris.deskText.copy(alpha = 0.10f), Libris.deskText.copy(alpha = 0.18f), Libris.deskText, null)
         } else {
-            Look(Color.Transparent, Libris.inkSoft.copy(alpha = 0.16f), Libris.ink, Libris.inkSoft)
+            Look(Libris.paperShade.copy(alpha = 0.55f), Libris.paperShade, Libris.ink, null)
         }
     ButtonVariant.Quiet ->
         if (onDesk) {
@@ -121,5 +127,60 @@ fun LibrisIconButton(
         contentAlignment = Alignment.Center,
     ) {
         Text(glyph, fontSize = 18.sp, color = look(variant, onDesk).content)
+    }
+}
+
+/** Square button for a drawn icon (the scanner inside the ISBN field); [description] is what a screen reader says. */
+@Composable
+fun LibrisIconAction(
+    icon: ImageVector,
+    description: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    variant: ButtonVariant = ButtonVariant.Quiet,
+) {
+    val interaction = remember { MutableInteractionSource() }
+    Box(
+        modifier.size(ControlHeight).buttonSurface(variant, false, true, interaction, onClick).semantics { contentDescription = description },
+        contentAlignment = Alignment.Center,
+    ) {
+        Image(rememberVectorPainter(icon), contentDescription = null, modifier = Modifier.size(24.dp), colorFilter = ColorFilter.tint(look(variant, false).content))
+    }
+}
+
+/** A secondary action with an icon before its label, narrower than a full button (Galeria, Câmera under the cover). */
+@Composable
+fun LibrisCompactButton(icon: ImageVector, label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val interaction = remember { MutableInteractionSource() }
+    val content = look(ButtonVariant.Secondary, false).content
+    Row(
+        modifier.buttonSurface(ButtonVariant.Secondary, false, true, interaction, onClick).padding(horizontal = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Image(rememberVectorPainter(icon), contentDescription = null, modifier = Modifier.size(18.dp), colorFilter = ColorFilter.tint(content))
+        Text(label, fontFamily = LocalLibrisType.current.body, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = content, maxLines = 1)
+    }
+}
+
+/** A secondary button with a small wine count after its label (Filtros 2); no count, no badge. */
+@Composable
+fun LibrisCountButton(label: String, count: Int, onClick: () -> Unit, modifier: Modifier = Modifier, onDesk: Boolean = false) {
+    val interaction = remember { MutableInteractionSource() }
+    val type = LocalLibrisType.current
+    Row(
+        modifier.buttonSurface(ButtonVariant.Secondary, onDesk, true, interaction, onClick).padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, fontFamily = type.body, fontWeight = FontWeight.Medium, fontSize = 15.sp, color = look(ButtonVariant.Secondary, onDesk).content, maxLines = 1)
+        if (count > 0) {
+            Box(
+                Modifier.heightIn(min = 20.dp).widthIn(min = 20.dp).background(Libris.oxblood, RoundedCornerShape(10.dp)).padding(horizontal = 6.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text("$count", fontFamily = type.body, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Libris.paper)
+            }
+        }
     }
 }
