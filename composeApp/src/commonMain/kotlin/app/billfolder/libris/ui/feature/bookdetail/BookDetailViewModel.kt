@@ -41,7 +41,22 @@ data class BookDetailState(
     val deleted: Boolean = false,
     /** "Lido" on a book with no finish yet: today, or no date at all (an old read stays out of Números). */
     val askingFinish: Boolean = false,
+    /** The book's series, owned and wished for, in reading order. */
+    val seriesBooks: List<Book> = emptyList(),
 ) {
+    /** "nº 2 · 3 livros da série com você", or just the count when the book has no number. */
+    val seriesPlace: String?
+        get() {
+            val b = book.valueOrNull ?: return null
+            if (b.series == null || seriesBooks.isEmpty()) return null
+            val count = "${seriesBooks.size} ${if (seriesBooks.size == 1) "livro" else "livros"} da série com você"
+            return b.seriesNumber?.let { "nº ${seriesNumberLabel(it)} · $count" } ?: count
+        }
+    val nextInSeries: Book?
+        get() {
+            val index = seriesBooks.indexOfFirst { it.id == book.valueOrNull?.id }
+            return seriesBooks.getOrNull(index + 1).takeIf { index >= 0 }
+        }
     val pageProblem: String?
         get() = when {
             pageInput.isBlank() -> null
@@ -70,6 +85,7 @@ class BookDetailViewModel(private val bookId: String, private val books: BookRep
                 val book = books.get(bookId)
                 _state.update { it.copy(book = Load.Loaded(book)) }
                 if (book.ownership == BookOwnership.Owned) loadLogs()
+                loadSeries(book.series)
             } catch (e: ApiException) {
                 if (e.status == 404) _state.update { it.copy(notFound = true) } else _state.update { it.copy(book = Load.Failed(e.userMessage())) }
             } catch (e: Exception) {
@@ -176,6 +192,25 @@ class BookDetailViewModel(private val bookId: String, private val books: BookRep
 
     fun deleteLog(log: ReadingLog) = run("Registro apagado.") { apply(reading.delete(bookId, log.id)) }
 
+    /** The series is extra: when it fails, the book page stands without it. */
+    private suspend fun loadSeries(series: String?) {
+        val list = series?.let { name -> runCatching { books.seriesBooks(name) }.getOrNull() }.orEmpty()
+        _state.update { it.copy(seriesBooks = list) }
+    }
+
+    /** Stars for a read or abandoned book; the same value again clears them. */
+    fun rate(rating: Double?) {
+        val book = _state.value.book.valueOrNull ?: return
+        viewModelScope.launch {
+            try {
+                val updated = books.rate(book.id, rating)
+                _state.update { it.copy(book = Load.Loaded(updated)) }
+            } catch (e: Exception) {
+                _messages.send(e.userMessage())
+            }
+        }
+    }
+
     private suspend fun loadLogs() {
         runCatching { reading.logs(bookId) }.onSuccess { logs -> _state.update { it.copy(logs = logs) } }
     }
@@ -193,3 +228,7 @@ class BookDetailViewModel(private val bookId: String, private val books: BookRep
         }
     }
 }
+
+/** "2" for 2.0 and "1,5" for 1.5, as a reader numbers a volume. */
+fun seriesNumberLabel(value: Double): String =
+    if (value % 1.0 == 0.0) value.toLong().toString() else value.toString().trimEnd('0').replace('.', ',')

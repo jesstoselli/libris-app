@@ -6,6 +6,7 @@ import app.billfolder.libris.ui.feature.library.LibraryViewModel
 import app.billfolder.libris.ui.feature.bookdetail.BookDetailViewModel
 import app.billfolder.libris.ui.feature.form.BookFormViewModel
 import app.billfolder.libris.ui.feature.genres.GenresViewModel
+import app.billfolder.libris.ui.feature.publishers.NamesKind
 import app.billfolder.libris.ui.feature.publishers.PublishersViewModel
 import app.billfolder.libris.ui.feature.login.LoginViewModel
 import app.billfolder.libris.ui.feature.stats.StatsViewModel
@@ -25,7 +26,7 @@ val presentationModule: Module = module {
     viewModelOf(::LibraryViewModel)
     viewModelOf(::WishlistViewModel)
     viewModelOf(::GenresViewModel)
-    viewModelOf(::PublishersViewModel)
+    viewModel { (kind: NamesKind) -> PublishersViewModel(get(), kind) }
     viewModel { StatsViewModel(get()) }
     viewModel { (bookId: String) -> BookDetailViewModel(bookId, get(), get()) }
     viewModel { (bookId: String?) -> BookFormViewModel(bookId, get(), get(), get()) }

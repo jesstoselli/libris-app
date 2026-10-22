@@ -1,5 +1,10 @@
 package app.billfolder.libris.ui.feature.bookdetail
 
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.text.font.FontStyle
+import app.billfolder.libris.ui.components.ratingText
+import app.billfolder.libris.ui.components.RatingStars
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -81,6 +86,8 @@ fun BookDetailScreen(
     onEdit: () -> Unit,
     onAuthor: (author: String, wishlist: Boolean) -> Unit = { _, _ -> },
     onGenre: (genreId: String, wishlist: Boolean) -> Unit = { _, _ -> },
+    onSeries: (series: String, wishlist: Boolean) -> Unit = { _, _ -> },
+    onOpenBook: (id: String, wishlist: Boolean) -> Unit = { _, _ -> },
     viewModel: BookDetailViewModel = koinViewModel(key = bookId) { parametersOf(bookId) }
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -130,7 +137,7 @@ fun BookDetailScreen(
                         // One continuous sheet: the book, then reading (or "Comprei"), then the destructive action last.
                         is Load.Loaded -> PaperCard(Modifier.fillMaxWidth(), padding = 20.dp) {
                             Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
-                                BookSheet(load.value, viewModel, onAuthor, onGenre)
+                                BookSheet(load.value, viewModel, onAuthor, onGenre, onSeries, onOpenBook)
                                 SheetDivider()
                                 if (load.value.ownership == BookOwnership.Owned) ReadingSheet(state, viewModel) else AcquireSheet(load.value, viewModel)
                                 SheetDivider()
@@ -150,6 +157,8 @@ private fun BookSheet(
     viewModel: BookDetailViewModel,
     onAuthor: (author: String, wishlist: Boolean) -> Unit,
     onGenre: (genreId: String, wishlist: Boolean) -> Unit,
+    onSeries: (series: String, wishlist: Boolean) -> Unit,
+    onOpenBook: (id: String, wishlist: Boolean) -> Unit,
 ) {
     val type = LocalLibrisType.current
     var editingDates by remember { mutableStateOf(false) }
@@ -197,6 +206,48 @@ private fun BookSheet(
                         )
                         if (i < book.authors.lastIndex) {
                             Text(", ", fontFamily = type.body, fontSize = 14.sp, color = Libris.inkSoft, modifier = Modifier.align(Alignment.CenterVertically))
+                        }
+                    }
+                }
+                book.series?.let { series ->
+                    // Where this book stands in its series, and the one after it.
+                    val detail = viewModel.state.collectAsStateWithLifecycle().value
+                    FlowRow(verticalArrangement = Arrangement.Center) {
+                        Text("Série: ", fontFamily = type.body, fontSize = 14.sp, color = Libris.inkSoft, modifier = Modifier.align(Alignment.CenterVertically))
+                        Text(
+                            series,
+                            fontFamily = type.body,
+                            fontSize = 14.sp,
+                            color = Libris.oxblood,
+                            textDecoration = TextDecoration.Underline,
+                            modifier = Modifier
+                                .align(Alignment.CenterVertically)
+                                .clickable(role = Role.Button) { onSeries(series, book.ownership == BookOwnership.Wishlist) }
+                                // Only the height: a short name like "1Q84" would otherwise sit centered in a wide box.
+                                .heightIn(min = 48.dp)
+                                .wrapContentHeight(),
+                        )
+                    }
+                    // On its own line: on a phone it never fits beside the series name.
+                    detail.seriesPlace?.let { Text(it, fontFamily = type.body, fontSize = 13.sp, color = Libris.inkSoft) }
+                    detail.nextInSeries?.let { next ->
+                        val wished = next.ownership == BookOwnership.Wishlist
+                        FlowRow(verticalArrangement = Arrangement.Center) {
+                            Text("Próximo: ", fontFamily = type.body, fontSize = 14.sp, color = Libris.inkSoft, modifier = Modifier.align(Alignment.CenterVertically))
+                            Text(
+                                next.title,
+                                fontFamily = type.body,
+                                fontSize = 14.sp,
+                                color = Libris.oxblood,
+                                textDecoration = TextDecoration.Underline,
+                                modifier = Modifier
+                                    .align(Alignment.CenterVertically)
+                                    .clickable(role = Role.Button) { onOpenBook(next.id, wished) }
+                                    .minimumInteractiveComponentSize(),
+                            )
+                            if (wished) {
+                                Text(" (na wishlist)", fontFamily = type.body, fontSize = 14.sp, fontStyle = FontStyle.Italic, color = Libris.inkSoft, modifier = Modifier.align(Alignment.CenterVertically))
+                            }
                         }
                     }
                 }
@@ -302,6 +353,11 @@ private fun BookSheet(
             }
             // Não iniciado has no dates and Lendo no finish yet; with the start gone, only these keep the line.
             if (book.status == BookStatus.Read || book.status == BookStatus.Abandoned) {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text("Sua avaliação", fontFamily = type.body, fontSize = 14.sp, color = Libris.inkSoft)
+                    RatingStars(book.rating, viewModel::rate, size = 28.sp)
+                    book.rating?.let { Text(ratingText(it), fontFamily = type.body, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = Libris.oxblood) }
+                }
                 // The editor carries its own Término label, so the line gives way to it instead of repeating the date.
                 if (editingDates) {
                     EditFinish(

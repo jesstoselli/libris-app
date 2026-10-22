@@ -1,6 +1,8 @@
 package app.billfolder.libris.data.remote
 
 import app.billfolder.libris.data.remote.dto.BookDto
+import app.billfolder.libris.data.remote.dto.BookSeriesInputDto
+import app.billfolder.libris.data.remote.dto.DayStatsDto
 import app.billfolder.libris.data.remote.dto.BookFormatDto
 import app.billfolder.libris.data.remote.dto.BookOwnershipDto
 import app.billfolder.libris.data.remote.dto.BookStatusDto
@@ -20,6 +22,7 @@ import app.billfolder.libris.domain.model.BookLookup
 import app.billfolder.libris.domain.model.BookOwnership
 import app.billfolder.libris.domain.model.BookStatus
 import app.billfolder.libris.domain.model.Cover
+import app.billfolder.libris.domain.model.DayStats
 import app.billfolder.libris.domain.model.FinishedBook
 import app.billfolder.libris.domain.model.Genre
 import app.billfolder.libris.domain.model.GenreRef
@@ -96,16 +99,27 @@ internal fun BookDto.toDomain(coverSrc: (String?) -> String?) = Book(
     percent = percent,
     formats = formats.map { it.toDomain() }.distinct().sortedBy { it.ordinal },
     language = language,
+    series = series,
+    seriesNumber = seriesNumber,
+    rating = rating,
 )
 
 internal fun BookDraft.toCreate(today: LocalDate) = CreateBookRequest(
     title, authors, isbn, totalPages, publisher, publishedYear, synopsis, coverId, genres,
-    ownership.toDto(), status?.toDto(), startedAt?.toString(), finishedAt?.toString(), today.toString(), formats.toWire(), currentPage, language,
+    ownership.toDto(), status?.toDto(), startedAt?.toString(), finishedAt?.toString(), today.toString(), formats.toWire(), currentPage, language, seriesInput(),
 )
 
 internal fun BookDraft.toUpdate() = UpdateBookRequest(
-    title, authors, isbn, totalPages, publisher, publishedYear, synopsis, coverId, genres, startedAt?.toString(), finishedAt?.toString(), formats.toWire(), language,
+    title, authors, isbn, totalPages, publisher, publishedYear, synopsis, coverId, genres, startedAt?.toString(), finishedAt?.toString(), formats.toWire(), language, seriesInput(),
 )
+
+/** A number only travels with a series name. */
+private fun BookDraft.seriesInput(): BookSeriesInputDto {
+    val name = series?.trim()?.takeIf { it.isNotEmpty() }
+    return BookSeriesInputDto(name, seriesNumber.takeIf { name != null })
+}
+
+internal fun DayStatsDto.toDomain() = DayStats(date.toDate(), pagesRead, books.map { ProgressedBook(it.bookId, it.title, it.pagesRead) })
 
 internal fun ReadingLogDto.toDomain() = ReadingLog(id, date.toDate(), page, fromPage, pagesRead)
 

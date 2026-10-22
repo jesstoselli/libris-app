@@ -39,10 +39,16 @@ import app.billfolder.libris.ui.components.RuledField
 import app.billfolder.libris.ui.theme.Libris
 import app.billfolder.libris.ui.theme.LocalLibrisType
 import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 /** [onOpen] gets the spelling and whether it lives only on the wishlist, to open the right list filtered by it. */
 @Composable
-fun PublishersScreen(onBack: () -> Unit, onOpen: (publisher: String, wishlist: Boolean) -> Unit, viewModel: PublishersViewModel = koinViewModel()) {
+fun PublishersScreen(
+    onBack: () -> Unit,
+    onOpen: (publisher: String, wishlist: Boolean) -> Unit,
+    kind: NamesKind = NamesKind.Publisher,
+    viewModel: PublishersViewModel = koinViewModel(key = kind.name) { parametersOf(kind) },
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val type = LocalLibrisType.current
     val snackbar = LocalSnackbar.current
@@ -53,13 +59,13 @@ fun PublishersScreen(onBack: () -> Unit, onOpen: (publisher: String, wishlist: B
     Refreshable(state.refreshing, viewModel::pullToRefresh) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             LibrisButton("‹ Voltar", onBack, variant = ButtonVariant.Quiet, onDesk = true)
-            PageHeading("Editoras")
+            PageHeading(kind.title)
             PaperCard(Modifier.fillMaxWidth()) {
                 when (val load = state.publishers) {
                     Load.Loading -> Text("Carregando…", fontFamily = type.body)
                     is Load.Failed -> Text(load.message, fontFamily = type.body)
                     is Load.Loaded -> if (load.value.isEmpty()) {
-                        Text("Nenhuma editora ainda. Elas aparecem quando você cadastra livros.", fontFamily = type.body, color = Libris.inkSoft)
+                        Text(kind.empty, fontFamily = type.body, color = Libris.inkSoft)
                     } else {
                         Column {
                             Text(
@@ -96,7 +102,7 @@ fun PublishersScreen(onBack: () -> Unit, onOpen: (publisher: String, wishlist: B
         AlertDialog(
             onDismissRequest = { renaming = null },
             containerColor = Libris.paper,
-            title = { Text("Renomear editora", fontFamily = type.title, color = Libris.oxblood) },
+            title = { Text(if (kind == NamesKind.Series) "Renomear série" else "Renomear editora", fontFamily = type.title, color = Libris.oxblood) },
             text = { RuledField("Nome", name, { name = it }, error = state.renameError) },
             confirmButton = { LibrisButton("Salvar", { viewModel.rename(p, name) }) },
             dismissButton = { LibrisButton("Cancelar", { renaming = null }, variant = ButtonVariant.Secondary) },

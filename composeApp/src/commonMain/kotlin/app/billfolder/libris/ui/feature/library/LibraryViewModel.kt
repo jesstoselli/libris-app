@@ -38,8 +38,14 @@ data class LibraryState(
     val genres: List<Genre> = emptyList(),
     val author: String? = null,
     val publisher: String? = null,
+    val series: String? = null,
+    /** 4, 3 or 2: books rated at least that. */
+    val minRating: Double? = null,
+    /** The best rated first instead of the shelf order. */
+    val byRating: Boolean = false,
 ) {
-    val hasFilters get() = status != null || genreId != null || format != null || language != null || author != null || publisher != null || query.isNotBlank()
+    val hasFilters get() = status != null || genreId != null || format != null || language != null || author != null || publisher != null ||
+        series != null || minRating != null || byRating || query.isNotBlank()
 
     /** What the list shows: the unfiltered load doubles as the "Todos" view, so no filter means one request. */
     val shown: Load<List<Book>> get() = if (hasFilters) filtered ?: Load.Loading else all
@@ -84,7 +90,7 @@ class LibraryViewModel(
     /** From a book page: that author's (or that genre's) books alone, whatever was filtered before. */
     private fun showOnly(request: FilterRequest) {
         searchJob?.cancel()
-        _state.update { it.copy(status = null, genreId = request.genreId, format = null, language = null, query = "", author = request.author, publisher = request.publisher) }
+        _state.update { it.copy(status = null, genreId = request.genreId, format = null, language = null, query = "", author = request.author, publisher = request.publisher, series = request.series, minRating = null, byRating = false) }
         loadFiltered()
     }
 
@@ -109,6 +115,21 @@ class LibraryViewModel(
             jobs.joinAll()
             _state.update { it.copy(refreshing = false) }
         }
+    }
+
+    fun setSeries(series: String?) {
+        _state.update { it.copy(series = series) }
+        loadFiltered()
+    }
+
+    fun setMinRating(minRating: Double?) {
+        _state.update { it.copy(minRating = minRating) }
+        loadFiltered()
+    }
+
+    fun setByRating(byRating: Boolean) {
+        _state.update { it.copy(byRating = byRating) }
+        loadFiltered()
     }
 
     fun setPublisher(publisher: String?) {
@@ -159,7 +180,7 @@ class LibraryViewModel(
         }
         _state.update { it.copy(filtered = Load.Loading) }
         filterJob = viewModelScope.launch {
-            val load = loadOf { books.list(BookFilter(BookOwnership.Owned, s.status, s.genreId, s.query, s.format, s.language, s.author, s.publisher)) }
+            val load = loadOf { books.list(BookFilter(BookOwnership.Owned, s.status, s.genreId, s.query, s.format, s.language, s.author, s.publisher, s.series, s.minRating, s.byRating)) }
             _state.update { it.copy(filtered = load) }
         }
         return filterJob

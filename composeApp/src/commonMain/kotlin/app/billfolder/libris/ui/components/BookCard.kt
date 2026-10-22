@@ -1,5 +1,7 @@
 package app.billfolder.libris.ui.components
 
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -39,9 +41,16 @@ fun BookCard(book: Book, onClick: () -> Unit, modifier: Modifier = Modifier) {
             Column(Modifier.weight(1f)) {
                 Text(book.title, fontFamily = type.title, fontWeight = FontWeight.Bold, fontSize = 18.sp, lineHeight = 20.sp, color = Libris.oxblood, maxLines = 3, overflow = TextOverflow.Ellipsis)
                 Text(book.authors.joinToString(", "), fontFamily = type.body, fontSize = 14.sp, color = Libris.inkSoft)
+                book.series?.let { series ->
+                    val label = book.seriesNumber?.let { "$series · nº ${if (it % 1.0 == 0.0) it.toLong().toString() else it.toString().replace('.', ',')}" } ?: series
+                    Text(label, fontFamily = type.body, fontSize = 13.sp, fontStyle = FontStyle.Italic, color = Libris.inkSoft)
+                }
                 Text(bookTag(book.formats, book.language).uppercase(), fontFamily = type.title, fontSize = 10.sp, letterSpacing = 1.sp, color = Libris.inkSoft, modifier = Modifier.padding(top = 2.dp))
                 progressLine(book)?.let { line ->
-                    Text(line, fontFamily = type.body, fontSize = 14.sp, color = Libris.inkSoft)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text(line, fontFamily = type.body, fontSize = 14.sp, color = Libris.inkSoft)
+                        book.rating?.let { RatingStars(it) }
+                    }
                     ProgressBar(if (book.status == BookStatus.Read) 100 else book.percent, Modifier.padding(top = 6.dp, bottom = 4.dp))
                 }
                 if (book.genres.isNotEmpty()) {

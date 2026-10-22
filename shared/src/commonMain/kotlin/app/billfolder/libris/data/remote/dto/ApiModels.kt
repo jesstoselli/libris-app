@@ -61,7 +61,22 @@ data class BookDto(
     val formats: List<BookFormatDto> = listOf(BookFormatDto.Physical),
     /** ISO 639-1; absent from APIs older than languages, when every book was Portuguese. */
     val language: String = "pt",
+    /** Absent from APIs older than series and ratings. */
+    val series: String? = null,
+    val seriesNumber: Double? = null,
+    val rating: Double? = null,
 )
+
+/** Always sent by this app; a blank name takes the book out of its series. */
+@Serializable data class BookSeriesInputDto(val name: String?, val number: Double?)
+
+@Serializable data class SeriesDto(val name: String, val bookCount: Int, val wishlistCount: Int)
+
+@Serializable internal data class RenameSeriesBody(val from: String, val to: String)
+
+@Serializable internal data class RatingBody(val rating: Double?)
+
+@Serializable data class DayStatsDto(val date: String, val pagesRead: Int, val books: List<ProgressedBookDto>)
 
 @Serializable
 data class CreateBookRequest(
@@ -83,6 +98,7 @@ data class CreateBookRequest(
     /** A book registered mid-read: the API turns it into the first reading log. */
     val currentPage: Int? = null,
     val language: String = "pt",
+    val series: BookSeriesInputDto = BookSeriesInputDto(null, null),
 )
 
 @Serializable
@@ -100,6 +116,7 @@ data class UpdateBookRequest(
     val finishedAt: String?,
     val formats: List<BookFormatDto>,
     val language: String = "pt",
+    val series: BookSeriesInputDto = BookSeriesInputDto(null, null),
 )
 
 data class BookListQuery(
@@ -111,6 +128,10 @@ data class BookListQuery(
     val language: String? = null,
     val author: String? = null,
     val publisher: String? = null,
+    val series: String? = null,
+    val minRating: Double? = null,
+    /** "rating" for the best rated first; null keeps the shelf order. */
+    val sort: String? = null,
 )
 
 @Serializable data class PublisherDto(val name: String, val bookCount: Int, val wishlistCount: Int)

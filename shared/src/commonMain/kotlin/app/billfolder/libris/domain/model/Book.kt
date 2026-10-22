@@ -35,6 +35,11 @@ data class Book(
     val formats: List<BookFormat> = listOf(BookFormat.Physical),
     /** ISO 639-1: "pt", "en", "fr"… */
     val language: String = "pt",
+    /** The series as the reader names it; the number may be 1.5 (a novella) or 0 (a prequel). */
+    val series: String? = null,
+    val seriesNumber: Double? = null,
+    /** 0.5 to 5 in halves; only read or abandoned books carry one. */
+    val rating: Double? = null,
 )
 
 /** What the user fills in to create or edit a book. [ownership] and [status] only count when creating. */
@@ -56,12 +61,21 @@ data class BookDraft(
     /** Only when creating a book that is being read or was abandoned: the page already reached. */
     val currentPage: Int? = null,
     val language: String = "pt",
+    val series: String? = null,
+    val seriesNumber: Double? = null,
 )
 
 fun Book.toDraft() = BookDraft(
     title, authors, isbn, totalPages, publisher, publishedYear, synopsis, coverId,
     genres.map { it.name }, ownership, status, startedAt, finishedAt, formats.toSet(), language = language,
+    series = series, seriesNumber = seriesNumber,
 )
+
+/** One series and its books in the Acervo and the Wishlist. */
+data class Series(val name: String, val bookCount: Int, val wishlistCount: Int)
+
+/** A day of the reading calendar. */
+data class DayStats(val date: LocalDate, val pagesRead: Int, val books: List<ProgressedBook>)
 
 data class BookFilter(
     val ownership: BookOwnership? = null,
@@ -73,6 +87,9 @@ data class BookFilter(
     val author: String? = null,
     /** One spelling exactly as on the book. */
     val publisher: String? = null,
+    val series: String? = null,
+    val minRating: Double? = null,
+    val byRating: Boolean = false,
 )
 
 /** One spelling of a publisher and its books in the Acervo and the Wishlist. */

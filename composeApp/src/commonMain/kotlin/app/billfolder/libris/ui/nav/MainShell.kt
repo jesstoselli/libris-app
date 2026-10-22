@@ -36,6 +36,7 @@ import app.billfolder.libris.ui.common.FilterRequests
 import app.billfolder.libris.ui.feature.bookdetail.BookDetailScreen
 import app.billfolder.libris.ui.feature.form.BookFormScreen
 import app.billfolder.libris.ui.feature.genres.GenresScreen
+import app.billfolder.libris.ui.feature.publishers.NamesKind
 import app.billfolder.libris.ui.feature.publishers.PublishersScreen
 import app.billfolder.libris.ui.feature.library.LibraryScreen
 import app.billfolder.libris.ui.feature.stats.StatsScreen
@@ -75,6 +76,7 @@ fun MainShell(auth: AuthRepository = koinInject(), filterRequests: FilterRequest
                             onRegister = { go(AddBookRoute) },
                             onManageGenres = { nav.navigate(GenresRoute) },
                             onManagePublishers = { nav.navigate(PublishersRoute) },
+                            onManageSeries = { nav.navigate(SeriesRoute) },
                             onLogout = logout,
                         )
                     }
@@ -92,6 +94,11 @@ fun MainShell(auth: AuthRepository = koinInject(), filterRequests: FilterRequest
                                 filterRequests.showGenre(genreId, wishlist)
                                 backToList(wishlist)
                             },
+                            onSeries = { series, wishlist ->
+                                filterRequests.showSeries(series, wishlist)
+                                backToList(wishlist)
+                            },
+                            onOpenBook = { bookId, wishlist -> nav.navigate(BookDetailRoute(bookId, fromWishlist = wishlist)) },
                         )
                     }
                     composable<EditRoute> { entry ->
@@ -106,6 +113,16 @@ fun MainShell(auth: AuthRepository = koinInject(), filterRequests: FilterRequest
                     }
                     composable<StatsRoute> { StatsScreen(onLogout = logout) }
                     composable<GenresRoute> { GenresScreen(onBack = { nav.popBackStack() }) }
+                    composable<SeriesRoute> {
+                        PublishersScreen(
+                            onBack = { nav.popBackStack() },
+                            onOpen = { series, wishlist ->
+                                filterRequests.showSeries(series, wishlist)
+                                backToList(wishlist)
+                            },
+                            kind = NamesKind.Series,
+                        )
+                    }
                     composable<PublishersRoute> {
                         PublishersScreen(
                             onBack = { nav.popBackStack() },
@@ -130,7 +147,7 @@ fun MainShell(auth: AuthRepository = koinInject(), filterRequests: FilterRequest
             }
             RibbonBar(
                 listOf(
-                    RibbonItem("Acervo", LibrisIcons.Book, isOn(LibraryRoute::class) || (isOn(BookDetailRoute::class) && !wishlistDetail) || isOn(EditRoute::class) || isOn(GenresRoute::class) || isOn(PublishersRoute::class)) { go(LibraryRoute) },
+                    RibbonItem("Acervo", LibrisIcons.Book, isOn(LibraryRoute::class) || (isOn(BookDetailRoute::class) && !wishlistDetail) || isOn(EditRoute::class) || isOn(GenresRoute::class) || isOn(PublishersRoute::class) || isOn(SeriesRoute::class)) { go(LibraryRoute) },
                     RibbonItem("Wishlist", LibrisIcons.Bookmark, isOn(WishlistRoute::class) || (isOn(BookDetailRoute::class) && wishlistDetail)) { go(WishlistRoute) },
                     RibbonItem("Números", LibrisIcons.Chart, isOn(StatsRoute::class)) { go(StatsRoute) },
                 ),

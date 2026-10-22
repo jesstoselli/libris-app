@@ -2,6 +2,7 @@ package app.billfolder.libris.ui.feature.stats
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.billfolder.libris.domain.model.DayStats
 import app.billfolder.libris.domain.model.MonthDetail
 import app.billfolder.libris.domain.model.YearStats
 import app.billfolder.libris.domain.repository.StatsRepository
@@ -23,6 +24,9 @@ data class StatsState(
     val stats: Load<YearStats> = Load.Loading,
     val detail: Load<MonthDetail> = Load.Loading,
     val refreshing: Boolean = false,
+    /** The reading calendar; extra, so a failure just leaves it empty. */
+    val days: List<DayStats> = emptyList(),
+    val selectedDay: DayStats? = null,
 )
 
 /** Current month this year; December for past years; January for future ones. */
@@ -42,13 +46,28 @@ class StatsViewModel(
 
     private var yearJob: Job? = null
     private var monthJob: Job? = null
+    private var daysJob: Job? = null
 
     init {
         loadYear()
         loadMonth()
+        loadDays()
     }
 
-    fun refresh(): List<Job> = listOf(loadYear(), loadMonth())
+    fun refresh(): List<Job> = listOf(loadYear(), loadMonth(), loadDays())
+
+    fun selectDay(day: DayStats?) = _state.update { it.copy(selectedDay = day) }
+
+    private fun loadDays(): Job {
+        daysJob?.cancel()
+        val year = _state.value.year
+        _state.update { it.copy(days = emptyList(), selectedDay = null) }
+        daysJob = viewModelScope.launch {
+            val days = runCatching { stats.days(year) }.getOrDefault(emptyList())
+            _state.update { if (it.year == year) it.copy(days = days) else it }
+        }
+        return daysJob!!
+    }
 
     /** The pull-down gesture: same reload, with the indicator up until every request has answered. */
     fun pullToRefresh() {
@@ -65,6 +84,7 @@ class StatsViewModel(
         _state.update { it.copy(year = year, month = defaultMonth(year, now())) }
         loadYear()
         loadMonth()
+        loadDays()
     }
 
     fun selectMonth(month: Int) {

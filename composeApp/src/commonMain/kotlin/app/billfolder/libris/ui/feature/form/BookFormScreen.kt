@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
@@ -92,6 +93,7 @@ fun BookFormScreen(
     val existing by viewModel.existingGenres.collectAsStateWithLifecycle()
     val knownAuthors by viewModel.knownAuthors.collectAsStateWithLifecycle()
     val knownPublishers by viewModel.knownPublishers.collectAsStateWithLifecycle()
+    val knownSeries by viewModel.knownSeries.collectAsStateWithLifecycle()
     val type = LocalLibrisType.current
     // The keyboard's action key walks the form field by field instead of closing it.
     val next = KeyboardOptions(imeAction = ImeAction.Next)
@@ -268,6 +270,19 @@ fun BookFormScreen(
                     }
                     RuledField("Editora", state.publisher, viewModel::onPublisher, keyboardOptions = next)
                     SuggestionChips(publisherSuggestions(knownPublishers, state.publisher), viewModel::onPublisher)
+                    // A series and the book's place in it; the number is optional (and may be 1,5 or 0).
+                    Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+                        RuledField("Série", state.series, viewModel::onSeries, Modifier.weight(1f), keyboardOptions = next)
+                        RuledField(
+                            "Nº",
+                            state.seriesNumber,
+                            viewModel::onSeriesNumber,
+                            Modifier.width(88.dp),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
+                            error = state.seriesNumberError,
+                        )
+                    }
+                    SuggestionChips(authorSuggestions(knownSeries, state.series, emptyList()), viewModel::onSeries)
                     RuledField("Sinopse", state.synopsis, viewModel::onSynopsis, singleLine = false)
 
                     GenreChips(state, existing.map { it.name }, viewModel)

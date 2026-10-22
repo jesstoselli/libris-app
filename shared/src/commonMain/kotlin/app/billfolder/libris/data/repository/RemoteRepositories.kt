@@ -9,6 +9,8 @@ import app.billfolder.libris.data.remote.toDto
 import app.billfolder.libris.data.remote.toUpdate
 import app.billfolder.libris.data.remote.dto.ReadingLogResultDto
 import app.billfolder.libris.domain.model.Publisher
+import app.billfolder.libris.domain.model.DayStats
+import app.billfolder.libris.domain.model.Series
 import app.billfolder.libris.domain.model.Book
 import app.billfolder.libris.domain.model.BookDraft
 import app.billfolder.libris.domain.model.BookFilter
@@ -36,7 +38,7 @@ class RemoteBookRepository(
     private val today: () -> LocalDate = { localToday() },
 ) : BookRepository {
     override suspend fun list(filter: BookFilter): List<Book> {
-        val query = BookListQuery(filter.ownership?.toDto(), filter.status?.toDto(), filter.genreId, filter.query?.trim()?.ifBlank { null }, filter.format?.toDto(), filter.language, filter.author, filter.publisher)
+        val query = BookListQuery(filter.ownership?.toDto(), filter.status?.toDto(), filter.genreId, filter.query?.trim()?.ifBlank { null }, filter.format?.toDto(), filter.language, filter.author, filter.publisher, filter.series, filter.minRating, "rating".takeIf { filter.byRating })
         return session.authorized { api.listBooks(it, query) }.map { it.toDomain(api::coverSrc) }
     }
 
@@ -45,6 +47,15 @@ class RemoteBookRepository(
     override suspend fun authors(): List<String> = session.authorized { api.listAuthors(it) }
 
     override suspend fun publishers(): List<String> = session.authorized { api.listPublishers(it) }
+
+    override suspend fun seriesSummary(): List<Series> =
+        session.authorized { api.seriesSummary(it) }.map { Series(it.name, it.bookCount, it.wishlistCount) }
+
+    override suspend fun seriesBooks(name: String): List<Book> = session.authorized { api.seriesBooks(it, name) }.map { it.toDomain(api::coverSrc) }
+
+    override suspend fun renameSeries(from: String, to: String): Int = session.authorized { api.renameSeries(it, from, to) }.updated
+
+    override suspend fun rate(id: String, rating: Double?): Book = session.authorized { api.rate(it, id, rating) }.toDomain(api::coverSrc)
 
     override suspend fun publisherSummary(): List<Publisher> =
         session.authorized { api.publisherSummary(it) }.map { Publisher(it.name, it.bookCount, it.wishlistCount) }
@@ -102,4 +113,6 @@ class RemoteStatsRepository(private val api: LibrisApi, private val session: Aut
     override suspend fun year(year: Int): YearStats = session.authorized { api.yearStats(it, year) }.toDomain()
 
     override suspend fun month(year: Int, month: Int): MonthDetail = session.authorized { api.monthStats(it, year, month) }.toDomain()
+
+    override suspend fun days(year: Int): List<DayStats> = session.authorized { api.statsDays(it, year) }.map { it.toDomain() }
 }

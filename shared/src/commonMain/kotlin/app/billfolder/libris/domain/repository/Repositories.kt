@@ -1,6 +1,8 @@
 package app.billfolder.libris.domain.repository
 
 import app.billfolder.libris.domain.model.Publisher
+import app.billfolder.libris.domain.model.DayStats
+import app.billfolder.libris.domain.model.Series
 import app.billfolder.libris.domain.model.AccountState
 import app.billfolder.libris.domain.model.Book
 import app.billfolder.libris.domain.model.BookDraft
@@ -41,6 +43,17 @@ interface BookRepository {
     /** Every publisher on the user's books, for the form's suggestions. */
     suspend fun publishers(): List<String>
 
+    suspend fun seriesSummary(): List<Series>
+
+    /** Every book of [name], owned or wished for, in reading order. */
+    suspend fun seriesBooks(name: String): List<Book>
+
+    /** Moves every book of [from] into [to], keeping their numbers; returns how many changed. */
+    suspend fun renameSeries(from: String, to: String): Int
+
+    /** 0.5 to 5 in halves for a read or abandoned book; null clears it. */
+    suspend fun rate(id: String, rating: Double?): Book
+
     /** Each spelling apart with its counts, so the publishers screen shows which variants to merge. */
     suspend fun publisherSummary(): List<Publisher>
 
@@ -70,4 +83,7 @@ interface CoverRepository {
 interface StatsRepository {
     suspend fun year(year: Int): YearStats
     suspend fun month(year: Int, month: Int): MonthDetail
+
+    /** The reading calendar: only the days with pages. */
+    suspend fun days(year: Int): List<DayStats>
 }

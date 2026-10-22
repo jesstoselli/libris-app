@@ -85,13 +85,13 @@ class WishlistGenresStatsViewModelTest {
         val vm = StatsViewModel(fake.stats) { 2026 to 10 }
         advanceUntilIdle()
 
-        assertEquals(setOf("/v1/stats/2026", "/v1/stats/2026/10"), fake.requests.map { it.url.encodedPath }.toSet())
+        assertEquals(setOf("/v1/stats/2026", "/v1/stats/2026/10", "/v1/stats/2026/days"), fake.requests.map { it.url.encodedPath }.toSet())
         assertIs<Load.Loaded<*>>(vm.state.value.stats)
 
         vm.goToYear(2025)
         advanceUntilIdle()
 
-        assertEquals(listOf("/v1/stats/2025", "/v1/stats/2025/12"), fake.requests.takeLast(2).map { it.url.encodedPath }.sorted())
+        assertEquals(listOf("/v1/stats/2025", "/v1/stats/2025/12", "/v1/stats/2025/days"), fake.requests.takeLast(3).map { it.url.encodedPath }.sorted())
     }
 
     @Test

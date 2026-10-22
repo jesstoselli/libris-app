@@ -42,11 +42,19 @@ fun bookJson(
     language: String? = null,
     authors: List<String> = listOf("Umberto Eco"),
     genres: List<Pair<String, String>> = emptyList(),
+    series: String? = null,
+    seriesNumber: Double? = null,
+    rating: Double? = null,
 ): String {
     fun q(v: String?) = v?.let { "\"$it\"" } ?: "null"
     val formatsField = formats?.let { f -> ""","formats":[${f.joinToString(",") { "\"$it\"" }}]""" }.orEmpty()
     val languageField = language?.let { ""","language":"$it"""" }.orEmpty()
-    return """{"id":"$id","title":"$title","authors":[${authors.joinToString(",") { "\"$it\"" }}],"ownership":"$ownership","status":${q(status)},"totalPages":${totalPages ?: "null"},"addedAt":"2026-10-01","genres":[${genres.joinToString(",") { (gid, name) -> """{"id":"$gid","name":"$name"}""" }}],"currentPage":$currentPage,"percent":$percent,"startedAt":${q(startedAt)},"finishedAt":${q(finishedAt)}$formatsField$languageField}"""
+    val extra = listOfNotNull(
+        series?.let { """"series":"$it"""" },
+        seriesNumber?.let { """"seriesNumber":$it""" },
+        rating?.let { """"rating":$it""" },
+    ).joinToString("") { ",$it" }
+    return """{"id":"$id","title":"$title","authors":[${authors.joinToString(",") { "\"$it\"" }}],"ownership":"$ownership","status":${q(status)},"totalPages":${totalPages ?: "null"},"addedAt":"2026-10-01","genres":[${genres.joinToString(",") { (gid, name) -> """{"id":"$gid","name":"$name"}""" }}],"currentPage":$currentPage,"percent":$percent,"startedAt":${q(startedAt)},"finishedAt":${q(finishedAt)}$formatsField$languageField$extra}"""
 }
 
 /** [dispatcher] must be the test's, so advanceUntilIdle() also waits for the fake HTTP calls. */

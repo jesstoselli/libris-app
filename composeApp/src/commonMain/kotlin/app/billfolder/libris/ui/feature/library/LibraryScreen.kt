@@ -63,6 +63,7 @@ fun LibraryScreen(
     onRegister: () -> Unit,
     onManageGenres: () -> Unit,
     onManagePublishers: () -> Unit = {},
+    onManageSeries: () -> Unit = {},
     onLogout: () -> Unit,
     viewModel: LibraryViewModel = koinViewModel(),
 ) {
@@ -83,11 +84,12 @@ fun LibraryScreen(
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                     DeskSearchField(state.query, viewModel::setQuery, "Buscar por título ou autor", Modifier.weight(1f))
-                    FiltersButton(listOfNotNull(state.status, state.genreId, state.format, state.language, state.author, state.publisher).size, { showFilters = true })
+                    FiltersButton(listOfNotNull(state.status, state.genreId, state.format, state.language, state.author, state.publisher, state.series, state.minRating, state.byRating.takeIf { it }).size, { showFilters = true })
                 }
             }
             state.author?.let { author -> item { AuthorChip(author, { viewModel.setAuthor(null) }) } }
             state.publisher?.let { publisher -> item { AuthorChip(publisher, { viewModel.setPublisher(null) }, label = "Editora") } }
+            state.series?.let { series -> item { AuthorChip(series, { viewModel.setSeries(null) }, label = "Série") } }
             when (val shown = state.shown) {
                 Load.Loading -> item { Text("Carregando…", fontFamily = type.body, color = Libris.deskTextSoft) }
                 is Load.Failed -> item { Text(shown.message, fontFamily = type.body, color = Libris.deskText) }
@@ -113,14 +115,17 @@ fun LibraryScreen(
     if (showFilters) {
         FiltersSheet(
             onDismiss = { showFilters = false },
-            onClear = { viewModel.setStatus(null); viewModel.setGenre(null); viewModel.setFormat(null); viewModel.setLanguage(null); viewModel.setAuthor(null); viewModel.setPublisher(null) },
+            onClear = { viewModel.setStatus(null); viewModel.setGenre(null); viewModel.setFormat(null); viewModel.setLanguage(null); viewModel.setAuthor(null); viewModel.setPublisher(null); viewModel.setSeries(null); viewModel.setMinRating(null); viewModel.setByRating(false) },
         ) {
             FilterSection("Situação", BookStatus.entries.map { it to STATUS_LABELS.getValue(it) }, state.status, viewModel::setStatus, allLabel = "Todas")
             FilterSection("Formato", listOf(BookFormat.Physical to "Físico", BookFormat.Digital to "Digital"), state.format, viewModel::setFormat)
             FilterSection("Idioma", LANGUAGES, state.language, viewModel::setLanguage)
             FilterSection("Gênero", state.genres.map { it.id to it.name }, state.genreId, viewModel::setGenre)
+            FilterSection("Avaliação", listOf(4.0 to "4 ou mais", 3.0 to "3 ou mais", 2.0 to "2 ou mais"), state.minRating, viewModel::setMinRating, allLabel = "Todas")
+            FilterSection("Ordenar por", listOf(true to "Avaliação"), state.byRating.takeIf { it }, { viewModel.setByRating(it == true) }, allLabel = "Título")
             LibrisButton("Gerenciar gêneros", { showFilters = false; onManageGenres() }, variant = ButtonVariant.Quiet)
             LibrisButton("Gerenciar editoras", { showFilters = false; onManagePublishers() }, variant = ButtonVariant.Quiet)
+            LibrisButton("Gerenciar séries", { showFilters = false; onManageSeries() }, variant = ButtonVariant.Quiet)
         }
     }
 }

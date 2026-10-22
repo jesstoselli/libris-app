@@ -42,6 +42,9 @@ data class BookFormState(
     val currentPage: String = "",
     val publishedYear: String = "",
     val publisher: String = "",
+    val series: String = "",
+    /** As typed: "2", "1,5" or "1.5"; read through [seriesNumberValue]. */
+    val seriesNumber: String = "",
     val synopsis: String = "",
     val genres: List<String> = emptyList(),
     val formats: Set<BookFormat> = setOf(BookFormat.Physical),
@@ -105,7 +108,15 @@ data class BookFormState(
     /** A hidden finish (say, on a Lendo book) is kept as it was rather than wiped. */
     val finishToSend: LocalDate? get() = if (showFinish) finishedAt else editing?.finishedAt
     val datesError: String? get() = readingDatesProblem(null, finishedAt.takeIf { showFinish }, today())?.message()
-    val canSubmit get() = listOf(titleError, authorsError, pagesError, yearError, datesError, currentPageError).all { it == null } && !uploading && !saving
+    /** 0 for a prequel, 1.5 for a novella; a comma reads as the decimal point. */
+    val seriesNumberValue: Double? get() = seriesNumber.replace(',', '.').toDoubleOrNull()
+    val seriesNumberError: String?
+        get() = when {
+            seriesNumber.isBlank() -> null
+            seriesNumberValue == null || seriesNumberValue!! !in 0.0..9999.0 -> "Use um número de 0 a 9999 (pode ser 1,5)."
+            else -> null
+        }
+    val canSubmit get() = listOf(titleError, authorsError, pagesError, yearError, datesError, currentPageError, seriesNumberError).all { it == null } && !uploading && !saving
     val canLookUp get() = isSearchableIsbn(isbn) && !lookingUp
     val coverPreview get() = pendingCoverUrl.takeIf { coverId == null }
 
@@ -138,6 +149,8 @@ class BookFormViewModel(
     val knownAuthors: StateFlow<List<String>> = _knownAuthors.asStateFlow()
     private val _knownPublishers = MutableStateFlow<List<String>>(emptyList())
     val knownPublishers: StateFlow<List<String>> = _knownPublishers.asStateFlow()
+    private val _knownSeries = MutableStateFlow<List<String>>(emptyList())
+    val knownSeries: StateFlow<List<String>> = _knownSeries.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -149,6 +162,7 @@ class BookFormViewModel(
         }
         viewModelScope.launch {
             runCatching { books.publishers() }.onSuccess { _knownPublishers.value = it }
+            runCatching { books.seriesSummary() }.onSuccess { list -> _knownSeries.value = list.map { it.name } }
         }
         bookId?.let { id ->
             viewModelScope.launch {
@@ -174,6 +188,10 @@ class BookFormViewModel(
     fun onCurrentPage(v: String) = _state.update { it.copy(currentPage = v.trim()) }
     fun onYear(v: String) = _state.update { it.copy(publishedYear = v.trim(), touched = it.touched + "year") }
     fun onPublisher(v: String) = _state.update { it.copy(publisher = v) }
+
+    fun onSeries(v: String) = _state.update { it.copy(series = v) }
+
+    fun onSeriesNumber(v: String) = _state.update { it.copy(seriesNumber = v.filter { c -> c.isDigit() || c == ',' || c == '.' }) }
     fun onSynopsis(v: String) = _state.update { it.copy(synopsis = v) }
     fun onLanguage(code: String) = _state.update { it.copy(language = code, languageChosen = true) }
     fun onOwnership(v: BookOwnership) = _state.update { it.copy(ownership = v) }
@@ -290,6 +308,8 @@ class BookFormViewModel(
             totalPages = book.totalPages?.toString().orEmpty(),
             publishedYear = book.publishedYear?.toString().orEmpty(),
             publisher = book.publisher.orEmpty(),
+            series = book.series.orEmpty(),
+            seriesNumber = book.seriesNumber?.let(::seriesNumberText).orEmpty(),
             synopsis = book.synopsis.orEmpty(),
             genres = book.genres.map { g -> g.name },
             formats = book.formats.toSet(),
@@ -311,6 +331,8 @@ private fun BookFormState.toDraft(coverId: String?) = BookDraft(
     isbn = isbn.orNull(),
     totalPages = totalPages.toIntOrNull(),
     publisher = publisher.orNull(),
+    series = series.orNull(),
+    seriesNumber = seriesNumberValue,
     publishedYear = publishedYear.toIntOrNull(),
     synopsis = synopsis.orNull(),
     coverId = coverId,
@@ -323,3 +345,7 @@ private fun BookFormState.toDraft(coverId: String?) = BookDraft(
     finishedAt = finishToSend,
     currentPage = currentPage.toIntOrNull().takeIf { showCurrentPage },
 )
+
+/** "2" for 2.0 and "1,5" for 1.5, as a reader numbers a volume. */
+fun seriesNumberText(value: Double): String =
+    if (value % 1.0 == 0.0) value.toLong().toString() else value.toString().trimEnd('0').replace('.', ',')

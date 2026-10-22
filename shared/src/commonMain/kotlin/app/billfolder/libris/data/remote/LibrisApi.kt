@@ -21,6 +21,10 @@ import app.billfolder.libris.data.remote.dto.NameBody
 import app.billfolder.libris.data.remote.dto.ReadingLogDto
 import app.billfolder.libris.data.remote.dto.ReadingLogResultDto
 import app.billfolder.libris.data.remote.dto.PublisherDto
+import app.billfolder.libris.data.remote.dto.DayStatsDto
+import app.billfolder.libris.data.remote.dto.RatingBody
+import app.billfolder.libris.data.remote.dto.RenameSeriesBody
+import app.billfolder.libris.data.remote.dto.SeriesDto
 import app.billfolder.libris.data.remote.dto.RefreshBody
 import app.billfolder.libris.data.remote.dto.RenamePublisherBody
 import app.billfolder.libris.data.remote.dto.RenamePublisherResultDto
@@ -87,8 +91,26 @@ class LibrisApi(private val http: HttpClient, val baseUrl: String) {
                 query.language?.let { parameter("language", it) }
                 query.author?.takeIf { it.isNotBlank() }?.let { parameter("author", it) }
                 query.publisher?.takeIf { it.isNotBlank() }?.let { parameter("publisher", it) }
+                query.series?.takeIf { it.isNotBlank() }?.let { parameter("series", it) }
+                query.minRating?.let { parameter("minRating", it) }
+                query.sort?.let { parameter("sort", it) }
             }
         }.body()
+
+    suspend fun seriesSummary(token: String): List<SeriesDto> = send { http.get("$baseUrl/v1/series") { bearerAuth(token) } }.body()
+
+    /** Every book of a series, owned or wished for, in reading order; the name travels as a query parameter. */
+    suspend fun seriesBooks(token: String, name: String): List<BookDto> =
+        send { http.get("$baseUrl/v1/series/books") { bearerAuth(token); parameter("name", name) } }.body()
+
+    suspend fun renameSeries(token: String, from: String, to: String): RenamePublisherResultDto =
+        send { http.put("$baseUrl/v1/series") { bearerAuth(token); json(RenameSeriesBody(from, to)) } }.body()
+
+    /** 0.5 to 5 in halves; null clears it. */
+    suspend fun rate(token: String, id: String, rating: Double?): BookDto =
+        send { http.patch("$baseUrl/v1/books/$id/rating") { bearerAuth(token); json(RatingBody(rating)) } }.body()
+
+    suspend fun statsDays(token: String, year: Int): List<DayStatsDto> = send { http.get("$baseUrl/v1/stats/$year/days") { bearerAuth(token) } }.body()
 
     suspend fun publisherSummary(token: String): List<PublisherDto> =
         send { http.get("$baseUrl/v1/publishers/summary") { bearerAuth(token) } }.body()

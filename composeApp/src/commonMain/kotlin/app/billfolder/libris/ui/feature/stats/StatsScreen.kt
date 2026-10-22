@@ -99,6 +99,11 @@ fun StatsScreen(
                             Text("Páginas lidas por mês · toque num mês", fontFamily = type.body, fontSize = 13.sp, color = Libris.inkSoft)
                             MonthBars(s.months, state.month, viewModel::selectMonth)
                         }
+                        SheetDivider()
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text("Dias de leitura", fontFamily = type.body, fontSize = 13.sp, color = Libris.inkSoft)
+                            ReadingCalendar(state.year, state.days, state.selectedDay, viewModel::selectDay)
+                        }
                         when (val d = state.detail) {
                             Load.Loading -> Unit
                             is Load.Failed -> Text(d.message, fontFamily = type.body, color = Libris.oxblood)

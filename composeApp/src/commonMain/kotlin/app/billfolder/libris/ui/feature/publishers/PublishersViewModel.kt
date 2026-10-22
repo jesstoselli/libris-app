@@ -19,8 +19,17 @@ import kotlinx.coroutines.launch
 
 data class PublishersState(val publishers: Load<List<Publisher>> = Load.Loading, val renameError: String? = null, val refreshing: Boolean = false)
 
-/** Each spelling of a publisher with its books; renaming one onto another merges them, which is how they get normalized. */
-class PublishersViewModel(private val books: BookRepository) : ViewModel() {
+/** The two kinds of name the reader normalizes the same way: list, filter by one, rename one onto another. */
+enum class NamesKind(val title: String, val empty: String, val renamed: String) {
+    Publisher("Editoras", "Nenhuma editora ainda. Elas aparecem quando você cadastra livros.", "Editora renomeada"),
+    Series("Séries", "Nenhuma série ainda. Elas aparecem quando você põe um livro numa série.", "Série renomeada"),
+}
+
+/**
+ * Each spelling of a publisher (or each series) with its books; renaming one onto another merges them, which is how
+ * they get normalized. A series keeps every book's number when it moves.
+ */
+class PublishersViewModel(private val books: BookRepository, val kind: NamesKind = NamesKind.Publisher) : ViewModel() {
     private val _state = MutableStateFlow(PublishersState())
     val state: StateFlow<PublishersState> = _state.asStateFlow()
 
@@ -36,7 +45,12 @@ class PublishersViewModel(private val books: BookRepository) : ViewModel() {
     }
 
     private fun load(): Job = viewModelScope.launch {
-        val load = loadOf { books.publisherSummary() }
+        val load = loadOf {
+            when (kind) {
+                NamesKind.Publisher -> books.publisherSummary()
+                NamesKind.Series -> books.seriesSummary().map { Publisher(it.name, it.bookCount, it.wishlistCount) }
+            }
+        }
         _state.update { it.copy(publishers = load) }
     }
 
@@ -57,10 +71,13 @@ class PublishersViewModel(private val books: BookRepository) : ViewModel() {
         if (trimmed.isEmpty() || trimmed == publisher.name) return
         viewModelScope.launch {
             try {
-                val updated = books.renamePublisher(publisher.name, trimmed)
+                val updated = when (kind) {
+                    NamesKind.Publisher -> books.renamePublisher(publisher.name, trimmed)
+                    NamesKind.Series -> books.renameSeries(publisher.name, trimmed)
+                }
                 _state.update { it.copy(renameError = null) }
                 _renamed.send(Unit)
-                _messages.send("Editora renomeada em $updated ${if (updated == 1) "livro" else "livros"}.")
+                _messages.send("${kind.renamed} em $updated ${if (updated == 1) "livro" else "livros"}.")
                 // Merged spellings collapse into one row, so the list comes back from the API.
                 load()
             } catch (e: Exception) {

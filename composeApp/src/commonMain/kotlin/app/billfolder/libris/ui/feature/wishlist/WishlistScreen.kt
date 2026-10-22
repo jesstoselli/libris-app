@@ -62,11 +62,12 @@ fun WishlistScreen(
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                     DeskSearchField(state.query, viewModel::setQuery, "Buscar por título ou autor", Modifier.weight(1f))
-                    FiltersButton(listOfNotNull(state.genreId, state.format, state.language, state.author, state.publisher).size, { showFilters = true })
+                    FiltersButton(listOfNotNull(state.genreId, state.format, state.language, state.author, state.publisher, state.series).size, { showFilters = true })
                 }
             }
             state.author?.let { author -> item { AuthorChip(author, { viewModel.setAuthor(null) }) } }
             state.publisher?.let { publisher -> item { AuthorChip(publisher, { viewModel.setPublisher(null) }, label = "Editora") } }
+            state.series?.let { series -> item { AuthorChip(series, { viewModel.setSeries(null) }, label = "Série") } }
             when (val load = state.books) {
                 Load.Loading -> item { Text("Carregando…", fontFamily = type.body, color = Libris.deskTextSoft) }
                 is Load.Failed -> item { Text(load.message, fontFamily = type.body, color = Libris.deskText) }

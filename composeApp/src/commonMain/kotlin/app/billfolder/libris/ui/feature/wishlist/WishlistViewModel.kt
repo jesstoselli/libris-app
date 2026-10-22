@@ -34,6 +34,7 @@ data class WishlistState(
     val query: String = "",
     val author: String? = null,
     val publisher: String? = null,
+    val series: String? = null,
 ) {
     val subtitle get() = books.valueOrNull?.let { "${it.size} ${if (it.size == 1) "livro" else "livros"} pra procurar" }
 
@@ -41,12 +42,15 @@ data class WishlistState(
     val visible: List<Book>
         get() {
             val term = fold(query.trim())
-            return books.valueOrNull.orEmpty().filter { b ->
+            // One series reads in its own order; books without a number go last.
+            val shelf = books.valueOrNull.orEmpty().let { list -> if (series == null) list else list.sortedBy { it.seriesNumber ?: Double.MAX_VALUE } }
+            return shelf.filter { b ->
                 (genreId == null || b.genres.any { it.id == genreId }) &&
                     (format == null || format in b.formats) &&
                     (language == null || b.language == language) &&
                     (author == null || author in b.authors) &&
                     (publisher == null || b.publisher == publisher) &&
+                    (series == null || b.series == series) &&
                     (term.isEmpty() || fold(b.title).contains(term) || b.authors.any { fold(it).contains(term) })
             }
         }
@@ -65,7 +69,7 @@ class WishlistViewModel(
         viewModelScope.launch {
             filterRequests.pending.filterNotNull().filter { it.wishlist }.collect { request ->
                 // From a book page: that author's (or that genre's) books alone, whatever was filtered before.
-                _state.update { it.copy(genreId = request.genreId, format = null, language = null, query = "", author = request.author, publisher = request.publisher) }
+                _state.update { it.copy(genreId = request.genreId, format = null, language = null, query = "", author = request.author, publisher = request.publisher, series = request.series) }
                 filterRequests.take(request)
             }
         }
@@ -74,6 +78,8 @@ class WishlistViewModel(
     fun setAuthor(author: String?) = _state.update { it.copy(author = author) }
 
     fun setPublisher(publisher: String?) = _state.update { it.copy(publisher = publisher) }
+
+    fun setSeries(series: String?) = _state.update { it.copy(series = series) }
 
     fun setGenre(id: String?) = _state.update { it.copy(genreId = id) }
 
